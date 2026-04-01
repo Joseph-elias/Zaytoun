@@ -1,0 +1,66 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Directory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page">
+      <header class="hero">
+        <div class="list-head">
+          <p class="eyebrow">Worker Radar</p>
+          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+        </div>
+        <h1>Workers Directory</h1>
+        <p class="sub" id="role-hint">Filter by location, availability, and separate men/women rates in seconds.</p>
+        <nav class="tabs">
+          <a class="tab" href="./login.html">Login</a>
+          <a class="tab" href="./signup.html">Create Account</a>
+          <a class="tab" href="./register.html">Register Worker</a>
+          <a class="tab" href="./my-profiles.html">My Profiles</a>
+          <a class="tab active" href="./workers.html">Workers Directory</a>
+        </nav>
+      </header>
+
+      <section class="card">
+        <h2>Filters</h2>
+        <form id="filters-form" class="form-grid compact">
+          <label>Village<input name="village" /></label>
+          <label>Availability
+            <select name="available">
+              <option value="">All</option>
+              <option value="true">Available</option>
+              <option value="false">Busy</option>
+            </select>
+          </label>
+          <label>Rate Type
+            <select name="rate_type">
+              <option value="">Any</option>
+              <option value="day">Per Day</option>
+              <option value="hour">Per Hour</option>
+            </select>
+          </label>
+          <label>Min Men Rate<input name="min_men_rate" type="number" step="0.01" min="0" /></label>
+          <label>Max Men Rate<input name="max_men_rate" type="number" step="0.01" min="0" /></label>
+          <label>Min Women Rate<input name="min_women_rate" type="number" step="0.01" min="0" /></label>
+          <label>Max Women Rate<input name="max_women_rate" type="number" step="0.01" min="0" /></label>
+          <button class="btn" type="submit">Apply Filters</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Workers</h2>
+          <button class="btn ghost" id="refresh-btn" type="button">Refresh</button>
+        </div>
+        <div id="workers-list" class="workers-list"></div>
+      </section>
+    </main>
+    <script type="module" src="./src/workers.js"></script>
+  </body>
+</html>

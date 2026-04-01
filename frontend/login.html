@@ -1,0 +1,39 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Worker Radar</p>
+        <h1>Login</h1>
+        <p class="sub">Sign in and we will route you automatically based on your role.</p>
+        <nav class="tabs">
+          <a class="tab active" href="./login.html">Login</a>
+          <a class="tab" href="./signup.html">Create Account</a>
+          <a class="tab" href="./my-profiles.html">My Profiles</a>
+          <a class="tab" href="./workers.html">Workers Directory</a>
+        </nav>
+      </header>
+
+      <section class="card">
+        <h2>Welcome Back</h2>
+        <form id="login-form" class="form-grid compact">
+          <label>Phone<input name="phone" required minlength="4" /></label>
+          <label>Password<input name="password" type="password" required minlength="6" /></label>
+          <button class="btn" type="submit">Login</button>
+        </form>
+        <p id="login-message" class="message"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./src/login.js"></script>
+  </body>
+</html>
