@@ -18,10 +18,12 @@ const nearLngInput = form.querySelector('input[name="near_longitude"]');
 const sortByInput = form.querySelector('select[name="sort_by"]');
 const mapHint = document.getElementById("map-hint");
 const mapEl = document.getElementById("workers-map");
+const mapSelectedWorkerEl = document.getElementById("map-selected-worker");
 
 const isWorker = session?.user?.role === "worker";
 const isFarmer = session?.user?.role === "farmer";
 const capacityCache = new Map();
+const workersById = new Map();
 
 let map = null;
 let markersLayer = null;
@@ -46,7 +48,7 @@ function money(value) {
 
 function formatDate(value) {
   if (!value) return "-";
-  return new Date(`${value}T00:00:00`).toLocaleDateString();
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
 }
 
 function dateBadges(dates) {
@@ -202,19 +204,59 @@ function ensureMap() {
   markersLayer = window.L.layerGroup().addTo(map);
 }
 
-function markerPopupHtml(worker) {
+function markerTooltipHtml(worker) {
   const men = worker.remaining_men_count ?? worker.men_count;
   const women = worker.remaining_women_count ?? worker.women_count;
   return `
-    <div>
-      <strong>${worker.name}</strong><br/>
-      <small>${worker.village}</small><br/>
-      <small>${worker.address || "No address"}</small><br/>
-      <small>Men: ${men} | Women: ${women}</small><br/>
-      <small>Rate: ${worker.rate_type}</small><br/>
-      <small>Distance: ${distanceText(worker)}</small>
+    <div class="map-tip">
+      <strong>${worker.name}</strong>
+      <small>M:${men} W:${women}</small>
     </div>
   `;
+}
+
+function selectedWorkerDetailsHtml(worker) {
+  const men = worker.remaining_men_count ?? worker.men_count;
+  const women = worker.remaining_women_count ?? worker.women_count;
+  const badgeClass = worker.available ? "available" : "busy";
+  const badgeText = worker.available ? "Available" : "Busy";
+  return `
+    <article class="map-selected-card">
+      <div class="map-selected-head">
+        <strong>${worker.name}</strong>
+        <span class="badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="map-selected-grid">
+        <p><strong>Village:</strong> ${worker.village}</p>
+        <p><strong>Distance:</strong> ${distanceText(worker)}</p>
+        <p><strong>Address:</strong> ${worker.address || "No address"}</p>
+        <p><strong>Phone:</strong> ${worker.phone || "-"}</p>
+        <p><strong>Capacity:</strong> ${men} men, ${women} women</p>
+        <p><strong>Rate type:</strong> ${worker.rate_type}</p>
+      </div>
+    </article>
+  `;
+}
+
+function renderSelectedWorker(worker) {
+  if (!mapSelectedWorkerEl) return;
+  if (!worker) {
+    mapSelectedWorkerEl.innerHTML = '<p class="sub">Select a worker on the map to view full details here.</p>';
+    return;
+  }
+  mapSelectedWorkerEl.innerHTML = selectedWorkerDetailsHtml(worker);
+}
+
+function offsetLatLng(lat, lng, index, total) {
+  if (total <= 1) return [lat, lng];
+
+  const radiusMeters = total <= 6 ? 22 : 32;
+  const angle = (Math.PI * 2 * index) / total;
+  const dx = Math.cos(angle) * radiusMeters;
+  const dy = Math.sin(angle) * radiusMeters;
+  const latOffset = dy / 111320;
+  const lngOffset = dx / (111320 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  return [lat + latOffset, lng + lngOffset];
 }
 
 function renderWorkersMap(workers) {
@@ -223,29 +265,56 @@ function renderWorkersMap(workers) {
 
   markersLayer.clearLayers();
   markersByWorkerId.clear();
+  workersById.clear();
 
   const withCoords = workers.filter((worker) => worker.latitude !== null && worker.longitude !== null);
   if (!withCoords.length) {
     mapHint.textContent = "No worker locations available for this filter.";
+    renderSelectedWorker(null);
     return;
   }
 
-  const bounds = [];
+  const coordinateBuckets = new Map();
   withCoords.forEach((worker) => {
+    workersById.set(worker.id, worker);
+    const key = `${Number(worker.latitude).toFixed(5)}|${Number(worker.longitude).toFixed(5)}`;
+    if (!coordinateBuckets.has(key)) coordinateBuckets.set(key, []);
+    coordinateBuckets.get(key).push(worker);
+  });
+
+  const bounds = [];
+  let crowdedLocations = 0;
+  coordinateBuckets.forEach((entries) => {
+    if (entries.length > 1) crowdedLocations += 1;
+  });
+
+  withCoords.forEach((worker) => {
+    const key = `${Number(worker.latitude).toFixed(5)}|${Number(worker.longitude).toFixed(5)}`;
+    const siblings = coordinateBuckets.get(key) || [];
+    const indexInBucket = siblings.findIndex((item) => item.id === worker.id);
+    const [pinLat, pinLng] = offsetLatLng(worker.latitude, worker.longitude, Math.max(0, indexInBucket), siblings.length);
     const men = worker.remaining_men_count ?? worker.men_count;
     const women = worker.remaining_women_count ?? worker.women_count;
+    const statusClass = worker.available ? "available" : "busy";
     const marker = window.L.marker([worker.latitude, worker.longitude], {
       title: worker.name,
       icon: window.L.divIcon({
         className: "worker-pin-wrap",
-        html: `<div class=\"worker-pin\">${worker.name}</div><div class=\"worker-pin-count\">M:${men} W:${women}</div>`,
+        html: `<div class=\"worker-pin ${statusClass}\"><span class=\"worker-pin-name\">${worker.name}</span></div><div class=\"worker-pin-count\">M:${men} W:${women}</div>`,
       }),
     });
+    marker.setLatLng([pinLat, pinLng]);
 
-    marker.bindPopup(markerPopupHtml(worker), { autoClose: false, closeButton: false });
-    marker.on("mouseover", () => marker.openPopup());
-    marker.on("mouseout", () => marker.closePopup());
+    marker.bindTooltip(markerTooltipHtml(worker), {
+      direction: "top",
+      offset: [0, -12],
+      className: "worker-map-tip",
+      opacity: 0.95,
+    });
+    marker.on("mouseover", () => marker.openTooltip());
+    marker.on("mouseout", () => marker.closeTooltip());
     marker.on("click", () => {
+      renderSelectedWorker(worker);
       const cardEl = document.querySelector(`[data-worker-card-id="${worker.id}"]`);
       if (!cardEl) return;
       cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -255,7 +324,7 @@ function renderWorkersMap(workers) {
 
     marker.addTo(markersLayer);
     markersByWorkerId.set(worker.id, marker);
-    bounds.push([worker.latitude, worker.longitude]);
+    bounds.push([pinLat, pinLng]);
   });
 
   if (bounds.length === 1) {
@@ -264,7 +333,8 @@ function renderWorkersMap(workers) {
     map.fitBounds(bounds, { padding: [20, 20] });
   }
 
-  mapHint.textContent = `${withCoords.length} worker location${withCoords.length > 1 ? "s" : ""} shown on map.`;
+  mapHint.textContent = `${withCoords.length} worker location${withCoords.length > 1 ? "s" : ""} shown on map${crowdedLocations ? ` (${crowdedLocations} crowded spot${crowdedLocations > 1 ? "s" : ""} spread for readability)` : ""}.`;
+  renderSelectedWorker(null);
 }
 
 async function fetchWorkers() {
@@ -387,11 +457,13 @@ listEl.addEventListener("click", async (event) => {
   const clickedCard = event.target.closest("[data-worker-card-id]");
   if (clickedCard && !event.target.closest("button, input, select, textarea, a, form")) {
     const workerId = clickedCard.dataset.workerCardId;
+    const worker = workersById.get(workerId);
+    if (worker) renderSelectedWorker(worker);
     const marker = markersByWorkerId.get(workerId);
     if (marker && map) {
       const latlng = marker.getLatLng();
       map.setView(latlng, Math.max(13, map.getZoom()));
-      marker.openPopup();
+      marker.openTooltip();
       clickedCard.classList.add("worker-card-highlight");
       window.setTimeout(() => clickedCard.classList.remove("worker-card-highlight"), 1400);
     }
@@ -560,3 +632,4 @@ form.addEventListener("submit", (event) => {
 
 refreshBtn.addEventListener("click", fetchWorkers);
 fetchWorkers();
+

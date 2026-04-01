@@ -1,97 +1,121 @@
-﻿# Worker Radar Backend (MVP)
+﻿# Worker Radar Backend (FastAPI)
 
-This service is API-only (FastAPI).
+Backend API for authentication, worker profiles, bookings, and olive season analytics.
 
-## Auth APIs
+## Stack
 
-- `POST /auth/register` create account with role `worker` or `farmer`
-- `POST /auth/login` get bearer token
+- FastAPI
+- SQLAlchemy ORM
+- Alembic migrations
+- SQLite default local DB (PostgreSQL-ready through env)
+- Pytest test suite
 
-## Worker APIs (protected)
+## API Modules
 
-- `POST /workers` (worker role only + own phone only)
-- `GET /workers` (worker or farmer)
-  - workers only see their own profiles
-  - farmers can see all profiles
-- `PATCH /workers/{id}/availability` (worker role only + own profile only)
+### Auth
+- `POST /auth/register`
+- `POST /auth/login`
 
-## Run locally
+### Workers
+- `POST /workers` (worker role, own phone only)
+- `PATCH /workers/{worker_id}` (worker role, own profile)
+- `GET /workers` (worker/farmer with filters)
+- `PATCH /workers/{worker_id}/availability` (worker role, own profile)
+- `DELETE /workers/{worker_id}` (worker role, own profile)
 
-```bash
+### Bookings
+- `POST /workers/{worker_id}/bookings` (farmer)
+- `GET /bookings/mine` (farmer)
+- `GET /bookings/received` (worker)
+- `PATCH /bookings/{booking_id}/worker-response` (worker)
+- `PATCH /bookings/{booking_id}/farmer-validation` (farmer)
+- `PATCH /bookings/{booking_id}/proposal` (worker/farmer owners, non-confirmed only)
+- `DELETE /bookings/{booking_id}` (worker/farmer owners, non-confirmed only)
+- `GET /bookings/{booking_id}/messages`
+- `POST /bookings/{booking_id}/messages`
+- `GET /bookings/{booking_id}/events`
+
+### Olive seasons (farmer)
+- `GET /olive-seasons/mine`
+- `POST /olive-seasons`
+- `PATCH /olive-seasons/{season_id}`
+- `DELETE /olive-seasons/{season_id}`
+
+### Olive piece metrics (farmer)
+- `GET /olive-piece-metrics/mine`
+- `POST /olive-piece-metrics`
+- `PATCH /olive-piece-metrics/{metric_id}`
+- `DELETE /olive-piece-metrics/{metric_id}`
+
+## Data Features
+
+### Worker profile fields
+- team name, phone, village/address
+- coordinates
+- men/women counts and rates
+- overtime settings
+- available dates and available status
+
+### Olive season fields
+- season year
+- land piece name
+- estimated/actual chonbol
+- kg per land piece
+- tanks 20L
+- notes
+- computed `kg_needed_per_tank`
+
+### Olive piece metric fields
+- season year
+- piece label
+- harvested kg
+- tanks 20L
+- notes
+- computed `kg_needed_per_tank`
+
+## Run Locally
+
+```powershell
 cd backend
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\alembic -c alembic.ini upgrade head
+.\.venv\Scripts\python -m uvicorn app.main:app --reload
 ```
 
-## Database migrations (Alembic)
-
-Apply schema before running API:
-
-```bash
-cd backend
-alembic -c alembic.ini upgrade head
-```
-
-Create new migration after model changes:
-
-```bash
-cd backend
-alembic -c alembic.ini revision --autogenerate -m "describe change"
-alembic -c alembic.ini upgrade head
-```
-
-Then run API:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-API docs:
-
+Docs:
 - `http://127.0.0.1:8000/docs`
 
-## Frontend
+## Migrations
 
-Frontend is separate in `../frontend` and uses Vite.
+Apply migrations:
 
-```bash
-cd frontend
-npm install
-npm run dev
+```powershell
+cd backend
+.\.venv\Scripts\alembic -c alembic.ini upgrade head
 ```
 
-CORS is enabled for:
+Create new migration:
 
-- `http://127.0.0.1:5173`
-- `http://localhost:5173`
-
-## Database
-
-Default: SQLite (`worker_radar.db`) for quick local startup.
-
-Supabase wiring is prepared in config, but inactive until env vars are set.
-
-Option 1 (direct):
-
-```bash
-DATABASE_URL=postgresql+psycopg://user:password@host:5432/dbname?sslmode=require
+```powershell
+cd backend
+.\.venv\Scripts\alembic -c alembic.ini revision --autogenerate -m "describe change"
+.\.venv\Scripts\alembic -c alembic.ini upgrade head
 ```
 
-Option 2 (built from separate Supabase vars):
+## Tests
 
-```bash
-SUPABASE_DB_HOST=...
-SUPABASE_DB_PORT=5432
-SUPABASE_DB_NAME=...
-SUPABASE_DB_USER=...
-SUPABASE_DB_PASSWORD=...
-SUPABASE_DB_SSLMODE=require
+```powershell
+cd backend
+.\.venv\Scripts\python -m pytest -q
 ```
 
-## Auth config
+## Configuration
 
-```bash
-AUTH_SECRET_KEY=change-me-in-production
-AUTH_ALGORITHM=HS256
-```
+- Default DB: SQLite (`worker_radar.db`)
+- Override with `DATABASE_URL`
+- Auth env:
+- `AUTH_SECRET_KEY`
+- `AUTH_ALGORITHM`
+
+CORS currently allows local Vite and local static-server origins.

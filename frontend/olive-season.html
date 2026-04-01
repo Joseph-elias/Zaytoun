@@ -1,0 +1,70 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Olive Season</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page">
+      <header class="hero">
+        <div class="list-head">
+          <p class="eyebrow">Worker Radar</p>
+          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+        </div>
+        <h1>Olive Season Tracker</h1>
+        <p class="sub" id="role-hint">Store olive season numbers for this year and future planning.</p>
+        <nav id="app-tabs" class="tabs"></nav>
+      </header>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Season Entry</h2>
+          <button class="btn ghost" id="reset-form-btn" type="button">New Record</button>
+        </div>
+        <form id="olive-season-form" class="form-grid">
+          <input type="hidden" name="season_id" />
+          <input type="hidden" name="land_pieces" value="1" />
+          <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
+          <label>Land Piece Name<input name="land_piece_name" type="text" maxlength="120" placeholder="Example: North Plot" /></label>
+          <label>Estimated Chonbol<input name="estimated_chonbol" type="number" min="0" step="0.01" /></label>
+          <label>Actual Chonbol<input name="actual_chonbol" type="number" min="0" step="0.01" /></label>
+          <label>KG per Land Piece<input name="kg_per_land_piece" type="number" min="0" step="0.01" /></label>
+          <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
+          <label class="full">Calculated KG Needed per Tank<input id="kg-needed-per-tank" type="text" readonly /></label>
+          <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional notes"></textarea></label>
+          <div class="actions-row full">
+            <button class="btn" type="submit">Save Season</button>
+            <button class="btn danger" id="delete-season-btn" type="button" hidden>Delete</button>
+          </div>
+          <p id="olive-season-message" class="message full"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>History</h2>
+          <button class="btn ghost" id="refresh-seasons-btn" type="button">Refresh</button>
+        </div>
+        <p id="season-progress" class="season-progress">Drafts: 0 / 0</p>
+        <div id="olive-seasons-list" class="workers-list"></div>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Insights</h2>
+          <button class="btn ghost" id="toggle-insights-btn" type="button">Show Insights</button>
+        </div>
+        <div id="olive-insights-embed" class="is-hidden">
+          <iframe id="olive-insights-frame" class="insight-embed-frame" src="./insight.html?embedded=1" title="Olive insights"></iframe>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/olive-season.js"></script>
+  </body>
+</html>

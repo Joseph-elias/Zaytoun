@@ -1,33 +1,62 @@
-﻿# Worker Radar Frontend (Vite)
+﻿# Worker Radar Frontend (Vite Multi-Page)
 
-Standalone frontend built with Vite (multi-page HTML + JS modules).
+Frontend for worker and farmer workflows using vanilla JS modules and role-based navigation.
 
 ## Pages
 
-- `login.html`: login only
-- `signup.html`: create account (worker or farmer)
-- `register.html`: worker-only worker profile creation
-- `my-profiles.html`: worker-owned profiles only
-- `workers.html`: worker/farmer directory browsing (availability toggle only for worker role)
+- `index.html`: landing/entry
+- `login.html`: login
+- `signup.html`: account registration
+- `workers.html`: worker directory + map + filters
+- `register.html`: worker profile creation
+- `my-profiles.html`: worker-owned profile management
+- `bookings.html`: booking management + chat + timeline
+- `olive-season.html`: season entry/history + embedded insights
+- `insight.html`: full analytics page (also embeddable)
+- `settings.html`: account settings
 
-## Behavior
+## Current UX Behavior
 
-- Login redirects by role:
-  - worker -> `register.html`
-  - farmer -> `workers.html`
-- Unauthenticated users are redirected to `login.html`
+### Role routing
+- Worker home: `register.html`
+- Farmer home: `workers.html`
+- Unauthenticated access redirects to `login.html`
 
-## API target
+### Worker side
+- Manage own profiles only
+- Update availability and profile details
+- Receive/respond to booking proposals
 
-Configured via env var:
+### Farmer side
+- Browse workers and use geographic/rate/date filters
+- Create and negotiate bookings
+- Track olive season records
+- Open Insights inside Olive Season page via toggle
+
+### Olive Season page specifics
+- Records are editable and deletable.
+- Shows computed `kg needed per tank`.
+- Shows Draft badge when record is incomplete.
+- Shows live progress counter: `Drafts: X / Y`.
+- Insights section is hidden by default and loaded on demand.
+
+### Insights page specifics
+- Filter bar (year range, selected pieces, metric type)
+- KPI cards, trend charts, comparison tables
+- Piece diagnostics (trend slope, volatility, quality)
+- Supports embedded mode via `?embedded=1`
+
+## API Target
+
+Set frontend API base via env var:
 
 ```bash
 VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-Create `.env` from `.env.example` if needed.
+Use `.env.example` as template.
 
-## Run
+## Run Locally
 
 Start backend first:
 
@@ -45,13 +74,7 @@ npm run dev
 ```
 
 Open:
-
 - `http://127.0.0.1:5173/`
-- `http://127.0.0.1:5173/login.html`
-- `http://127.0.0.1:5173/signup.html`
-- `http://127.0.0.1:5173/register.html`
-- `http://127.0.0.1:5173/my-profiles.html`
-- `http://127.0.0.1:5173/workers.html`
 
 ## Build
 
@@ -60,3 +83,5 @@ cd frontend
 npm run build
 npm run preview
 ```
+
+Note: in restricted sandboxes, Vite build may fail with `esbuild spawn EPERM` even when code is valid.

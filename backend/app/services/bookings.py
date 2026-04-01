@@ -1,7 +1,7 @@
 ﻿from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, delete, select
 from sqlalchemy.orm import Session
 
 from app.models.booking import Booking
@@ -9,7 +9,7 @@ from app.models.booking_event import BookingEvent
 from app.models.booking_message import BookingMessage
 from app.models.user import User
 from app.models.worker import Worker
-from app.schemas.booking import BookingCreate, BookingStatus, WorkerBookingResponse
+from app.schemas.booking import BookingCreate, BookingProposalUpdate, BookingStatus, WorkerBookingResponse
 from app.services.capacity import remaining_capacity_for_date, weekday_name, worker_available_on_date
 
 
@@ -59,6 +59,10 @@ def _is_pending_worker(status: str) -> bool:
 
 def _is_pending_farmer(status: str) -> bool:
     return status == "pending_farmer"
+
+
+def _is_confirmed(status: str) -> bool:
+    return status in {"confirmed", "accepted"}
 
 
 def _record_event(db: Session, booking_id: UUID, actor_user_id: UUID, action: str, details: str | None = None) -> None:
@@ -247,6 +251,105 @@ def farmer_validate_booking(db: Session, booking_id: UUID, farmer_user: User, ac
 
     fresh = db.execute(_booking_select().where(Booking.id == booking.id)).first()
     return _to_out_row(fresh) if fresh else None
+
+
+def update_booking_proposal(
+    db: Session,
+    booking_id: UUID,
+    current_user: User,
+    payload: BookingProposalUpdate,
+) -> dict | None:
+    row = db.execute(_booking_select().where(Booking.id == booking_id)).first()
+    if not _assert_booking_access(row, current_user):
+        return None
+
+    booking, worker, _ = row
+    if _is_confirmed(booking.status):
+        raise ValueError("Confirmed bookings cannot be modified")
+
+    work_date = payload.work_date if payload.work_date is not None else booking.work_date
+    requested_men = payload.requested_men if payload.requested_men is not None else booking.requested_men
+    requested_women = payload.requested_women if payload.requested_women is not None else booking.requested_women
+
+    if work_date is None:
+        raise ValueError("Cannot update legacy booking without exact date")
+    if requested_men + requested_women < 1:
+        raise ValueError("At least one person is required")
+    if not worker_available_on_date(worker, work_date):
+        raise ValueError(f"Worker is not available on selected date {work_date.isoformat()}")
+
+    existing = db.scalar(
+        select(Booking).where(
+            Booking.id != booking.id,
+            Booking.worker_id == booking.worker_id,
+            Booking.farmer_user_id == booking.farmer_user_id,
+            Booking.work_date == work_date,
+            Booking.status.in_(["pending_worker", "pending", "pending_farmer", "confirmed", "accepted"]),
+        )
+    )
+    if existing:
+        raise ValueError(f"Booking already exists for selected date {work_date.isoformat()}")
+
+    _ensure_capacity(
+        db,
+        worker,
+        work_date,
+        requested_men,
+        requested_women,
+        exclude_booking_id=booking.id,
+    )
+
+    booking.work_date = work_date
+    booking.day = weekday_name(work_date)
+    booking.requested_men = requested_men
+    booking.requested_women = requested_women
+    if payload.note is not None:
+        booking.note = payload.note
+
+    if current_user.role == "farmer":
+        booking.status = "pending_worker"
+        _record_event(
+            db,
+            booking.id,
+            current_user.id,
+            "farmer_updated_proposal",
+            f"{work_date.isoformat()}: {requested_men} men, {requested_women} women",
+        )
+    else:
+        booking.status = "pending_farmer"
+        _record_event(
+            db,
+            booking.id,
+            current_user.id,
+            "worker_updated_proposal",
+            f"{work_date.isoformat()}: {requested_men} men, {requested_women} women",
+        )
+
+    db.commit()
+    db.refresh(booking)
+
+    fresh = db.execute(_booking_select().where(Booking.id == booking.id)).first()
+    return _to_out_row(fresh) if fresh else None
+
+
+def delete_booking_proposal(
+    db: Session,
+    booking_id: UUID,
+    current_user: User,
+) -> bool | None:
+    row = db.execute(_booking_select().where(Booking.id == booking_id)).first()
+    if not _assert_booking_access(row, current_user):
+        return None
+
+    booking, _, _ = row
+    if _is_confirmed(booking.status):
+        raise ValueError("Confirmed bookings cannot be deleted")
+
+    db.execute(delete(BookingMessage).where(BookingMessage.booking_id == booking_id))
+    db.execute(delete(BookingEvent).where(BookingEvent.booking_id == booking_id))
+    db.delete(booking)
+    db.commit()
+    return True
 
 
 def list_booking_messages(db: Session, booking_id: UUID, current_user: User) -> Sequence[dict] | None:

@@ -4,11 +4,14 @@ from decimal import Decimal
 import math
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
+from app.models.booking import Booking
+from app.models.booking_event import BookingEvent
+from app.models.booking_message import BookingMessage
 from app.models.worker import Worker
-from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate
+from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate, WorkerUpdate
 from app.services.capacity import remaining_capacity_for_date, weekday_name
 
 
@@ -139,6 +142,63 @@ def update_worker_availability(
         return None
 
     worker.available = payload.available
+    db.commit()
+    db.refresh(worker)
+    return worker
+
+
+def delete_worker(
+    db: Session,
+    worker_id: UUID,
+    owner_phone: str | None = None,
+) -> bool:
+    worker = db.get(Worker, worker_id)
+    if not worker:
+        return False
+
+    if owner_phone and worker.phone != owner_phone:
+        return False
+
+    booking_ids = db.scalars(select(Booking.id).where(Booking.worker_id == worker_id)).all()
+    if booking_ids:
+        db.execute(delete(BookingMessage).where(BookingMessage.booking_id.in_(booking_ids)))
+        db.execute(delete(BookingEvent).where(BookingEvent.booking_id.in_(booking_ids)))
+        db.execute(delete(Booking).where(Booking.id.in_(booking_ids)))
+
+    db.delete(worker)
+    db.commit()
+    return True
+
+
+
+def update_worker_profile(
+    db: Session,
+    worker_id: UUID,
+    payload: WorkerUpdate,
+    owner_phone: str | None = None,
+) -> Worker | None:
+    worker = db.get(Worker, worker_id)
+    if not worker:
+        return None
+
+    if owner_phone and worker.phone != owner_phone:
+        return None
+
+    worker.name = payload.name
+    worker.village = payload.village
+    worker.address = payload.address
+    worker.latitude = payload.latitude
+    worker.longitude = payload.longitude
+    worker.men_count = payload.men_count
+    worker.women_count = payload.women_count
+    worker.rate_type = payload.rate_type
+    worker.men_rate_value = payload.men_rate_value
+    worker.women_rate_value = payload.women_rate_value
+    worker.overtime_open = payload.overtime_open
+    worker.overtime_price = payload.overtime_price
+    worker.overtime_note = payload.overtime_note
+    worker.available_dates = _dates_to_storage(payload.available_dates)
+
     db.commit()
     db.refresh(worker)
     return worker

@@ -9,6 +9,8 @@ from app.models.booking import Booking
 from app.models.booking_event import BookingEvent
 from app.models.booking_message import BookingMessage
 from app.models.user import User
+from app.models.olive_season import FarmerOliveSeason
+from app.models.olive_piece_metric import FarmerOlivePieceMetric
 from app.models.worker import Worker
 
 config = context.config
@@ -52,3 +54,7 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+
+
+

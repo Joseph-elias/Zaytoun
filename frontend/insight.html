@@ -1,0 +1,158 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Insights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page">
+      <header class="hero">
+        <div class="list-head">
+          <p class="eyebrow">Worker Radar</p>
+          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+        </div>
+        <h1>Farm Insights</h1>
+        <p class="sub" id="role-hint">Compare olive season output over years and between pieces of land.</p>
+        <nav id="app-tabs" class="tabs"></nav>
+      </header>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Analyst Filters</h2>
+          <button class="btn ghost" id="refresh-insights-btn" type="button">Refresh</button>
+        </div>
+        <form id="insight-filters-form" class="form-grid compact">
+          <label>
+            From Year
+            <select id="filter-year-from"></select>
+          </label>
+          <label>
+            To Year
+            <select id="filter-year-to"></select>
+          </label>
+          <label>
+            Metric Type
+            <select id="filter-metric-type">
+              <option value="actual_chonbol">Actual Chonbol (season)</option>
+              <option value="tanks_20l">Tanks 20L (season)</option>
+              <option value="kg_needed_per_tank">KG per Tank (season)</option>
+              <option value="piece_harvested_kg">Harvested KG (pieces)</option>
+            </select>
+          </label>
+          <label class="full">
+            Piece Selection (Ctrl/Cmd + click for multi select)
+            <select id="filter-piece-select" multiple size="6"></select>
+          </label>
+          <div class="actions-row full">
+            <button class="btn ghost" type="button" id="filter-select-all-pieces">Select All Pieces</button>
+            <button class="btn ghost" type="button" id="filter-clear-pieces">Clear Piece Filter</button>
+            <button class="btn" type="button" id="filter-apply">Apply Filters</button>
+            <button class="btn ghost" type="button" id="filter-reset">Reset Filters</button>
+          </div>
+          <p id="filter-summary" class="message full"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Summary</h2>
+        <div class="insight-kpis" id="insight-kpis"></div>
+      </section>
+
+      <section class="card">
+        <h2>Year Over Year Output</h2>
+        <div class="insight-chart-wrap">
+          <svg id="yearly-chart" class="insight-chart" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="table-wrap">
+          <table class="insight-table">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Pieces</th>
+                <th>Actual Chonbol</th>
+                <th>Tanks</th>
+                <th>KG / Tank</th>
+                <th>YoY Change</th>
+              </tr>
+            </thead>
+            <tbody id="season-comparison-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Piece Comparison</h2>
+        <div class="insight-chart-wrap">
+          <svg id="piece-chart" class="insight-chart" viewBox="0 0 800 280" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="table-wrap">
+          <table class="insight-table">
+            <thead>
+              <tr>
+                <th>Piece</th>
+                <th>Seasons</th>
+                <th>Total KG</th>
+                <th>Total Tanks</th>
+                <th>Avg KG / Tank</th>
+                <th>Avg KG / Season</th>
+              </tr>
+            </thead>
+            <tbody id="piece-comparison-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Analyst Diagnostics</h2>
+        <div class="insight-notes" id="insight-notes"></div>
+        <div class="table-wrap">
+          <table class="insight-table">
+            <thead>
+              <tr>
+                <th>Piece</th>
+                <th>Trend Slope (kg/year)</th>
+                <th>Volatility (CV%)</th>
+                <th>Best Year KG</th>
+                <th>Worst Year KG</th>
+                <th>Data Quality</th>
+              </tr>
+            </thead>
+            <tbody id="piece-diagnostics-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Piece Metrics Entry</h2>
+          <button class="btn ghost" id="reset-piece-form-btn" type="button">New Record</button>
+        </div>
+        <form id="piece-metric-form" class="form-grid">
+          <input type="hidden" name="metric_id" />
+          <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
+          <label>Piece Label<input name="piece_label" type="text" maxlength="120" required /></label>
+          <label>Harvested KG<input name="harvested_kg" type="number" min="0" step="0.01" required /></label>
+          <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
+          <label class="full">Notes<textarea name="notes" rows="2" maxlength="400" placeholder="Optional notes"></textarea></label>
+          <div class="actions-row full">
+            <button class="btn" type="submit">Save Piece Metric</button>
+            <button class="btn danger" id="delete-piece-metric-btn" type="button" hidden>Delete</button>
+          </div>
+          <p id="piece-metric-message" class="message full"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Saved Piece Metrics</h2>
+        <div id="piece-metrics-list" class="workers-list"></div>
+      </section>
+    </main>
+    <script type="module" src="./src/insight.js"></script>
+  </body>
+</html>

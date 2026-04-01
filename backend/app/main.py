@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes_auth import router as auth_router
 from app.api.routes_workers import router as workers_router
+from app.api.routes_olive_seasons import router as olive_seasons_router
+from app.api.routes_olive_piece_metrics import router as olive_piece_metrics_router
 
 
 def create_app() -> FastAPI:
@@ -26,7 +28,13 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router)
     app.include_router(workers_router)
+    app.include_router(olive_seasons_router)
+    app.include_router(olive_piece_metrics_router)
     return app
 
 
 app = create_app()
+
+
+
+

@@ -75,6 +75,19 @@ class FarmerBookingValidation(BaseModel):
     action: Literal["confirm", "reject"]
 
 
+class BookingProposalUpdate(BaseModel):
+    work_date: date | None = None
+    requested_men: int | None = Field(default=None, ge=0, le=100)
+    requested_women: int | None = Field(default=None, ge=0, le=100)
+    note: str | None = Field(default=None, max_length=300)
+
+    @model_validator(mode="after")
+    def validate_has_change(self) -> "BookingProposalUpdate":
+        if self.work_date is None and self.requested_men is None and self.requested_women is None and self.note is None:
+            raise ValueError("At least one field must be provided")
+        return self
+
+
 class BookingOut(BaseModel):
     id: UUID
     worker_id: UUID

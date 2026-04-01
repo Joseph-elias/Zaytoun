@@ -16,22 +16,25 @@ from app.schemas.booking import (
     BookingMessageCreate,
     BookingMessageOut,
     BookingOut,
+    BookingProposalUpdate,
     BookingStatus,
     FarmerBookingValidation,
     WorkerBookingResponse,
 )
-from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate, WorkerOut
+from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate, WorkerOut, WorkerUpdate
 from app.services.bookings import (
     create_booking_message,
     create_bookings_for_worker,
+    delete_booking_proposal,
     farmer_validate_booking,
     list_booking_events,
     list_booking_messages,
     list_farmer_bookings,
     list_worker_received_bookings,
+    update_booking_proposal,
     worker_respond_to_booking,
 )
-from app.services.workers import create_worker, list_workers, update_worker_availability
+from app.services.workers import create_worker, delete_worker, list_workers, update_worker_availability, update_worker_profile
 
 router = APIRouter(tags=["Workers"])
 
@@ -49,6 +52,19 @@ def create_worker_endpoint(
         )
 
     worker = create_worker(db, payload)
+    return WorkerOut.model_validate(worker)
+
+
+@router.patch("/workers/{worker_id}", response_model=WorkerOut)
+def update_worker_endpoint(
+    worker_id: UUID,
+    payload: WorkerUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("worker")),
+) -> WorkerOut:
+    worker = update_worker_profile(db, worker_id, payload, owner_phone=current_user.phone)
+    if not worker:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Worker not found")
     return WorkerOut.model_validate(worker)
 
 
@@ -101,6 +117,17 @@ def update_worker_availability_endpoint(
     if not worker:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Worker not found")
     return WorkerOut.model_validate(worker)
+
+
+@router.delete("/workers/{worker_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_worker_endpoint(
+    worker_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("worker")),
+) -> None:
+    deleted = delete_worker(db, worker_id, owner_phone=current_user.phone)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Worker not found")
 
 
 @router.post("/workers/{worker_id}/bookings", response_model=list[BookingOut], status_code=status.HTTP_201_CREATED)
@@ -175,6 +202,38 @@ def farmer_validation_endpoint(
     return BookingOut.model_validate(row)
 
 
+@router.patch("/bookings/{booking_id}/proposal", response_model=BookingOut)
+def update_booking_proposal_endpoint(
+    booking_id: UUID,
+    payload: BookingProposalUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("worker", "farmer")),
+) -> BookingOut:
+    try:
+        row = update_booking_proposal(db, booking_id, current_user, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+    return BookingOut.model_validate(row)
+
+
+@router.delete("/bookings/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_booking_endpoint(
+    booking_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("worker", "farmer")),
+) -> None:
+    try:
+        deleted = delete_booking_proposal(db, booking_id, current_user)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+
 @router.get("/bookings/{booking_id}/messages", response_model=list[BookingMessageOut])
 def list_booking_messages_endpoint(
     booking_id: UUID,
@@ -210,3 +269,5 @@ def list_booking_events_endpoint(
     if rows is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     return [BookingEventOut.model_validate(item) for item in rows]
+
+

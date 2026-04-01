@@ -14,6 +14,8 @@ from app.models.booking_event import BookingEvent  # noqa: F401,E402
 from app.models.booking_message import BookingMessage  # noqa: F401,E402
 from app.models.user import User  # noqa: F401,E402
 from app.models.worker import Worker  # noqa: F401,E402
+from app.models.olive_season import FarmerOliveSeason  # noqa: F401,E402
+from app.models.olive_piece_metric import FarmerOlivePieceMetric  # noqa: F401,E402
 
 
 def pytest_sessionstart(session):
@@ -26,3 +28,7 @@ def pytest_sessionfinish(session, exitstatus):
     engine.dispose()
     if TEST_DB_PATH.exists():
         TEST_DB_PATH.unlink()
+
+
+
+

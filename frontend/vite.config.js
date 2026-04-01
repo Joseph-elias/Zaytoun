@@ -17,7 +17,13 @@ export default defineConfig({
         myProfiles: resolve(__dirname, "my-profiles.html"),
         workers: resolve(__dirname, "workers.html"),
         bookings: resolve(__dirname, "bookings.html"),
+        oliveSeason: resolve(__dirname, "olive-season.html"),
+        insight: resolve(__dirname, "insight.html"),
       },
     },
   },
 });
+
+
+
+

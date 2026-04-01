@@ -11,6 +11,7 @@ const ROLE_TABS = {
   farmer: [
     { href: "./workers.html", label: "Workers Directory", page: "workers.html" },
     { href: "./bookings.html", label: "My Bookings", page: "bookings.html" },
+    { href: "./olive-season.html", label: "Olive Season", page: "olive-season.html" },
     { href: "./settings.html", label: "Settings", page: "settings.html" },
   ],
 };
