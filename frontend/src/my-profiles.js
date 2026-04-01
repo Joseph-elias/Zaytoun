@@ -166,6 +166,7 @@ function card(worker) {
       </div>
       <div class="worker-grid">
         <div><strong>Village:</strong> ${worker.village}</div>
+        <div><strong>Address:</strong> ${worker.address || "-"}</div>
         <div><strong>Phone:</strong> ${worker.phone}</div>
         <div><strong>Men:</strong> ${worker.men_count} | <strong>Rate:</strong> ${money(worker.men_rate_value)}</div>
         <div><strong>Women:</strong> ${worker.women_count} | <strong>Rate:</strong> ${money(worker.women_rate_value)}</div>

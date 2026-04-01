@@ -1,0 +1,40 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page">
+      <header class="hero">
+        <div class="list-head">
+          <p class="eyebrow">Worker Radar</p>
+          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+        </div>
+        <h1>Settings</h1>
+        <p class="sub" id="role-hint">Manage your account security and privacy.</p>
+        <nav id="app-tabs" class="tabs"></nav>
+      </header>
+
+      <section class="card">
+        <h2>Delete Account</h2>
+        <p class="message error">This action is permanent. Your account and related data will be removed.</p>
+        <form id="delete-account-form" class="form-grid">
+          <label class="full">
+            Type <strong>DELETE</strong> to confirm
+            <input id="delete-confirm-input" name="confirm" placeholder="DELETE" required />
+          </label>
+          <button class="btn danger full" id="delete-account-btn" type="submit">Delete My Account</button>
+        </form>
+        <p id="settings-message" class="message"></p>
+      </section>
+    </main>
+    <script type="module" src="./src/settings.js"></script>
+  </body>
+</html>

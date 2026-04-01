@@ -6,10 +6,12 @@ const ROLE_TABS = {
     { href: "./register.html", label: "Register Worker", page: "register.html" },
     { href: "./my-profiles.html", label: "My Profiles", page: "my-profiles.html" },
     { href: "./workers.html", label: "Workers Directory", page: "workers.html" },
+    { href: "./settings.html", label: "Settings", page: "settings.html" },
   ],
   farmer: [
     { href: "./workers.html", label: "Workers Directory", page: "workers.html" },
     { href: "./bookings.html", label: "My Bookings", page: "bookings.html" },
+    { href: "./settings.html", label: "Settings", page: "settings.html" },
   ],
 };
 

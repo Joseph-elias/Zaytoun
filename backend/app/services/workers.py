@@ -1,6 +1,7 @@
 ﻿from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
+import math
 from uuid import UUID
 
 from sqlalchemy import or_, select
@@ -14,6 +15,20 @@ from app.services.capacity import remaining_capacity_for_date, weekday_name
 def _dates_to_storage(dates: list[date]) -> str:
     iso_dates = sorted({value.isoformat() for value in dates})
     return "," + ",".join(iso_dates) + ","
+
+
+def _distance_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    radius_km = 6371.0
+    lat1_rad = math.radians(lat1)
+    lng1_rad = math.radians(lng1)
+    lat2_rad = math.radians(lat2)
+    lng2_rad = math.radians(lng2)
+    dlat = lat2_rad - lat1_rad
+    dlng = lng2_rad - lng1_rad
+
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlng / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return radius_km * c
 
 
 def create_worker(db: Session, payload: WorkerCreate) -> Worker:
@@ -37,6 +52,10 @@ def list_workers(
     max_women_rate: Decimal | None = None,
     phone: str | None = None,
     work_date: date | None = None,
+    near_latitude: float | None = None,
+    near_longitude: float | None = None,
+    max_distance_km: float | None = None,
+    sort_by: str | None = None,
 ) -> Sequence[Worker]:
     query = select(Worker)
 
@@ -82,6 +101,26 @@ def list_workers(
             remaining_men, remaining_women = remaining_capacity_for_date(db, worker, work_date)
             worker.remaining_men_count = remaining_men
             worker.remaining_women_count = remaining_women
+
+    if near_latitude is not None and near_longitude is not None:
+        filtered: list[Worker] = []
+        for worker in workers:
+            if worker.latitude is None or worker.longitude is None:
+                worker.distance_km = None
+                continue
+
+            distance = _distance_km(near_latitude, near_longitude, worker.latitude, worker.longitude)
+            worker.distance_km = round(distance, 2)
+
+            if max_distance_km is not None and distance > max_distance_km:
+                continue
+
+            filtered.append(worker)
+
+        workers = filtered
+
+        if sort_by == "distance":
+            workers.sort(key=lambda item: item.distance_km if item.distance_km is not None else float("inf"))
 
     return workers
 

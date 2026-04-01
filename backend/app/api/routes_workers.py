@@ -62,6 +62,10 @@ def list_workers_endpoint(
     min_women_rate: Decimal | None = Query(default=None, gt=0),
     max_women_rate: Decimal | None = Query(default=None, gt=0),
     work_date: date | None = Query(default=None),
+    near_latitude: float | None = Query(default=None, ge=-90, le=90),
+    near_longitude: float | None = Query(default=None, ge=-180, le=180),
+    max_distance_km: float | None = Query(default=None, gt=0),
+    sort_by: Literal["newest", "distance"] | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[WorkerOut]:
@@ -78,6 +82,10 @@ def list_workers_endpoint(
         max_women_rate=max_women_rate,
         phone=phone_scope,
         work_date=work_date,
+        near_latitude=near_latitude,
+        near_longitude=near_longitude,
+        max_distance_km=max_distance_km,
+        sort_by=sort_by,
     )
     return [WorkerOut.model_validate(worker) for worker in workers]
 

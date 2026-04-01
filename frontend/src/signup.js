@@ -1,3 +1,4 @@
+﻿import { initLocationPicker } from "./location-picker.js";
 import { getSession, login, redirectToRoleHome, registerAccount } from "./session.js";
 
 const existing = getSession();
@@ -7,6 +8,14 @@ if (existing?.user?.role) {
 
 const registerForm = document.getElementById("register-user-form");
 const registerMessage = document.getElementById("register-message");
+
+const locationPicker = initLocationPicker({
+  mapElementId: "account-location-map",
+  addressInputId: "account-address",
+  latitudeInputId: "account-latitude",
+  longitudeInputId: "account-longitude",
+  useMyLocationButtonId: "account-use-my-location-btn",
+});
 
 function setMessage(node, text, ok = true) {
   node.textContent = text;
@@ -18,11 +27,16 @@ registerForm.addEventListener("submit", async (event) => {
   setMessage(registerMessage, "Creating account...");
 
   const fd = new FormData(registerForm);
+  const location = locationPicker.getValue();
+
   const payload = {
     full_name: String(fd.get("full_name") || "").trim(),
     phone: String(fd.get("phone") || "").trim(),
     role: String(fd.get("role") || "worker"),
     password: String(fd.get("password") || ""),
+    address: location.address,
+    latitude: location.latitude,
+    longitude: location.longitude,
   };
 
   try {

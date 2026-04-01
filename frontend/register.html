@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
@@ -28,6 +29,17 @@
           <label>Name<input name="name" required minlength="2" /></label>
           <label>Phone<input name="phone" required minlength="4" /></label>
           <label>Village<input name="village" required minlength="2" /></label>
+          <label class="full">Address<input id="worker-address" name="address" placeholder="Tap map or use live location" /></label>
+          <input id="worker-latitude" name="latitude" type="hidden" />
+          <input id="worker-longitude" name="longitude" type="hidden" />
+
+          <fieldset class="full availability-panel">
+            <legend>Team Location</legend>
+            <div class="actions-row">
+              <button class="btn ghost" id="worker-use-my-location-btn" type="button">Use My Live Location</button>
+            </div>
+            <div id="worker-location-map" class="map-picker"></div>
+          </fieldset>
 
           <label>Men Count<input name="men_count" type="number" min="0" value="0" required /></label>
           <label>Women Count<input name="women_count" type="number" min="0" value="0" required /></label>
@@ -79,6 +91,7 @@
         <p id="form-message" class="message"></p>
       </section>
     </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script type="module" src="./src/register.js"></script>
   </body>
 </html>

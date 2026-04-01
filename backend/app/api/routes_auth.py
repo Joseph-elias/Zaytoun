@@ -1,10 +1,12 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status
+﻿from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user
 from app.core.security import create_access_token
 from app.db.session import get_db
+from app.models.user import User
 from app.schemas.auth import AuthToken, UserLogin, UserOut, UserRegister
-from app.services.auth import authenticate_user, register_user
+from app.services.auth import authenticate_user, delete_user_account, register_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -27,3 +29,12 @@ def login_endpoint(payload: UserLogin, db: Session = Depends(get_db)) -> AuthTok
 
     token = create_access_token(subject=str(user.id), role=user.role)
     return AuthToken(access_token=token, user=UserOut.model_validate(user))
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_account_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    delete_user_account(db, current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -1,4 +1,5 @@
-﻿import { API_BASE } from "./config.js";
+﻿import { initLocationPicker } from "./location-picker.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
 const session = requireRole("worker", "./workers.html");
@@ -53,6 +54,18 @@ if (session) {
     phoneInput.value = session.user.phone;
     phoneInput.readOnly = true;
   }
+}
+
+const locationPicker = initLocationPicker({
+  mapElementId: "worker-location-map",
+  addressInputId: "worker-address",
+  latitudeInputId: "worker-latitude",
+  longitudeInputId: "worker-longitude",
+  useMyLocationButtonId: "worker-use-my-location-btn",
+});
+
+if (session?.user?.latitude !== null && session?.user?.longitude !== null) {
+  locationPicker.setValue(session.user.latitude, session.user.longitude, session.user.address || null);
 }
 
 logoutBtn.addEventListener("click", () => {
@@ -167,11 +180,15 @@ form.addEventListener("submit", async (event) => {
   const menCount = Number(data.get("men_count"));
   const womenCount = Number(data.get("women_count"));
   const availableDates = [...selectedDates].sort();
+  const location = locationPicker.getValue();
 
   const payload = {
     name: String(data.get("name") || "").trim(),
     phone: session?.user?.phone || String(data.get("phone") || "").trim(),
     village: String(data.get("village") || "").trim(),
+    address: location.address,
+    latitude: location.latitude,
+    longitude: location.longitude,
     men_count: menCount,
     women_count: womenCount,
     rate_type: data.get("rate_type"),
@@ -228,3 +245,5 @@ form.addEventListener("submit", async (event) => {
 });
 
 renderAvailabilityPanel();
+
+

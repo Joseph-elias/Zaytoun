@@ -2,7 +2,7 @@
 from decimal import Decimal
 import uuid
 
-from sqlalchemy import Boolean, DateTime, Index, Integer, Numeric, String, Uuid
+from sqlalchemy import Boolean, DateTime, Float, Index, Integer, Numeric, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -18,6 +18,9 @@ class Worker(Base):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     phone: Mapped[str] = mapped_column(String(50), nullable=False)
     village: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     men_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     women_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     rate_type: Mapped[str] = mapped_column(String(10), nullable=False)  # day | hour

@@ -12,10 +12,20 @@ const refreshBtn = document.getElementById("refresh-btn");
 const roleHint = document.getElementById("role-hint");
 const logoutBtn = document.getElementById("logout-btn");
 const appTabs = document.getElementById("app-tabs");
+const useMyLocationBtn = document.getElementById("use-my-location-btn");
+const nearLatInput = form.querySelector('input[name="near_latitude"]');
+const nearLngInput = form.querySelector('input[name="near_longitude"]');
+const sortByInput = form.querySelector('select[name="sort_by"]');
+const mapHint = document.getElementById("map-hint");
+const mapEl = document.getElementById("workers-map");
 
 const isWorker = session?.user?.role === "worker";
 const isFarmer = session?.user?.role === "farmer";
 const capacityCache = new Map();
+
+let map = null;
+let markersLayer = null;
+const markersByWorkerId = new Map();
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
@@ -46,6 +56,19 @@ function dateBadges(dates) {
 function selectedWorkDate() {
   const raw = form.elements.work_date?.value;
   return raw ? String(raw).trim() : "";
+}
+
+function distanceText(worker) {
+  if (worker.distance_km === null || worker.distance_km === undefined) return "-";
+  return `${Number(worker.distance_km).toFixed(2)} km`;
+}
+
+function distanceBadgeClass(worker) {
+  const distance = worker.distance_km;
+  if (distance === null || distance === undefined) return "na";
+  if (distance <= 5) return "near";
+  if (distance <= 20) return "medium";
+  return "far";
 }
 
 function bookingRequestRow(defaultDate = "") {
@@ -93,16 +116,20 @@ function card(worker) {
 
   const menDisplay = worker.remaining_men_count ?? worker.men_count;
   const womenDisplay = worker.remaining_women_count ?? worker.women_count;
+  const distanceBadge = distanceBadgeClass(worker);
+  const distanceLabel = distanceText(worker);
 
   return `
-    <article class="worker-card">
+    <article class="worker-card" data-worker-card-id="${worker.id}">
       <div class="list-head">
         <h3>${worker.name}</h3>
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="worker-grid">
         <div><strong>Village:</strong> ${worker.village}</div>
+        <div><strong>Address:</strong> ${worker.address || "-"}</div>
         <div><strong>Phone:</strong> ${worker.phone}</div>
+        <div><strong>Distance:</strong> <span class="badge distance-badge ${distanceBadge}">${distanceLabel}</span></div>
         <div><strong>Men:</strong> ${menDisplay} | <strong>Rate:</strong> ${money(worker.men_rate_value)}</div>
         <div><strong>Women:</strong> ${womenDisplay} | <strong>Rate:</strong> ${money(worker.women_rate_value)}</div>
         <div><strong>Rate Type:</strong> ${worker.rate_type}</div>
@@ -124,14 +151,120 @@ function buildQuery() {
   const fd = new FormData(form);
   const params = new URLSearchParams();
 
-  ["village", "available", "work_date", "rate_type", "min_men_rate", "max_men_rate", "min_women_rate", "max_women_rate"].forEach(
-    (key) => {
-      const raw = fd.get(key);
-      if (raw !== null && String(raw).trim() !== "") params.set(key, String(raw).trim());
-    }
-  );
+  [
+    "village",
+    "available",
+    "work_date",
+    "sort_by",
+    "max_distance_km",
+    "near_latitude",
+    "near_longitude",
+    "rate_type",
+    "min_men_rate",
+    "max_men_rate",
+    "min_women_rate",
+    "max_women_rate",
+  ].forEach((key) => {
+    const raw = fd.get(key);
+    if (raw !== null && String(raw).trim() !== "") params.set(key, String(raw).trim());
+  });
 
   return params.toString();
+}
+
+function extractApiErrorMessage(err, fallbackMessage) {
+  const detail = err?.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
+
+  if (Array.isArray(detail) && detail.length) {
+    const first = detail[0];
+    if (typeof first === "string") return first;
+    if (first && typeof first.msg === "string") return first.msg;
+    try {
+      return JSON.stringify(first);
+    } catch {
+      return fallbackMessage;
+    }
+  }
+
+  return fallbackMessage;
+}
+
+function ensureMap() {
+  if (map || !window.L || !mapEl) return;
+
+  map = window.L.map("workers-map").setView([33.8938, 35.5018], 8);
+  window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+
+  markersLayer = window.L.layerGroup().addTo(map);
+}
+
+function markerPopupHtml(worker) {
+  const men = worker.remaining_men_count ?? worker.men_count;
+  const women = worker.remaining_women_count ?? worker.women_count;
+  return `
+    <div>
+      <strong>${worker.name}</strong><br/>
+      <small>${worker.village}</small><br/>
+      <small>${worker.address || "No address"}</small><br/>
+      <small>Men: ${men} | Women: ${women}</small><br/>
+      <small>Rate: ${worker.rate_type}</small><br/>
+      <small>Distance: ${distanceText(worker)}</small>
+    </div>
+  `;
+}
+
+function renderWorkersMap(workers) {
+  ensureMap();
+  if (!map || !markersLayer) return;
+
+  markersLayer.clearLayers();
+  markersByWorkerId.clear();
+
+  const withCoords = workers.filter((worker) => worker.latitude !== null && worker.longitude !== null);
+  if (!withCoords.length) {
+    mapHint.textContent = "No worker locations available for this filter.";
+    return;
+  }
+
+  const bounds = [];
+  withCoords.forEach((worker) => {
+    const men = worker.remaining_men_count ?? worker.men_count;
+    const women = worker.remaining_women_count ?? worker.women_count;
+    const marker = window.L.marker([worker.latitude, worker.longitude], {
+      title: worker.name,
+      icon: window.L.divIcon({
+        className: "worker-pin-wrap",
+        html: `<div class=\"worker-pin\">${worker.name}</div><div class=\"worker-pin-count\">M:${men} W:${women}</div>`,
+      }),
+    });
+
+    marker.bindPopup(markerPopupHtml(worker), { autoClose: false, closeButton: false });
+    marker.on("mouseover", () => marker.openPopup());
+    marker.on("mouseout", () => marker.closePopup());
+    marker.on("click", () => {
+      const cardEl = document.querySelector(`[data-worker-card-id="${worker.id}"]`);
+      if (!cardEl) return;
+      cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      cardEl.classList.add("worker-card-highlight");
+      window.setTimeout(() => cardEl.classList.remove("worker-card-highlight"), 1400);
+    });
+
+    marker.addTo(markersLayer);
+    markersByWorkerId.set(worker.id, marker);
+    bounds.push([worker.latitude, worker.longitude]);
+  });
+
+  if (bounds.length === 1) {
+    map.setView(bounds[0], 13);
+  } else {
+    map.fitBounds(bounds, { padding: [20, 20] });
+  }
+
+  mapHint.textContent = `${withCoords.length} worker location${withCoords.length > 1 ? "s" : ""} shown on map.`;
 }
 
 async function fetchWorkers() {
@@ -153,10 +286,12 @@ async function fetchWorkers() {
     const workers = await response.json();
     if (!workers.length) {
       listEl.innerHTML = "No workers found for these filters.";
+      renderWorkersMap([]);
       return;
     }
 
     listEl.innerHTML = workers.map(card).join("");
+    renderWorkersMap(workers);
   } catch (error) {
     listEl.innerHTML = `<p class="message error">${error.message}</p>`;
   }
@@ -223,7 +358,46 @@ async function updateRowCapacity(rowEl, workerId) {
   }
 }
 
+useMyLocationBtn?.addEventListener("click", () => {
+  if (!navigator.geolocation) {
+    mapHint.textContent = "Geolocation not supported on this device.";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      nearLatInput.value = String(position.coords.latitude);
+      nearLngInput.value = String(position.coords.longitude);
+      if (sortByInput) sortByInput.value = "distance";
+      fetchWorkers();
+    },
+    () => {
+      mapHint.textContent = "Could not get your location.";
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+});
+
+if (session?.user?.latitude !== null && session?.user?.longitude !== null) {
+  nearLatInput.value = String(session.user.latitude);
+  nearLngInput.value = String(session.user.longitude);
+}
+
 listEl.addEventListener("click", async (event) => {
+  const clickedCard = event.target.closest("[data-worker-card-id]");
+  if (clickedCard && !event.target.closest("button, input, select, textarea, a, form")) {
+    const workerId = clickedCard.dataset.workerCardId;
+    const marker = markersByWorkerId.get(workerId);
+    if (marker && map) {
+      const latlng = marker.getLatLng();
+      map.setView(latlng, Math.max(13, map.getZoom()));
+      marker.openPopup();
+      clickedCard.classList.add("worker-card-highlight");
+      window.setTimeout(() => clickedCard.classList.remove("worker-card-highlight"), 1400);
+    }
+    return;
+  }
+
   const addRowButton = event.target.closest("button[data-add-booking-row]");
   if (addRowButton) {
     const bookingFormEl = addRowButton.closest("form.booking-form");
@@ -311,6 +485,7 @@ listEl.addEventListener("submit", async (event) => {
 
   const rows = [...bookingFormEl.querySelectorAll(".booking-request-row")];
   const requests = [];
+  const seenDates = new Set();
 
   for (const row of rows) {
     const workDate = String(row.querySelector('input[name="work_date"]').value || "").trim();
@@ -327,6 +502,12 @@ listEl.addEventListener("submit", async (event) => {
       messageEl.className = "message error";
       return;
     }
+    if (seenDates.has(workDate)) {
+      messageEl.textContent = `Duplicate date selected: ${formatDate(workDate)}. Use each date once per request.`;
+      messageEl.className = "message error";
+      return;
+    }
+    seenDates.add(workDate);
 
     requests.push({
       work_date: workDate,
@@ -359,7 +540,7 @@ listEl.addEventListener("submit", async (event) => {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err?.detail || "Booking request failed");
+      throw new Error(extractApiErrorMessage(err, "Booking request failed"));
     }
 
     const created = await response.json();

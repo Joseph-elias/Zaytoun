@@ -23,6 +23,9 @@ class WorkerCreate(BaseModel):
     name: str = Field(min_length=2, max_length=150)
     phone: str = Field(min_length=4, max_length=50)
     village: str = Field(min_length=2, max_length=120)
+    address: str | None = Field(default=None, max_length=255)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
     men_count: int = Field(ge=0, le=100)
     women_count: int = Field(ge=0, le=100)
     rate_type: RateType
@@ -38,6 +41,14 @@ class WorkerCreate(BaseModel):
     @classmethod
     def normalize_dates(cls, values: list[date]) -> list[date]:
         return sorted(set(values))
+
+    @field_validator("address")
+    @classmethod
+    def normalize_address(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
     @model_validator(mode="after")
     def validate_business_rules(self) -> "WorkerCreate":
@@ -62,6 +73,9 @@ class WorkerCreate(BaseModel):
         if not self.overtime_open and self.overtime_price is not None:
             raise ValueError("overtime_price must be empty when overtime_open is false")
 
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("latitude and longitude must be provided together")
+
         return self
 
 
@@ -74,6 +88,9 @@ class WorkerOut(BaseModel):
     name: str
     phone: str
     village: str
+    address: str | None
+    latitude: float | None
+    longitude: float | None
     men_count: int
     women_count: int
     rate_type: RateType
@@ -86,6 +103,7 @@ class WorkerOut(BaseModel):
     available: bool
     remaining_men_count: int | None = None
     remaining_women_count: int | None = None
+    distance_km: float | None = None
     created_at: datetime
 
     @field_validator("available_dates", mode="before")
