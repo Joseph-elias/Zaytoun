@@ -1,6 +1,17 @@
 ﻿import { API_BASE } from "./config.js";
 
 const SESSION_KEY = "worker_radar_session";
+const ROLE_TABS = {
+  worker: [
+    { href: "./register.html", label: "Register Worker", page: "register.html" },
+    { href: "./my-profiles.html", label: "My Profiles", page: "my-profiles.html" },
+    { href: "./workers.html", label: "Workers Directory", page: "workers.html" },
+  ],
+  farmer: [
+    { href: "./workers.html", label: "Workers Directory", page: "workers.html" },
+    { href: "./bookings.html", label: "My Bookings", page: "bookings.html" },
+  ],
+};
 
 export function saveSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -50,6 +61,28 @@ export function requireRole(role, redirect = "./workers.html") {
   }
 
   return session;
+}
+
+export function roleHome(role) {
+  return role === "worker" ? "./register.html" : "./workers.html";
+}
+
+export function redirectToRoleHome(session) {
+  if (!session?.user?.role) {
+    window.location.href = "./login.html";
+    return;
+  }
+  window.location.href = roleHome(session.user.role);
+}
+
+export function renderAppTabs(container, role, currentPage) {
+  const tabs = ROLE_TABS[role] || [];
+  container.innerHTML = tabs
+    .map((tab) => {
+      const activeClass = tab.page === currentPage ? " active" : "";
+      return `<a class="tab${activeClass}" href="${tab.href}">${tab.label}</a>`;
+    })
+    .join("");
 }
 
 export async function login(phone, password) {

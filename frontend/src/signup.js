@@ -1,5 +1,9 @@
-﻿import "../css/style.css";
-import { registerAccount } from "./session.js";
+import { getSession, login, redirectToRoleHome, registerAccount } from "./session.js";
+
+const existing = getSession();
+if (existing?.user?.role) {
+  redirectToRoleHome(existing);
+}
 
 const registerForm = document.getElementById("register-user-form");
 const registerMessage = document.getElementById("register-message");
@@ -23,10 +27,9 @@ registerForm.addEventListener("submit", async (event) => {
 
   try {
     await registerAccount(payload);
-    setMessage(registerMessage, "Account created. Redirecting to login...");
-    setTimeout(() => {
-      window.location.href = "./login.html";
-    }, 700);
+    setMessage(registerMessage, "Account created. Signing you in...");
+    const session = await login(payload.phone, payload.password);
+    redirectToRoleHome(session);
   } catch (error) {
     setMessage(registerMessage, error.message || "Registration failed", false);
   }

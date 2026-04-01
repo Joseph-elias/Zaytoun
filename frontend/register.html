@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
     <div class="backdrop"></div>
@@ -18,13 +19,7 @@
         </div>
         <h1>Grow Work Like an Olive Grove</h1>
         <p class="sub" id="role-hint">Register teams quickly, set clear rates, and stay available for new opportunities.</p>
-        <nav class="tabs">
-          <a class="tab" href="./login.html">Login</a>
-          <a class="tab" href="./signup.html">Create Account</a>
-          <a class="tab active" href="./register.html">Register Worker</a>
-          <a class="tab" href="./my-profiles.html">My Profiles</a>
-          <a class="tab" href="./workers.html">Workers Directory</a>
-        </nav>
+        <nav id="app-tabs" class="tabs"></nav>
       </header>
 
       <section class="card">
@@ -52,6 +47,17 @@
           </label>
           <label>Overtime Price<input id="overtime_price" name="overtime_price" type="number" step="0.01" min="0" disabled /></label>
           <label class="full">Overtime Note<textarea name="overtime_note" rows="3" placeholder="Optional details"></textarea></label>
+
+          <fieldset class="full day-selector">
+            <legend>Available Days</legend>
+            <label><input type="checkbox" name="available_days" value="monday" checked /> Monday</label>
+            <label><input type="checkbox" name="available_days" value="tuesday" checked /> Tuesday</label>
+            <label><input type="checkbox" name="available_days" value="wednesday" checked /> Wednesday</label>
+            <label><input type="checkbox" name="available_days" value="thursday" checked /> Thursday</label>
+            <label><input type="checkbox" name="available_days" value="friday" checked /> Friday</label>
+            <label><input type="checkbox" name="available_days" value="saturday" checked /> Saturday</label>
+            <label><input type="checkbox" name="available_days" value="sunday" checked /> Sunday</label>
+          </fieldset>
 
           <label class="toggle">Available Now
             <input name="available" type="checkbox" checked />

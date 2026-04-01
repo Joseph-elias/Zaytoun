@@ -3,10 +3,20 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 RateType = Literal["day", "hour"]
+WeekDay = Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+ALL_WEEK_DAYS: list[WeekDay] = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+]
 
 
 class WorkerCreate(BaseModel):
@@ -21,7 +31,13 @@ class WorkerCreate(BaseModel):
     overtime_open: bool = False
     overtime_price: Decimal | None = Field(default=None, gt=0)
     overtime_note: str | None = Field(default=None, max_length=300)
+    available_days: list[WeekDay] = Field(default_factory=lambda: ALL_WEEK_DAYS.copy(), min_length=1, max_length=7)
     available: bool = True
+
+    @field_validator("available_days")
+    @classmethod
+    def normalize_days(cls, days: list[WeekDay]) -> list[WeekDay]:
+        return list(dict.fromkeys(days))
 
     @model_validator(mode="after")
     def validate_business_rules(self) -> "WorkerCreate":
@@ -66,7 +82,17 @@ class WorkerOut(BaseModel):
     overtime_open: bool
     overtime_price: Decimal | None
     overtime_note: str | None
+    available_days: list[WeekDay]
     available: bool
     created_at: datetime
+
+    @field_validator("available_days", mode="before")
+    @classmethod
+    def parse_days(cls, value: object) -> list[str]:
+        if isinstance(value, str):
+            return [day for day in value.split(",") if day]
+        if isinstance(value, list):
+            return value
+        return ALL_WEEK_DAYS.copy()
 
     model_config = ConfigDict(from_attributes=True)

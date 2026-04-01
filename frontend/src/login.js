@@ -1,11 +1,8 @@
-﻿import "../css/style.css";
-import { getSession, login } from "./session.js";
+import { getSession, login, redirectToRoleHome } from "./session.js";
 
 const existing = getSession();
-if (existing?.user?.role === "worker") {
-  window.location.href = "./register.html";
-} else if (existing?.user?.role === "farmer") {
-  window.location.href = "./workers.html";
+if (existing?.user?.role) {
+  redirectToRoleHome(existing);
 }
 
 const loginForm = document.getElementById("login-form");
@@ -27,12 +24,7 @@ loginForm.addEventListener("submit", async (event) => {
   try {
     const session = await login(phone, password);
     setMessage(loginMessage, "Login successful. Redirecting...");
-
-    if (session.user.role === "worker") {
-      window.location.href = "./register.html";
-    } else {
-      window.location.href = "./workers.html";
-    }
+    redirectToRoleHome(session);
   } catch (error) {
     setMessage(loginMessage, error.message || "Login failed", false);
   }

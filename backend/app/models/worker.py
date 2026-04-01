@@ -26,5 +26,11 @@ class Worker(Base):
     overtime_open: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     overtime_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     overtime_note: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # Comma-delimited with leading/trailing commas, e.g. ",monday,wednesday,"
+    available_days: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+        default=",monday,tuesday,wednesday,thursday,friday,saturday,sunday,",
+    )
     available: Mapped[bool] = mapped_column(Boolean, index=True, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

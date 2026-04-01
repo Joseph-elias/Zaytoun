@@ -16,6 +16,7 @@ export default defineConfig({
         register: resolve(__dirname, "register.html"),
         myProfiles: resolve(__dirname, "my-profiles.html"),
         workers: resolve(__dirname, "workers.html"),
+        bookings: resolve(__dirname, "bookings.html"),
       },
     },
   },

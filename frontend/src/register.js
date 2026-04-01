@@ -1,6 +1,5 @@
-﻿import "../css/style.css";
-import { API_BASE } from "./config.js";
-import { authHeaders, clearSession, requireRole } from "./session.js";
+﻿import { API_BASE } from "./config.js";
+import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
 const session = requireRole("worker", "./workers.html");
 if (!session) {
@@ -13,9 +12,13 @@ const overtimeOpen = document.getElementById("overtime_open");
 const overtimePrice = document.getElementById("overtime_price");
 const roleHint = document.getElementById("role-hint");
 const logoutBtn = document.getElementById("logout-btn");
+const appTabs = document.getElementById("app-tabs");
 const phoneInput = form.querySelector('input[name="phone"]');
 
 if (session) {
+  if (appTabs) {
+    renderAppTabs(appTabs, session.user.role, "register.html");
+  }
   if (roleHint) {
     roleHint.textContent = `Logged in as ${session.user.full_name} (worker).`;
   }
@@ -47,6 +50,7 @@ form.addEventListener("submit", async (event) => {
   const data = new FormData(form);
   const menCount = Number(data.get("men_count"));
   const womenCount = Number(data.get("women_count"));
+  const availableDays = data.getAll("available_days").map((day) => String(day));
 
   const payload = {
     name: String(data.get("name") || "").trim(),
@@ -60,11 +64,16 @@ form.addEventListener("submit", async (event) => {
     overtime_open: overtimeOpen.checked,
     overtime_price: data.get("overtime_price") ? Number(data.get("overtime_price")) : null,
     overtime_note: String(data.get("overtime_note") || "").trim() || null,
+    available_days: availableDays,
     available: data.get("available") === "on",
   };
 
   if (menCount + womenCount < 1) {
     setMessage("Add at least one worker (men or women count).", false);
+    return;
+  }
+  if (!availableDays.length) {
+    setMessage("Select at least one available day.", false);
     return;
   }
 
@@ -93,6 +102,9 @@ form.addEventListener("submit", async (event) => {
     form.reset();
     if (phoneInput && session?.user?.phone) phoneInput.value = session.user.phone;
     overtimePrice.disabled = true;
+    form.querySelectorAll('input[name="available_days"]').forEach((checkbox) => {
+      checkbox.checked = true;
+    });
     setMessage("Worker registered successfully.");
   } catch (error) {
     setMessage(error.message || "Failed to register worker.", false);

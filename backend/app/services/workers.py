@@ -9,8 +9,14 @@ from app.models.worker import Worker
 from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate
 
 
+def _days_to_storage(days: list[str]) -> str:
+    return "," + ",".join(days) + ","
+
+
 def create_worker(db: Session, payload: WorkerCreate) -> Worker:
-    worker = Worker(**payload.model_dump())
+    data = payload.model_dump()
+    data["available_days"] = _days_to_storage(payload.available_days)
+    worker = Worker(**data)
     db.add(worker)
     db.commit()
     db.refresh(worker)
@@ -27,6 +33,7 @@ def list_workers(
     min_women_rate: Decimal | None = None,
     max_women_rate: Decimal | None = None,
     phone: str | None = None,
+    available_day: str | None = None,
 ) -> Sequence[Worker]:
     query = select(Worker)
 
@@ -53,6 +60,9 @@ def list_workers(
 
     if max_women_rate is not None:
         query = query.where(Worker.women_rate_value.is_not(None), Worker.women_rate_value <= max_women_rate)
+
+    if available_day:
+        query = query.where(Worker.available_days.like(f"%,{available_day},%"))
 
     query = query.order_by(Worker.created_at.desc())
     return db.scalars(query).all()

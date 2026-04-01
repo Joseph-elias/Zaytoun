@@ -7,25 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
     <div class="backdrop"></div>
-    <main class="page">
-      <header class="hero">
+    <main class="page auth-page">
+      <section class="card auth-card">
         <p class="eyebrow">Worker Radar</p>
         <h1>Create Account</h1>
         <p class="sub">Choose your role: worker or farmer.</p>
-        <nav class="tabs">
-          <a class="tab" href="./login.html">Login</a>
-          <a class="tab active" href="./signup.html">Create Account</a>
-          <a class="tab" href="./my-profiles.html">My Profiles</a>
-          <a class="tab" href="./workers.html">Workers Directory</a>
-        </nav>
-      </header>
-
-      <section class="card">
-        <h2>Register</h2>
-        <form id="register-user-form" class="form-grid compact">
+        <form id="register-user-form" class="form-grid">
           <label>Full Name<input name="full_name" required minlength="2" /></label>
           <label>Phone<input name="phone" required minlength="4" /></label>
           <label>Role
@@ -35,9 +26,13 @@
             </select>
           </label>
           <label>Password<input name="password" type="password" required minlength="6" /></label>
-          <button class="btn" type="submit">Create Account</button>
+          <button class="btn full" type="submit">Create Account</button>
         </form>
         <p id="register-message" class="message"></p>
+        <p class="auth-switch">
+          Already have an account?
+          <a href="./login.html">Login</a>
+        </p>
       </section>
     </main>
 
