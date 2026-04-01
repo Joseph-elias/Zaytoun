@@ -44,6 +44,7 @@ def _worker_payload(phone: str, name: str = "Ali Ahmed") -> dict:
         "overtime_open": True,
         "overtime_price": 20,
         "overtime_note": "Can work up to 2 extra hours.",
+        "available_dates": ["2030-01-02", "2030-01-03"],
         "available": True,
     }
 
@@ -156,6 +157,7 @@ def test_rate_filters_with_auth() -> None:
             "overtime_open": False,
             "overtime_price": None,
             "overtime_note": None,
+            "available_dates": ["2030-02-10", "2030-02-11"],
             "available": True,
         },
         {
@@ -170,6 +172,7 @@ def test_rate_filters_with_auth() -> None:
             "overtime_open": False,
             "overtime_price": None,
             "overtime_note": None,
+            "available_dates": ["2030-02-10"],
             "available": True,
         },
         {
@@ -184,6 +187,7 @@ def test_rate_filters_with_auth() -> None:
             "overtime_open": False,
             "overtime_price": None,
             "overtime_note": None,
+            "available_dates": ["2030-02-12"],
             "available": True,
         },
     ]

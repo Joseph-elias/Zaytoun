@@ -69,6 +69,14 @@ function dayLabel(day) {
   return day.charAt(0).toUpperCase() + day.slice(1);
 }
 
+function bookingDateLabel(booking) {
+  if (booking.work_date) {
+    return new Date(`${booking.work_date}T00:00:00`).toLocaleDateString();
+  }
+  if (booking.day) return dayLabel(booking.day);
+  return "-";
+}
+
 function sanitizePhone(phone) {
   return String(phone || "").replace(/[^\d]/g, "");
 }
@@ -183,7 +191,7 @@ async function fetchBookings() {
         </div>
         <div class="worker-grid">
           <div><strong>Village:</strong> ${booking.worker_village}</div>
-          <div><strong>Day:</strong> ${dayLabel(booking.day)}</div>
+          <div><strong>Date:</strong> ${bookingDateLabel(booking)}</div>
           <div><strong>Requested:</strong> ${booking.requested_men} men</div>
           <div><strong>Requested:</strong> ${booking.requested_women} women</div>
           <div class="full"><strong>Note:</strong> ${booking.note || "-"}</div>

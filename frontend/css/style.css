@@ -34,6 +34,20 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 .booking-form { margin-top:.8rem; border-top:1px dashed #c2cfaa; padding-top:.8rem; display:grid; gap:.55rem; }
 .booking-form h4 { margin:0; font-size:1rem; }
 .actions-row { display:flex; gap:.5rem; margin-top:.6rem; flex-wrap:wrap; }
+.availability-panel { display:grid; gap:.6rem; }
+.availability-head { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; }
+.availability-today { margin:0; font-weight:700; color:var(--olive-800); }
+.availability-month-nav { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+.availability-month-nav .btn { min-width:44px; padding:.5rem .75rem; }
+.availability-month-actions { display:flex; align-items:center; gap:.45rem; }
+.availability-month-label { margin:0; font-weight:800; color:var(--olive-800); }
+.availability-weekdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.45rem; font-size:.82rem; font-weight:700; color:var(--olive-700); text-align:center; }
+.availability-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.45rem; }
+.date-cell { border:1px solid #b7c79c; border-radius:10px; background:#fff; color:var(--olive-800); padding:.55rem .45rem; font-weight:700; cursor:pointer; min-height:40px; }
+.date-cell.today { border-color:var(--accent); box-shadow:0 0 0 1px rgba(216,132,47,.35) inset; }
+.date-cell.selected { background:var(--olive-800); color:#fff; border-color:var(--olive-800); }
+.date-cell.disabled { opacity:.45; cursor:not-allowed; }
+.date-cell-empty { border:none; background:transparent; pointer-events:none; }
 .chat-panel { margin-top:.7rem; border-top:1px dashed #c2cfaa; padding-top:.7rem; display:grid; gap:.6rem; }
 .chat-messages { display:grid; gap:.4rem; max-height:220px; overflow:auto; padding-right:.2rem; }
 .chat-message { border:1px solid #d1dbc0; border-radius:10px; padding:.5rem .65rem; background:#fff; }

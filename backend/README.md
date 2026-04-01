@@ -22,6 +22,28 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+## Database migrations (Alembic)
+
+Apply schema before running API:
+
+```bash
+cd backend
+alembic -c alembic.ini upgrade head
+```
+
+Create new migration after model changes:
+
+```bash
+cd backend
+alembic -c alembic.ini revision --autogenerate -m "describe change"
+alembic -c alembic.ini upgrade head
+```
+
+Then run API:
+
+```bash
 uvicorn app.main:app --reload
 ```
 
@@ -73,5 +95,3 @@ SUPABASE_DB_SSLMODE=require
 AUTH_SECRET_KEY=change-me-in-production
 AUTH_ALGORITHM=HS256
 ```
-
-If you already created `worker_radar.db` with older fields, delete it once and restart the API so the new schema is created.

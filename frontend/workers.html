@@ -18,7 +18,7 @@
           <button class="btn ghost" id="logout-btn" type="button">Logout</button>
         </div>
         <h1>Workers Directory</h1>
-        <p class="sub" id="role-hint">Filter by location, availability, and separate men/women rates in seconds.</p>
+        <p class="sub" id="role-hint">Filter by location, date, availability, and separate men/women rates in seconds.</p>
         <nav id="app-tabs" class="tabs"></nav>
       </header>
 
@@ -33,17 +33,8 @@
               <option value="false">Busy</option>
             </select>
           </label>
-          <label>Available Day
-            <select name="available_day">
-              <option value="">Any</option>
-              <option value="monday">Monday</option>
-              <option value="tuesday">Tuesday</option>
-              <option value="wednesday">Wednesday</option>
-              <option value="thursday">Thursday</option>
-              <option value="friday">Friday</option>
-              <option value="saturday">Saturday</option>
-              <option value="sunday">Sunday</option>
-            </select>
+          <label>Work Date
+            <input name="work_date" type="date" />
           </label>
           <label>Rate Type
             <select name="rate_type">

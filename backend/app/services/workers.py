@@ -1,21 +1,24 @@
 ﻿from collections.abc import Sequence
+from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.worker import Worker
 from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate
+from app.services.capacity import remaining_capacity_for_date, weekday_name
 
 
-def _days_to_storage(days: list[str]) -> str:
-    return "," + ",".join(days) + ","
+def _dates_to_storage(dates: list[date]) -> str:
+    iso_dates = sorted({value.isoformat() for value in dates})
+    return "," + ",".join(iso_dates) + ","
 
 
 def create_worker(db: Session, payload: WorkerCreate) -> Worker:
     data = payload.model_dump()
-    data["available_days"] = _days_to_storage(payload.available_days)
+    data["available_dates"] = _dates_to_storage(payload.available_dates)
     worker = Worker(**data)
     db.add(worker)
     db.commit()
@@ -33,7 +36,7 @@ def list_workers(
     min_women_rate: Decimal | None = None,
     max_women_rate: Decimal | None = None,
     phone: str | None = None,
-    available_day: str | None = None,
+    work_date: date | None = None,
 ) -> Sequence[Worker]:
     query = select(Worker)
 
@@ -61,11 +64,26 @@ def list_workers(
     if max_women_rate is not None:
         query = query.where(Worker.women_rate_value.is_not(None), Worker.women_rate_value <= max_women_rate)
 
-    if available_day:
-        query = query.where(Worker.available_days.like(f"%,{available_day},%"))
+    if work_date:
+        work_date_token = f"%,{work_date.isoformat()},%"
+        day_token = f"%,{weekday_name(work_date)},%"
+        query = query.where(
+            or_(
+                Worker.available_dates.like(work_date_token),
+                Worker.available_days.like(day_token),
+            )
+        )
 
     query = query.order_by(Worker.created_at.desc())
-    return db.scalars(query).all()
+    workers = db.scalars(query).all()
+
+    if work_date:
+        for worker in workers:
+            remaining_men, remaining_women = remaining_capacity_for_date(db, worker, work_date)
+            worker.remaining_men_count = remaining_men
+            worker.remaining_women_count = remaining_women
+
+    return workers
 
 
 def update_worker_availability(

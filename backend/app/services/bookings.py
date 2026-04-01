@@ -10,6 +10,7 @@ from app.models.booking_message import BookingMessage
 from app.models.user import User
 from app.models.worker import Worker
 from app.schemas.booking import BookingCreate, BookingStatus, WorkerBookingResponse
+from app.services.capacity import remaining_capacity_for_date, weekday_name, worker_available_on_date
 
 
 def _booking_select() -> Select:
@@ -18,6 +19,10 @@ def _booking_select() -> Select:
 
 def _to_out_row(row) -> dict:
     booking, worker, farmer = row
+    resolved_day = booking.day
+    if booking.work_date is not None:
+        resolved_day = weekday_name(booking.work_date)
+
     return {
         "id": booking.id,
         "worker_id": booking.worker_id,
@@ -27,7 +32,8 @@ def _to_out_row(row) -> dict:
         "farmer_user_id": booking.farmer_user_id,
         "farmer_name": farmer.full_name,
         "farmer_phone": farmer.phone,
-        "day": booking.day,
+        "work_date": booking.work_date,
+        "day": resolved_day,
         "requested_men": booking.requested_men,
         "requested_women": booking.requested_women,
         "status": booking.status,
@@ -66,35 +72,54 @@ def _record_event(db: Session, booking_id: UUID, actor_user_id: UUID, action: st
     )
 
 
+def _ensure_capacity(
+    db: Session,
+    worker: Worker,
+    work_date,
+    requested_men: int,
+    requested_women: int,
+    *,
+    exclude_booking_id: UUID | None = None,
+) -> None:
+    remaining_men, remaining_women = remaining_capacity_for_date(
+        db,
+        worker,
+        work_date,
+        exclude_booking_id=exclude_booking_id,
+    )
+    if requested_men > remaining_men:
+        raise ValueError(f"Requested men exceeds remaining team capacity ({remaining_men}) for selected date")
+    if requested_women > remaining_women:
+        raise ValueError(f"Requested women exceeds remaining team capacity ({remaining_women}) for selected date")
+
+
 def create_bookings_for_worker(db: Session, worker: Worker, farmer: User, payload: BookingCreate) -> list[dict]:
-    if payload.requested_men > worker.men_count:
-        raise ValueError("Requested men exceeds team capacity")
-    if payload.requested_women > worker.women_count:
-        raise ValueError("Requested women exceeds team capacity")
-
-    available_days = {day for day in worker.available_days.split(",") if day}
-    if any(day not in available_days for day in payload.days):
-        raise ValueError("Some requested days are not available for this worker")
-
     created: list[Booking] = []
-    for day in payload.days:
+
+    for item in payload.requests:
+        if not worker_available_on_date(worker, item.work_date):
+            raise ValueError(f"Worker is not available on selected date {item.work_date.isoformat()}")
+
+        _ensure_capacity(db, worker, item.work_date, item.requested_men, item.requested_women)
+
         existing = db.scalar(
             select(Booking).where(
                 Booking.worker_id == worker.id,
                 Booking.farmer_user_id == farmer.id,
-                Booking.day == day,
+                Booking.work_date == item.work_date,
                 Booking.status.in_(["pending_worker", "pending", "pending_farmer", "confirmed", "accepted"]),
             )
         )
         if existing:
-            continue
+            raise ValueError(f"Booking already exists for selected date {item.work_date.isoformat()}")
 
         booking = Booking(
             worker_id=worker.id,
             farmer_user_id=farmer.id,
-            day=day,
-            requested_men=payload.requested_men,
-            requested_women=payload.requested_women,
+            work_date=item.work_date,
+            day=weekday_name(item.work_date),
+            requested_men=item.requested_men,
+            requested_women=item.requested_women,
             note=payload.note,
             status="pending_worker",
         )
@@ -105,19 +130,17 @@ def create_bookings_for_worker(db: Session, worker: Worker, farmer: User, payloa
             booking.id,
             farmer.id,
             "farmer_created_request",
-            f"{payload.requested_men} men, {payload.requested_women} women",
+            f"{item.work_date.isoformat()}: {item.requested_men} men, {item.requested_women} women",
         )
         created.append(booking)
 
-    db.commit()
-    for booking in created:
-        db.refresh(booking)
-
     if not created:
-        raise ValueError("Booking already exists for selected day(s)")
+        raise ValueError("No booking requests were created")
+
+    db.commit()
 
     rows = db.execute(
-        _booking_select().where(Booking.id.in_([booking.id for booking in created])).order_by(Booking.created_at.desc())
+        _booking_select().where(Booking.id.in_([booking.id for booking in created])).order_by(Booking.work_date.asc())
     ).all()
     return [_to_out_row(row) for row in rows]
 
@@ -162,10 +185,17 @@ def worker_respond_to_booking(
             raise ValueError("requested_men and requested_women are required for proposals")
         if payload.requested_men + payload.requested_women < 1:
             raise ValueError("At least one person is required")
-        if payload.requested_men > worker.men_count:
-            raise ValueError("Requested men exceeds team capacity")
-        if payload.requested_women > worker.women_count:
-            raise ValueError("Requested women exceeds team capacity")
+        if booking.work_date is None:
+            raise ValueError("Cannot propose changes for legacy booking without exact date")
+
+        _ensure_capacity(
+            db,
+            worker,
+            booking.work_date,
+            payload.requested_men,
+            payload.requested_women,
+            exclude_booking_id=booking.id,
+        )
 
         booking.requested_men = payload.requested_men
         booking.requested_women = payload.requested_women
@@ -191,11 +221,21 @@ def farmer_validate_booking(db: Session, booking_id: UUID, farmer_user: User, ac
     if not row:
         return None
 
-    booking, _, _ = row
+    booking, worker, _ = row
     if not _is_pending_farmer(booking.status):
         raise ValueError("Booking is not waiting for farmer validation")
 
     if action == "confirm":
+        if booking.work_date is None:
+            raise ValueError("Cannot confirm legacy booking without exact date")
+        _ensure_capacity(
+            db,
+            worker,
+            booking.work_date,
+            booking.requested_men,
+            booking.requested_women,
+            exclude_booking_id=booking.id,
+        )
         booking.status = "confirmed"
         _record_event(db, booking.id, farmer_user.id, "farmer_confirmed", None)
     else:

@@ -26,7 +26,9 @@ class Worker(Base):
     overtime_open: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     overtime_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     overtime_note: Mapped[str | None] = mapped_column(String(300), nullable=True)
-    # Comma-delimited with leading/trailing commas, e.g. ",monday,wednesday,"
+    # Comma-delimited with leading/trailing commas, e.g. ",2026-04-02,2026-04-03,"
+    available_dates: Mapped[str] = mapped_column(String(4000), nullable=False, default=",")
+    # Legacy fallback for older records that only had weekdays.
     available_days: Mapped[str] = mapped_column(
         String(120),
         nullable=False,

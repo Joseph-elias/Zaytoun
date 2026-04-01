@@ -1,4 +1,5 @@
-﻿from decimal import Decimal
+﻿from datetime import date
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
@@ -19,7 +20,7 @@ from app.schemas.booking import (
     FarmerBookingValidation,
     WorkerBookingResponse,
 )
-from app.schemas.worker import WeekDay, WorkerAvailabilityUpdate, WorkerCreate, WorkerOut
+from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate, WorkerOut
 from app.services.bookings import (
     create_booking_message,
     create_bookings_for_worker,
@@ -60,7 +61,7 @@ def list_workers_endpoint(
     max_men_rate: Decimal | None = Query(default=None, gt=0),
     min_women_rate: Decimal | None = Query(default=None, gt=0),
     max_women_rate: Decimal | None = Query(default=None, gt=0),
-    available_day: WeekDay | None = Query(default=None),
+    work_date: date | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[WorkerOut]:
@@ -76,7 +77,7 @@ def list_workers_endpoint(
         min_women_rate=min_women_rate,
         max_women_rate=max_women_rate,
         phone=phone_scope,
-        available_day=available_day,
+        work_date=work_date,
     )
     return [WorkerOut.model_validate(worker) for worker in workers]
 

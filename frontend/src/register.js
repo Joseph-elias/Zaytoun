@@ -14,6 +14,33 @@ const roleHint = document.getElementById("role-hint");
 const logoutBtn = document.getElementById("logout-btn");
 const appTabs = document.getElementById("app-tabs");
 const phoneInput = form.querySelector('input[name="phone"]');
+const panelGrid = document.getElementById("availability-panel-grid");
+const availabilityToday = document.getElementById("availability-today");
+const availabilitySummary = document.getElementById("availability-summary");
+const availabilityMonthLabel = document.getElementById("availability-month-label");
+const clearDatesBtn = document.getElementById("clear-available-dates-btn");
+const todayBtn = document.getElementById("availability-today-btn");
+const prevMonthBtn = document.getElementById("availability-prev-month-btn");
+const nextMonthBtn = document.getElementById("availability-next-month-btn");
+
+const selectedDates = new Set();
+
+function todayAtMidnight() {
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return t;
+}
+
+function startOfMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function addMonths(d, delta) {
+  return new Date(d.getFullYear(), d.getMonth() + delta, 1);
+}
+
+const firstMonth = startOfMonth(todayAtMidnight());
+let visibleMonth = new Date(firstMonth);
 
 if (session) {
   if (appTabs) {
@@ -38,9 +65,98 @@ function setMessage(text, ok = true) {
   message.className = `message ${ok ? "success" : "error"}`;
 }
 
+function toIsoDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function humanDate(iso) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString();
+}
+
+function renderAvailabilityPanel() {
+  const today = todayAtMidnight();
+  const todayIso = toIsoDate(today);
+  const todayMonth = startOfMonth(today);
+
+  availabilityToday.textContent = `Today: ${humanDate(todayIso)}`;
+  availabilityMonthLabel.textContent = visibleMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  prevMonthBtn.disabled = visibleMonth.getFullYear() === firstMonth.getFullYear() && visibleMonth.getMonth() === firstMonth.getMonth();
+  todayBtn.disabled = visibleMonth.getFullYear() === todayMonth.getFullYear() && visibleMonth.getMonth() === todayMonth.getMonth();
+
+  const firstDayOfVisibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+  const firstWeekday = firstDayOfVisibleMonth.getDay();
+  const daysInVisibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+
+  const cells = [];
+
+  for (let i = 0; i < firstWeekday; i += 1) {
+    cells.push('<span class="date-cell date-cell-empty" aria-hidden="true"></span>');
+  }
+
+  for (let day = 1; day <= daysInVisibleMonth; day += 1) {
+    const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day);
+    const iso = toIsoDate(date);
+    const selected = selectedDates.has(iso);
+    const isToday = iso === todayIso;
+    const isPast = date < today;
+
+    cells.push(`
+      <button
+        type="button"
+        class="date-cell${selected ? " selected" : ""}${isToday ? " today" : ""}${isPast ? " disabled" : ""}"
+        data-date="${iso}"
+        ${isPast ? "disabled" : ""}
+      >
+        <span>${day}</span>
+      </button>
+    `);
+  }
+
+  panelGrid.innerHTML = cells.join("");
+
+  const count = selectedDates.size;
+  availabilitySummary.textContent = count ? `${count} date${count > 1 ? "s" : ""} selected` : "No dates selected yet.";
+  availabilitySummary.className = "message";
+}
+
 overtimeOpen.addEventListener("change", () => {
   overtimePrice.disabled = !overtimeOpen.checked;
   if (!overtimeOpen.checked) overtimePrice.value = "";
+});
+
+panelGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-date]");
+  if (!button || button.disabled) return;
+
+  const iso = button.dataset.date;
+  if (selectedDates.has(iso)) {
+    selectedDates.delete(iso);
+  } else {
+    selectedDates.add(iso);
+  }
+  renderAvailabilityPanel();
+});
+
+clearDatesBtn.addEventListener("click", () => {
+  selectedDates.clear();
+  renderAvailabilityPanel();
+});
+
+prevMonthBtn.addEventListener("click", () => {
+  const target = addMonths(visibleMonth, -1);
+  if (target < firstMonth) return;
+  visibleMonth = target;
+  renderAvailabilityPanel();
+});
+
+nextMonthBtn.addEventListener("click", () => {
+  visibleMonth = addMonths(visibleMonth, 1);
+  renderAvailabilityPanel();
+});
+
+todayBtn.addEventListener("click", () => {
+  visibleMonth = startOfMonth(todayAtMidnight());
+  renderAvailabilityPanel();
 });
 
 form.addEventListener("submit", async (event) => {
@@ -50,7 +166,7 @@ form.addEventListener("submit", async (event) => {
   const data = new FormData(form);
   const menCount = Number(data.get("men_count"));
   const womenCount = Number(data.get("women_count"));
-  const availableDays = data.getAll("available_days").map((day) => String(day));
+  const availableDates = [...selectedDates].sort();
 
   const payload = {
     name: String(data.get("name") || "").trim(),
@@ -64,7 +180,7 @@ form.addEventListener("submit", async (event) => {
     overtime_open: overtimeOpen.checked,
     overtime_price: data.get("overtime_price") ? Number(data.get("overtime_price")) : null,
     overtime_note: String(data.get("overtime_note") || "").trim() || null,
-    available_days: availableDays,
+    available_dates: availableDates,
     available: data.get("available") === "on",
   };
 
@@ -72,8 +188,8 @@ form.addEventListener("submit", async (event) => {
     setMessage("Add at least one worker (men or women count).", false);
     return;
   }
-  if (!availableDays.length) {
-    setMessage("Select at least one available day.", false);
+  if (!availableDates.length) {
+    setMessage("Select at least one available date.", false);
     return;
   }
 
@@ -100,13 +216,15 @@ form.addEventListener("submit", async (event) => {
     }
 
     form.reset();
+    selectedDates.clear();
+    visibleMonth = new Date(firstMonth);
+    renderAvailabilityPanel();
     if (phoneInput && session?.user?.phone) phoneInput.value = session.user.phone;
     overtimePrice.disabled = true;
-    form.querySelectorAll('input[name="available_days"]').forEach((checkbox) => {
-      checkbox.checked = true;
-    });
     setMessage("Worker registered successfully.");
   } catch (error) {
     setMessage(error.message || "Failed to register worker.", false);
   }
 });
+
+renderAvailabilityPanel();

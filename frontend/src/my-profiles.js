@@ -11,6 +11,8 @@ const appTabs = document.getElementById("app-tabs");
 
 const bookingRequestsList = document.getElementById("booking-requests-list");
 const refreshRequestsBtn = document.getElementById("refresh-requests-btn");
+const upcomingScheduleList = document.getElementById("upcoming-schedule-list");
+const refreshScheduleBtn = document.getElementById("refresh-schedule-btn");
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (worker). Phone scope: ${session.user.phone}`;
@@ -69,10 +71,6 @@ function money(value) {
   return Number(value).toFixed(2);
 }
 
-function dayLabel(day) {
-  return day.charAt(0).toUpperCase() + day.slice(1);
-}
-
 function sanitizePhone(phone) {
   return String(phone || "").replace(/[^\d]/g, "");
 }
@@ -83,8 +81,21 @@ function whatsappLink(phone) {
   return `https://wa.me/${clean}`;
 }
 
-function formatDate(value) {
+function formatDateTime(value) {
   return new Date(value).toLocaleString();
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(`${value}T00:00:00`).toLocaleDateString();
+}
+
+function bookingDateLabel(booking) {
+  if (booking.work_date) {
+    return formatDate(booking.work_date);
+  }
+  if (booking.day) return booking.day;
+  return "-";
 }
 
 function messageCard(message) {
@@ -92,7 +103,7 @@ function messageCard(message) {
   return `
     <article class="chat-message ${mine ? "mine" : "other"}">
       <p>${message.content}</p>
-      <small>${message.sender_name} (${message.sender_role}) - ${formatDate(message.created_at)}</small>
+      <small>${message.sender_name} (${message.sender_role}) - ${formatDateTime(message.created_at)}</small>
     </article>
   `;
 }
@@ -146,7 +157,7 @@ async function hydrateTimelines() {
 function card(worker) {
   const badgeClass = worker.available ? "available" : "busy";
   const badgeText = worker.available ? "Available" : "Busy";
-  const days = worker.available_days.map((d) => dayLabel(d)).join(", ");
+  const dates = (worker.available_dates || []).map((d) => formatDate(d)).join(", ");
   return `
     <article class="worker-card">
       <div class="list-head">
@@ -160,7 +171,7 @@ function card(worker) {
         <div><strong>Women:</strong> ${worker.women_count} | <strong>Rate:</strong> ${money(worker.women_rate_value)}</div>
         <div><strong>Rate Type:</strong> ${worker.rate_type}</div>
         <div><strong>Overtime:</strong> ${worker.overtime_open ? "Yes" : "No"}</div>
-        <div class="full"><strong>Available Days:</strong> ${days}</div>
+        <div class="full"><strong>Available Dates:</strong> ${dates || "-"}</div>
         <div class="full"><strong>Note:</strong> ${worker.overtime_note || "-"}</div>
       </div>
       <button class="btn ghost" data-id="${worker.id}" data-next="${!worker.available}">
@@ -168,6 +179,45 @@ function card(worker) {
       </button>
     </article>
   `;
+}
+
+function renderUpcomingSchedule(requests) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcoming = requests
+    .filter((request) => normalizeStatus(request.status) === "confirmed")
+    .filter((request) => {
+      if (!request.work_date) return false;
+      const d = new Date(`${request.work_date}T00:00:00`);
+      return d >= today;
+    })
+    .sort((a, b) => String(a.work_date).localeCompare(String(b.work_date)));
+
+  if (!upcoming.length) {
+    upcomingScheduleList.innerHTML = "No upcoming confirmed shifts.";
+    return;
+  }
+
+  upcomingScheduleList.innerHTML = upcoming
+    .map(
+      (request) => `
+        <article class="worker-card">
+          <div class="list-head">
+            <h3>${bookingDateLabel(request)}</h3>
+            ${statusBadge(request.status)}
+          </div>
+          <div class="worker-grid">
+            <div><strong>Farmer:</strong> ${request.farmer_name}</div>
+            <div><strong>Team:</strong> ${request.worker_name}</div>
+            <div><strong>Assigned:</strong> ${request.requested_men} men</div>
+            <div><strong>Assigned:</strong> ${request.requested_women} women</div>
+            <div class="full"><strong>Note:</strong> ${request.note || "-"}</div>
+          </div>
+        </article>
+      `
+    )
+    .join("");
 }
 
 async function fetchMine() {
@@ -206,6 +256,8 @@ async function fetchRequests() {
     if (!response.ok) throw new Error("Could not load booking requests");
 
     const requests = await response.json();
+    renderUpcomingSchedule(requests);
+
     if (!requests.length) {
       bookingRequestsList.innerHTML = "No booking requests yet.";
       return;
@@ -225,7 +277,7 @@ async function fetchRequests() {
         </div>
         <div class="worker-grid">
           <div><strong>Team:</strong> ${request.worker_name}</div>
-          <div><strong>Day:</strong> ${dayLabel(request.day)}</div>
+          <div><strong>Date:</strong> ${bookingDateLabel(request)}</div>
           <div><strong>Requested:</strong> ${request.requested_men} men</div>
           <div><strong>Requested:</strong> ${request.requested_women} women</div>
           <div class="full"><strong>Note:</strong> ${request.note || "-"}</div>
@@ -267,6 +319,7 @@ async function fetchRequests() {
     await hydrateTimelines();
   } catch (error) {
     bookingRequestsList.innerHTML = `<p class="message error">${error.message}</p>`;
+    upcomingScheduleList.innerHTML = `<p class="message error">${error.message}</p>`;
   }
 }
 
@@ -412,5 +465,6 @@ listEl.addEventListener("click", async (event) => {
 
 refreshBtn.addEventListener("click", fetchMine);
 refreshRequestsBtn.addEventListener("click", fetchRequests);
+refreshScheduleBtn.addEventListener("click", fetchRequests);
 fetchRequests();
 fetchMine();

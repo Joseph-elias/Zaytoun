@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+﻿from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -31,13 +31,13 @@ class WorkerCreate(BaseModel):
     overtime_open: bool = False
     overtime_price: Decimal | None = Field(default=None, gt=0)
     overtime_note: str | None = Field(default=None, max_length=300)
-    available_days: list[WeekDay] = Field(default_factory=lambda: ALL_WEEK_DAYS.copy(), min_length=1, max_length=7)
+    available_dates: list[date] = Field(min_length=1, max_length=365)
     available: bool = True
 
-    @field_validator("available_days")
+    @field_validator("available_dates")
     @classmethod
-    def normalize_days(cls, days: list[WeekDay]) -> list[WeekDay]:
-        return list(dict.fromkeys(days))
+    def normalize_dates(cls, values: list[date]) -> list[date]:
+        return sorted(set(values))
 
     @model_validator(mode="after")
     def validate_business_rules(self) -> "WorkerCreate":
@@ -82,17 +82,26 @@ class WorkerOut(BaseModel):
     overtime_open: bool
     overtime_price: Decimal | None
     overtime_note: str | None
-    available_days: list[WeekDay]
+    available_dates: list[date]
     available: bool
+    remaining_men_count: int | None = None
+    remaining_women_count: int | None = None
     created_at: datetime
 
-    @field_validator("available_days", mode="before")
+    @field_validator("available_dates", mode="before")
     @classmethod
-    def parse_days(cls, value: object) -> list[str]:
+    def parse_dates(cls, value: object) -> list[date]:
         if isinstance(value, str):
-            return [day for day in value.split(",") if day]
+            raw = [token for token in value.split(",") if token]
+            parsed: list[date] = []
+            for token in raw:
+                try:
+                    parsed.append(date.fromisoformat(token))
+                except ValueError:
+                    continue
+            return sorted(set(parsed))
         if isinstance(value, list):
-            return value
-        return ALL_WEEK_DAYS.copy()
+            return sorted(set(value))
+        return []
 
     model_config = ConfigDict(from_attributes=True)

@@ -15,6 +15,7 @@ const appTabs = document.getElementById("app-tabs");
 
 const isWorker = session?.user?.role === "worker";
 const isFarmer = session?.user?.role === "farmer";
+const capacityCache = new Map();
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
@@ -33,39 +34,55 @@ function money(value) {
   return Number(value).toFixed(2);
 }
 
-function dayLabel(day) {
-  return day.charAt(0).toUpperCase() + day.slice(1);
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(`${value}T00:00:00`).toLocaleDateString();
 }
 
-function daysBadges(days) {
-  return days.map((day) => `<span class="badge day">${dayLabel(day)}</span>`).join(" ");
+function dateBadges(dates) {
+  return (dates || []).map((d) => `<span class="badge day">${formatDate(d)}</span>`).join(" ");
+}
+
+function selectedWorkDate() {
+  const raw = form.elements.work_date?.value;
+  return raw ? String(raw).trim() : "";
+}
+
+function bookingRequestRow(defaultDate = "") {
+  return `
+    <div class="worker-grid full booking-request-row">
+      <label>Work Date<input name="work_date" type="date" value="${defaultDate}" required /></label>
+      <label>Men Needed<input name="requested_men" type="number" min="0" value="0" required /></label>
+      <label>Women Needed<input name="requested_women" type="number" min="0" value="0" required /></label>
+      <div class="actions-row" style="align-items:end;">
+        <button class="btn ghost" type="button" data-remove-booking-row>Remove</button>
+      </div>
+      <p class="message full" data-row-capacity></p>
+    </div>
+  `;
 }
 
 function bookingForm(worker) {
   if (!isFarmer) return "";
 
-  const dayChecks = worker.available_days
-    .map(
-      (day, index) =>
-        `<label><input type="checkbox" name="days" value="${day}" ${index === 0 ? "checked" : ""} /> ${dayLabel(day)}</label>`
-    )
-    .join("");
+  const filterDate = selectedWorkDate();
+  const remainingMen = worker.remaining_men_count ?? worker.men_count;
+  const remainingWomen = worker.remaining_women_count ?? worker.women_count;
+  const liveRemaining = filterDate && worker.remaining_men_count !== null && worker.remaining_women_count !== null;
 
   return `
-    <form class="booking-form" data-worker-id="${worker.id}" data-days='${JSON.stringify(worker.available_days)}'>
+    <form class="booking-form" data-worker-id="${worker.id}">
       <h4>Book This Team</h4>
-      <label class="inline-check">
-        <input type="checkbox" name="all_days" /> Book all available days
-      </label>
-      <fieldset class="full day-selector">
-        <legend>Pick Days</legend>
-        ${dayChecks}
-      </fieldset>
-      <label>Men Needed<input name="requested_men" type="number" min="0" value="0" required /></label>
-      <label>Women Needed<input name="requested_women" type="number" min="0" value="0" required /></label>
-      <label class="full">Note<textarea name="note" rows="2" placeholder="Optional note"></textarea></label>
+      <div class="full"><strong>Date:</strong> ${filterDate ? formatDate(filterDate) : "Pick date(s) below"}</div>
+      <div class="full"><strong>Remaining Capacity:</strong> ${remainingMen} men, ${remainingWomen} women${liveRemaining ? " (live for selected date)" : ""}</div>
+      <p class="message">You can add multiple dates and choose different men/women for each date.</p>
+      <div class="full" data-booking-requests>${bookingRequestRow(filterDate)}</div>
+      <div class="actions-row">
+        <button class="btn ghost" type="button" data-add-booking-row>Add Another Date</button>
+      </div>
+      <label class="full">Note<textarea name="note" rows="2" placeholder="Optional note for all selected dates"></textarea></label>
       <button class="btn" type="submit">Send Booking Request</button>
-      <p class="message"></p>
+      <p class="message booking-submit-message"></p>
     </form>
   `;
 }
@@ -73,6 +90,9 @@ function bookingForm(worker) {
 function card(worker) {
   const badgeClass = worker.available ? "available" : "busy";
   const badgeText = worker.available ? "Available" : "Busy";
+
+  const menDisplay = worker.remaining_men_count ?? worker.men_count;
+  const womenDisplay = worker.remaining_women_count ?? worker.women_count;
 
   return `
     <article class="worker-card">
@@ -83,11 +103,11 @@ function card(worker) {
       <div class="worker-grid">
         <div><strong>Village:</strong> ${worker.village}</div>
         <div><strong>Phone:</strong> ${worker.phone}</div>
-        <div><strong>Men:</strong> ${worker.men_count} | <strong>Rate:</strong> ${money(worker.men_rate_value)}</div>
-        <div><strong>Women:</strong> ${worker.women_count} | <strong>Rate:</strong> ${money(worker.women_rate_value)}</div>
+        <div><strong>Men:</strong> ${menDisplay} | <strong>Rate:</strong> ${money(worker.men_rate_value)}</div>
+        <div><strong>Women:</strong> ${womenDisplay} | <strong>Rate:</strong> ${money(worker.women_rate_value)}</div>
         <div><strong>Rate Type:</strong> ${worker.rate_type}</div>
         <div><strong>Overtime:</strong> ${worker.overtime_open ? "Yes" : "No"}</div>
-        <div class="full"><strong>Available Days:</strong> ${daysBadges(worker.available_days)}</div>
+        <div class="full"><strong>Available Dates:</strong> ${dateBadges(worker.available_dates)}</div>
         <div class="full"><strong>Note:</strong> ${worker.overtime_note || "-"}</div>
       </div>
       ${
@@ -104,7 +124,7 @@ function buildQuery() {
   const fd = new FormData(form);
   const params = new URLSearchParams();
 
-  ["village", "available", "available_day", "rate_type", "min_men_rate", "max_men_rate", "min_women_rate", "max_women_rate"].forEach(
+  ["village", "available", "work_date", "rate_type", "min_men_rate", "max_men_rate", "min_women_rate", "max_women_rate"].forEach(
     (key) => {
       const raw = fd.get(key);
       if (raw !== null && String(raw).trim() !== "") params.set(key, String(raw).trim());
@@ -142,96 +162,105 @@ async function fetchWorkers() {
   }
 }
 
-listEl.addEventListener("change", (event) => {
-  const allDaysToggle = event.target.closest('input[name="all_days"]');
-  if (allDaysToggle) {
-    const bookingFormEl = allDaysToggle.closest("form.booking-form");
-    if (!bookingFormEl) return;
-    const dayInputs = bookingFormEl.querySelectorAll('input[name="days"]');
-    dayInputs.forEach((input) => {
-      input.checked = allDaysToggle.checked;
-      input.disabled = allDaysToggle.checked;
-    });
+async function fetchDateCapacity(workerId, workDate) {
+  const key = `${workerId}|${workDate}`;
+  if (capacityCache.has(key)) return capacityCache.get(key);
+
+  const response = await fetch(`${API_BASE}/workers?work_date=${encodeURIComponent(workDate)}`, {
+    headers: authHeaders(),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    clearSession();
+    window.location.href = "./login.html";
+    return null;
+  }
+  if (!response.ok) return null;
+
+  const workers = await response.json();
+  const worker = workers.find((item) => item.id === workerId);
+  if (!worker) {
+    capacityCache.set(key, null);
+    return null;
+  }
+
+  const value = {
+    men: worker.remaining_men_count ?? worker.men_count,
+    women: worker.remaining_women_count ?? worker.women_count,
+  };
+  capacityCache.set(key, value);
+  return value;
+}
+
+async function updateRowCapacity(rowEl, workerId) {
+  const capacityEl = rowEl.querySelector("[data-row-capacity]");
+  const dateInput = rowEl.querySelector('input[name="work_date"]');
+  if (!capacityEl || !dateInput) return;
+
+  const workDate = String(dateInput.value || "").trim();
+  if (!workDate) {
+    capacityEl.textContent = "";
+    capacityEl.className = "message";
     return;
   }
 
-  const dayInput = event.target.closest('input[name="days"]');
-  if (!dayInput) return;
-  const bookingFormEl = dayInput.closest("form.booking-form");
-  if (!bookingFormEl) return;
-  const dayInputs = [...bookingFormEl.querySelectorAll('input[name="days"]')];
-  const allChecked = dayInputs.length > 0 && dayInputs.every((input) => input.checked);
-  const allDaysCheckbox = bookingFormEl.querySelector('input[name="all_days"]');
-  if (allDaysCheckbox) allDaysCheckbox.checked = allChecked;
-});
-
-listEl.addEventListener("submit", async (event) => {
-  const bookingFormEl = event.target.closest("form.booking-form");
-  if (!bookingFormEl) return;
-  event.preventDefault();
-
-  const messageEl = bookingFormEl.querySelector(".message");
-  const workerId = bookingFormEl.dataset.workerId;
-  const availableDays = JSON.parse(bookingFormEl.dataset.days || "[]");
-  const fd = new FormData(bookingFormEl);
-
-  const allDays = fd.get("all_days") === "on";
-  const requestedMen = Number(fd.get("requested_men") || 0);
-  const requestedWomen = Number(fd.get("requested_women") || 0);
-  const selectedDays = fd.getAll("days").map((day) => String(day));
-  const days = allDays ? availableDays : selectedDays;
-
-  if (requestedMen + requestedWomen < 1) {
-    messageEl.textContent = "Pick at least one person (men/women).";
-    messageEl.className = "message error";
-    return;
-  }
-  if (!days.length) {
-    messageEl.textContent = "Pick at least one day.";
-    messageEl.className = "message error";
-    return;
-  }
-
-  messageEl.textContent = "Sending booking request...";
-  messageEl.className = "message success";
+  capacityEl.textContent = "Checking availability...";
+  capacityEl.className = "message";
 
   try {
-    const response = await fetch(`${API_BASE}/workers/${workerId}/bookings`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        days,
-        requested_men: requestedMen,
-        requested_women: requestedWomen,
-        note: String(fd.get("note") || "").trim() || null,
-      }),
-    });
-
-    if (response.status === 401 || response.status === 403) {
-      clearSession();
-      window.location.href = "./login.html";
+    const capacity = await fetchDateCapacity(workerId, workDate);
+    if (!capacity) {
+      capacityEl.textContent = "Not available for this date.";
+      capacityEl.className = "message error";
       return;
     }
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err?.detail || "Booking request failed");
-    }
-
-    messageEl.textContent = "Booking request sent.";
-    messageEl.className = "message success";
-    bookingFormEl.reset();
-    bookingFormEl.querySelectorAll('input[name="days"]').forEach((input, index) => {
-      input.disabled = false;
-      input.checked = index === 0;
-    });
-  } catch (error) {
-    messageEl.textContent = error.message || "Booking request failed";
-    messageEl.className = "message error";
+    capacityEl.textContent = `Remaining on ${formatDate(workDate)}: ${capacity.men} men, ${capacity.women} women`;
+    capacityEl.className = "message success";
+  } catch {
+    capacityEl.textContent = "Could not check date capacity.";
+    capacityEl.className = "message error";
   }
-});
+}
 
 listEl.addEventListener("click", async (event) => {
+  const addRowButton = event.target.closest("button[data-add-booking-row]");
+  if (addRowButton) {
+    const bookingFormEl = addRowButton.closest("form.booking-form");
+    if (!bookingFormEl) return;
+    const container = bookingFormEl.querySelector("[data-booking-requests]");
+    if (!container) return;
+    container.insertAdjacentHTML("beforeend", bookingRequestRow());
+    return;
+  }
+
+  const removeRowButton = event.target.closest("button[data-remove-booking-row]");
+  if (removeRowButton) {
+    const bookingFormEl = removeRowButton.closest("form.booking-form");
+    if (!bookingFormEl) return;
+    const container = bookingFormEl.querySelector("[data-booking-requests]");
+    if (!container) return;
+
+    const rows = [...container.querySelectorAll(".booking-request-row")];
+    if (rows.length <= 1) {
+      const row = rows[0];
+      row.querySelectorAll('input[name="work_date"], input[name="requested_men"], input[name="requested_women"]').forEach((input) => {
+        if (input.name === "work_date") input.value = "";
+        else input.value = "0";
+      });
+      const capacityEl = row.querySelector("[data-row-capacity]");
+      if (capacityEl) {
+        capacityEl.textContent = "";
+        capacityEl.className = "message";
+      }
+      return;
+    }
+
+    const row = removeRowButton.closest(".booking-request-row");
+    if (row) row.remove();
+    return;
+  }
+
   const button = event.target.closest("button[data-id]");
   if (!button) return;
 
@@ -257,6 +286,89 @@ listEl.addEventListener("click", async (event) => {
   } catch (error) {
     button.disabled = false;
     alert(error.message);
+  }
+});
+
+listEl.addEventListener("change", async (event) => {
+  const dateInput = event.target.closest('input[name="work_date"]');
+  if (!dateInput) return;
+
+  const rowEl = dateInput.closest(".booking-request-row");
+  const bookingFormEl = dateInput.closest("form.booking-form");
+  if (!rowEl || !bookingFormEl) return;
+
+  await updateRowCapacity(rowEl, bookingFormEl.dataset.workerId);
+});
+
+listEl.addEventListener("submit", async (event) => {
+  const bookingFormEl = event.target.closest("form.booking-form");
+  if (!bookingFormEl) return;
+  event.preventDefault();
+
+  const messageEl = bookingFormEl.querySelector(".booking-submit-message");
+  const workerId = bookingFormEl.dataset.workerId;
+  const note = String(new FormData(bookingFormEl).get("note") || "").trim() || null;
+
+  const rows = [...bookingFormEl.querySelectorAll(".booking-request-row")];
+  const requests = [];
+
+  for (const row of rows) {
+    const workDate = String(row.querySelector('input[name="work_date"]').value || "").trim();
+    const requestedMen = Number(row.querySelector('input[name="requested_men"]').value || 0);
+    const requestedWomen = Number(row.querySelector('input[name="requested_women"]').value || 0);
+
+    if (!workDate) {
+      messageEl.textContent = "Each row needs a work date.";
+      messageEl.className = "message error";
+      return;
+    }
+    if (requestedMen + requestedWomen < 1) {
+      messageEl.textContent = `Each date needs at least one person (${formatDate(workDate)} has zero).`;
+      messageEl.className = "message error";
+      return;
+    }
+
+    requests.push({
+      work_date: workDate,
+      requested_men: requestedMen,
+      requested_women: requestedWomen,
+    });
+  }
+
+  if (!requests.length) {
+    messageEl.textContent = "Add at least one date request.";
+    messageEl.className = "message error";
+    return;
+  }
+
+  messageEl.textContent = "Sending booking requests...";
+  messageEl.className = "message success";
+
+  try {
+    const response = await fetch(`${API_BASE}/workers/${workerId}/bookings`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ requests, note }),
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      clearSession();
+      window.location.href = "./login.html";
+      return;
+    }
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.detail || "Booking request failed");
+    }
+
+    const created = await response.json();
+    messageEl.textContent = `${created.length} booking request${created.length > 1 ? "s" : ""} sent.`;
+    messageEl.className = "message success";
+    await fetchWorkers();
+  } catch (error) {
+    messageEl.textContent = error.message || "Booking request failed";
+    messageEl.className = "message error";
   }
 });
 

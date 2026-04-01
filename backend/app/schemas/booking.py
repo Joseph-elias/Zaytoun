@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+﻿from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -16,17 +16,51 @@ BookingStatus = Literal[
 ]
 
 
-class BookingCreate(BaseModel):
-    days: list[WeekDay] = Field(min_length=1, max_length=7)
+class BookingRequestItem(BaseModel):
+    work_date: date
     requested_men: int = Field(ge=0, le=100)
     requested_women: int = Field(ge=0, le=100)
-    note: str | None = Field(default=None, max_length=300)
 
     @model_validator(mode="after")
-    def validate_team_size(self) -> "BookingCreate":
+    def validate_team_size(self) -> "BookingRequestItem":
         if self.requested_men + self.requested_women < 1:
-            raise ValueError("At least one person is required in booking request")
-        self.days = list(dict.fromkeys(self.days))
+            raise ValueError("At least one person is required per date request")
+        return self
+
+
+class BookingCreate(BaseModel):
+    requests: list[BookingRequestItem] = Field(min_length=1, max_length=31)
+    note: str | None = Field(default=None, max_length=300)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_single_date_payload(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        if "requests" in data:
+            return data
+
+        work_date = data.get("work_date")
+        requested_men = data.get("requested_men")
+        requested_women = data.get("requested_women")
+        if work_date is None or requested_men is None or requested_women is None:
+            return data
+
+        updated = dict(data)
+        updated["requests"] = [
+            {
+                "work_date": work_date,
+                "requested_men": requested_men,
+                "requested_women": requested_women,
+            }
+        ]
+        return updated
+
+    @model_validator(mode="after")
+    def validate_unique_dates(self) -> "BookingCreate":
+        dates = [item.work_date for item in self.requests]
+        if len(set(dates)) != len(dates):
+            raise ValueError("Duplicate dates are not allowed in one booking request")
         return self
 
 
@@ -50,7 +84,8 @@ class BookingOut(BaseModel):
     farmer_user_id: UUID
     farmer_name: str
     farmer_phone: str
-    day: WeekDay
+    work_date: date | None
+    day: WeekDay | None
     requested_men: int
     requested_women: int
     status: BookingStatus
