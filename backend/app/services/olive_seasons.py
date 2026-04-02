@@ -33,30 +33,42 @@ def _to_out(item: FarmerOliveSeason) -> dict:
     }
 
 
+def _normalize_piece_name(value: str | None) -> str:
+    return " ".join(part for part in str(value or "").strip().split()).casefold()
+
+
+def _validate_piece_name(value: str | None) -> str:
+    normalized = _normalize_piece_name(value)
+    if not normalized:
+        raise ValueError("Land piece name is required")
+    return normalized
+
+
 def list_my_olive_seasons(db: Session, farmer_user_id: UUID) -> list[dict]:
     rows = db.scalars(
         select(FarmerOliveSeason)
         .where(FarmerOliveSeason.farmer_user_id == farmer_user_id)
-        .order_by(FarmerOliveSeason.season_year.desc())
+        .order_by(FarmerOliveSeason.season_year.desc(), FarmerOliveSeason.land_piece_name.asc(), FarmerOliveSeason.created_at.desc())
     ).all()
     return [_to_out(row) for row in rows]
 
 
 def create_olive_season(db: Session, farmer_user_id: UUID, payload: OliveSeasonCreate) -> dict:
-    existing = db.scalar(
+    incoming_piece = _validate_piece_name(payload.land_piece_name)
+    same_year_rows = db.scalars(
         select(FarmerOliveSeason).where(
             FarmerOliveSeason.farmer_user_id == farmer_user_id,
             FarmerOliveSeason.season_year == payload.season_year,
         )
-    )
-    if existing:
-        raise ValueError("Season already exists for this year")
+    ).all()
+    if any(_normalize_piece_name(row.land_piece_name) == incoming_piece for row in same_year_rows):
+        raise ValueError("Season already exists for this year and land piece")
 
     item = FarmerOliveSeason(
         farmer_user_id=farmer_user_id,
         season_year=payload.season_year,
         land_pieces=payload.land_pieces,
-        land_piece_name=payload.land_piece_name,
+        land_piece_name=str(payload.land_piece_name).strip(),
         estimated_chonbol=payload.estimated_chonbol,
         actual_chonbol=payload.actual_chonbol,
         kg_per_land_piece=payload.kg_per_land_piece,
@@ -74,19 +86,20 @@ def update_olive_season(db: Session, season_id: UUID, farmer_user_id: UUID, payl
     if not item or item.farmer_user_id != farmer_user_id:
         return None
 
-    existing = db.scalar(
+    incoming_piece = _validate_piece_name(payload.land_piece_name)
+    same_year_rows = db.scalars(
         select(FarmerOliveSeason).where(
             FarmerOliveSeason.id != item.id,
             FarmerOliveSeason.farmer_user_id == farmer_user_id,
             FarmerOliveSeason.season_year == payload.season_year,
         )
-    )
-    if existing:
-        raise ValueError("Another season already exists for this year")
+    ).all()
+    if any(_normalize_piece_name(row.land_piece_name) == incoming_piece for row in same_year_rows):
+        raise ValueError("Another season already exists for this year and land piece")
 
     item.season_year = payload.season_year
     item.land_pieces = payload.land_pieces
-    item.land_piece_name = payload.land_piece_name
+    item.land_piece_name = str(payload.land_piece_name).strip()
     item.estimated_chonbol = payload.estimated_chonbol
     item.actual_chonbol = payload.actual_chonbol
     item.kg_per_land_piece = payload.kg_per_land_piece
@@ -106,5 +119,3 @@ def delete_olive_season(db: Session, season_id: UUID, farmer_user_id: UUID) -> b
     db.delete(item)
     db.commit()
     return True
-
-

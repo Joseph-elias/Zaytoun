@@ -10,7 +10,7 @@ from app.db.base import Base
 class FarmerOliveSeason(Base):
     __tablename__ = "farmer_olive_seasons"
     __table_args__ = (
-        UniqueConstraint("farmer_user_id", "season_year", name="uq_farmer_olive_seasons_farmer_year"),
+        UniqueConstraint("farmer_user_id", "season_year", "land_piece_name", name="uq_farmer_olive_seasons_farmer_year_piece"),
         Index("ix_farmer_olive_seasons_farmer_user_id", "farmer_user_id"),
         Index("ix_farmer_olive_seasons_season_year", "season_year"),
     )
@@ -19,7 +19,7 @@ class FarmerOliveSeason(Base):
     farmer_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     season_year: Mapped[int] = mapped_column(Integer, nullable=False)
     land_pieces: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    land_piece_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    land_piece_name: Mapped[str] = mapped_column(String(120), nullable=False)
     estimated_chonbol: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     actual_chonbol: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     kg_per_land_piece: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)

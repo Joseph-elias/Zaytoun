@@ -383,6 +383,7 @@ def test_farmer_olive_season_crud() -> None:
         json={
             "season_year": 2030,
             "land_pieces": 12,
+            "land_piece_name": "North Plot",
             "estimated_chonbol": 1600,
             "actual_chonbol": 1400,
             "kg_per_land_piece": 116.67,
@@ -395,15 +396,48 @@ def test_farmer_olive_season_crud() -> None:
     season_id = create.json()["id"]
     assert create.json()["kg_needed_per_tank"] == "1.67"
 
+    create_second_piece_same_year = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2030,
+            "land_pieces": 8,
+            "land_piece_name": "South Plot",
+            "estimated_chonbol": 800,
+            "actual_chonbol": 720,
+            "kg_per_land_piece": 90,
+            "tanks_20l": 40,
+            "notes": "second piece",
+        },
+        headers=farmer_headers,
+    )
+    assert create_second_piece_same_year.status_code == 201
+
+    duplicate_same_piece = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2030,
+            "land_pieces": 6,
+            "land_piece_name": "North Plot",
+            "estimated_chonbol": 700,
+            "actual_chonbol": 640,
+            "kg_per_land_piece": 80,
+            "tanks_20l": 32,
+            "notes": "duplicate",
+        },
+        headers=farmer_headers,
+    )
+    assert duplicate_same_piece.status_code == 400
+
     list_one = client.get("/olive-seasons/mine", headers=farmer_headers)
     assert list_one.status_code == 200
-    assert len(list_one.json()) == 1
+    assert len(list_one.json()) == 2
 
     update = client.patch(
         f"/olive-seasons/{season_id}",
         json={
             "season_year": 2030,
             "land_pieces": 12,
+            "land_piece_name": "North Plot",
             "estimated_chonbol": 1700,
             "actual_chonbol": 1500,
             "kg_per_land_piece": 125,
@@ -418,9 +452,9 @@ def test_farmer_olive_season_crud() -> None:
     delete = client.delete(f"/olive-seasons/{season_id}", headers=farmer_headers)
     assert delete.status_code == 204
 
-    list_empty = client.get("/olive-seasons/mine", headers=farmer_headers)
-    assert list_empty.status_code == 200
-    assert len(list_empty.json()) == 0
+    list_after_delete = client.get("/olive-seasons/mine", headers=farmer_headers)
+    assert list_after_delete.status_code == 200
+    assert len(list_after_delete.json()) == 1
 
 
 

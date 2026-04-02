@@ -48,6 +48,10 @@ function toNum(v) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function normalizePieceName(value) {
+  return String(value || "").trim();
+}
+
 function calculateKgPerTank(kgPerLandPiece, actualChonbol, tanks) {
   const baseKg = kgPerLandPiece !== null ? kgPerLandPiece : actualChonbol;
   if (baseKg === null || tanks === null || tanks <= 0) return "-";
@@ -58,7 +62,7 @@ function readFormPayload() {
   return {
     season_year: Number(form.elements.season_year.value),
     land_pieces: Number(form.elements.land_pieces.value || 1),
-    land_piece_name: String(form.elements.land_piece_name.value || "").trim() || null,
+    land_piece_name: normalizePieceName(form.elements.land_piece_name.value),
     estimated_chonbol: toNum(form.elements.estimated_chonbol.value),
     actual_chonbol: toNum(form.elements.actual_chonbol.value),
     kg_per_land_piece: toNum(form.elements.kg_per_land_piece.value),
@@ -131,14 +135,14 @@ function seasonCard(item) {
   return `
     <article class="worker-card" data-season-id="${item.id}">
       <div class="list-head">
-        <h3>Season ${item.season_year}</h3>
+        <h3>${item.land_piece_name || "Unnamed Piece"}</h3>
         <div class="actions-row season-badges">
+          <span class="badge day">Season ${item.season_year}</span>
           ${seasonStatusBadge(item)}
           <span class="badge day">${item.kg_needed_per_tank ?? "-"} kg / tank</span>
         </div>
       </div>
       <div class="worker-grid">
-        <div><strong>Land Piece Name:</strong> ${item.land_piece_name || "-"}</div>
         <div><strong>Estimated Chonbol:</strong> ${item.estimated_chonbol ?? "-"}</div>
         <div><strong>Actual Chonbol:</strong> ${item.actual_chonbol ?? "-"}</div>
         <div><strong>KG per Piece:</strong> ${item.kg_per_land_piece ?? "-"}</div>
@@ -151,6 +155,41 @@ function seasonCard(item) {
         <button class="btn ghost" type="button" data-edit-season="${item.id}">Modify</button>
       </div>
     </article>
+  `;
+}
+
+function groupSeasonsByYear(items) {
+  const sorted = [...items].sort(
+    (a, b) =>
+      Number(b.season_year) - Number(a.season_year) ||
+      String(a.land_piece_name || "").localeCompare(String(b.land_piece_name || "")),
+  );
+
+  const grouped = new Map();
+  for (const item of sorted) {
+    const year = Number(item.season_year);
+    if (!grouped.has(year)) grouped.set(year, []);
+    grouped.get(year).push(item);
+  }
+
+  return Array.from(grouped.entries()).map(([year, rows]) => ({ year, rows }));
+}
+
+function seasonYearGroup(group, openByDefault = false) {
+  const draftCount = group.rows.filter((item) => missingSeasonFields(item).length > 0).length;
+  const totalCount = group.rows.length;
+  const openAttr = openByDefault ? " open" : "";
+
+  return `
+    <details class="season-year-group"${openAttr}>
+      <summary class="season-year-summary">
+        <span class="season-year-title">${group.year}</span>
+        <span class="season-year-meta">${totalCount} piece${totalCount > 1 ? "s" : ""} | Drafts: ${draftCount}</span>
+      </summary>
+      <div class="season-year-list">
+        ${group.rows.map(seasonCard).join("")}
+      </div>
+    </details>
   `;
 }
 
@@ -174,7 +213,9 @@ async function fetchSeasons() {
     const items = await response.json();
     cachedSeasons = items;
     updateSeasonProgress(items);
-    seasonsList.innerHTML = items.length ? items.map(seasonCard).join("") : "No season records yet.";
+
+    const grouped = groupSeasonsByYear(items);
+    seasonsList.innerHTML = grouped.length ? grouped.map((group, index) => seasonYearGroup(group, index === 0)).join("") : "No season records yet.";
   } catch (error) {
     updateSeasonProgress([]);
     seasonsList.innerHTML = `<p class="message error">${error.message}</p>`;

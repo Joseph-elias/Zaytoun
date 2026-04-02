@@ -28,14 +28,9 @@ const filterResetBtn = document.getElementById("filter-reset");
 const filterSelectAllBtn = document.getElementById("filter-select-all-pieces");
 const filterClearPiecesBtn = document.getElementById("filter-clear-pieces");
 
-const pieceForm = document.getElementById("piece-metric-form");
-const pieceMessage = document.getElementById("piece-metric-message");
-const resetPieceFormBtn = document.getElementById("reset-piece-form-btn");
-const deletePieceBtn = document.getElementById("delete-piece-metric-btn");
-const pieceMetricsList = document.getElementById("piece-metrics-list");
-
 let seasons = [];
 let pieceMetrics = [];
+let analyticsPieceMetrics = [];
 let filteredSeasons = [];
 let filteredPieceMetrics = [];
 let activeYearlySeries = [];
@@ -76,13 +71,8 @@ function safeDecimal(value, digits = 2) {
   return num.toFixed(digits);
 }
 
-function currentYear() {
-  return new Date().getFullYear();
-}
-
-function setPieceMessage(text, ok = true) {
-  pieceMessage.textContent = text;
-  pieceMessage.className = `message ${ok ? "success" : "error"}`;
+function normalizePieceLabel(value) {
+  return String(value || "").trim() || "Unnamed";
 }
 
 function mean(values) {
@@ -119,44 +109,6 @@ function linearSlope(points) {
   return (n * sumXY - sumX * sumY) / denominator;
 }
 
-function resetPieceForm() {
-  pieceForm.reset();
-  pieceForm.elements.metric_id.value = "";
-  pieceForm.elements.season_year.value = String(currentYear());
-  deletePieceBtn.hidden = true;
-  pieceMessage.textContent = "";
-  pieceMessage.className = "message";
-}
-
-function fillPieceForm(metric) {
-  pieceForm.elements.metric_id.value = metric.id;
-  pieceForm.elements.season_year.value = String(metric.season_year);
-  pieceForm.elements.piece_label.value = metric.piece_label || "";
-  pieceForm.elements.harvested_kg.value = metric.harvested_kg ?? "";
-  pieceForm.elements.tanks_20l.value = metric.tanks_20l ?? "";
-  pieceForm.elements.notes.value = metric.notes || "";
-  deletePieceBtn.hidden = false;
-}
-
-function pieceMetricCard(metric) {
-  return `
-    <article class="worker-card" data-piece-metric-id="${metric.id}">
-      <div class="list-head">
-        <h3>${metric.piece_label} (${metric.season_year})</h3>
-        <span class="badge day">${metric.kg_needed_per_tank ?? "-"} kg / tank</span>
-      </div>
-      <div class="worker-grid">
-        <div><strong>Harvested KG:</strong> ${safeDecimal(metric.harvested_kg)}</div>
-        <div><strong>Tanks:</strong> ${metric.tanks_20l ?? "-"}</div>
-        <div><strong>KG / Tank:</strong> ${metric.kg_needed_per_tank ?? "-"}</div>
-        <div class="full"><strong>Notes:</strong> ${metric.notes || "-"}</div>
-      </div>
-      <div class="actions-row">
-        <button class="btn ghost" type="button" data-edit-piece-metric="${metric.id}">Modify</button>
-      </div>
-    </article>
-  `;
-}
 
 function aggregatePieces(metrics) {
   const map = new Map();
@@ -234,6 +186,51 @@ function getMetricFromSeason(row, metricType) {
   return toNumber(row.actual_chonbol);
 }
 
+function buildAutoPieceMetricFromSeason(season) {
+  const harvestedKg = toNumber(season.kg_per_land_piece) ?? toNumber(season.actual_chonbol) ?? 0;
+  const tanks = toNumber(season.tanks_20l);
+  const computedKgNeededPerTank = tanks && tanks > 0 ? harvestedKg / tanks : null;
+  const existingKgNeededPerTank = toNumber(season.kg_needed_per_tank);
+
+  return {
+    id: `season:${season.id}`,
+    season_year: Number(season.season_year),
+    piece_label: normalizePieceLabel(season.land_piece_name),
+    harvested_kg: harvestedKg,
+    tanks_20l: tanks,
+    kg_needed_per_tank: existingKgNeededPerTank ?? computedKgNeededPerTank,
+    notes: season.notes || null,
+    is_auto_generated: true,
+  };
+}
+
+function buildAnalyticsPieceMetrics() {
+  const manualMetrics = (pieceMetrics || []).map((metric) => ({
+    ...metric,
+    piece_label: normalizePieceLabel(metric.piece_label),
+    season_year: Number(metric.season_year),
+    is_auto_generated: false,
+  }));
+
+  const existingKeys = new Set(
+    manualMetrics.map((metric) => `${metric.season_year}::${normalizePieceLabel(metric.piece_label).toLowerCase()}`),
+  );
+
+  const inferredMetrics = [];
+  for (const season of seasons) {
+    const pieceLabel = normalizePieceLabel(season.land_piece_name);
+    const seasonYear = Number(season.season_year);
+    if (!Number.isFinite(seasonYear)) continue;
+
+    const key = `${seasonYear}::${pieceLabel.toLowerCase()}`;
+    if (existingKeys.has(key)) continue;
+
+    inferredMetrics.push(buildAutoPieceMetricFromSeason(season));
+  }
+
+  return [...manualMetrics, ...inferredMetrics];
+}
+
 function buildYearlySeries() {
   const metricType = filtersState.metricType;
 
@@ -275,7 +272,7 @@ function applyFilters() {
     return true;
   });
 
-  filteredPieceMetrics = pieceMetrics.filter((row) => {
+  filteredPieceMetrics = analyticsPieceMetrics.filter((row) => {
     const year = Number(row.season_year);
     const piece = String(row.piece_label || "").trim() || "Unnamed";
     if (yearFrom !== null && year < yearFrom) return false;
@@ -293,14 +290,14 @@ function populateFilterOptions() {
   const allYears = Array.from(
     new Set([
       ...seasons.map((s) => Number(s.season_year)),
-      ...pieceMetrics.map((p) => Number(p.season_year)),
+      ...analyticsPieceMetrics.map((p) => Number(p.season_year)),
     ]),
   )
     .filter((v) => Number.isFinite(v))
     .sort((a, b) => a - b);
 
   const allPieces = Array.from(
-    new Set(pieceMetrics.map((item) => String(item.piece_label || "").trim() || "Unnamed")),
+    new Set(analyticsPieceMetrics.map((item) => normalizePieceLabel(item.piece_label))),
   ).sort((a, b) => a.localeCompare(b));
 
   if (!allYears.length) {
@@ -555,15 +552,6 @@ function renderPieceChart() {
   pieceChart.innerHTML = `<rect x="0" y="0" width="800" height="280" class="chart-bg"></rect>${bars}`;
 }
 
-function renderPieceMetricList() {
-  const rows = [...filteredPieceMetrics].sort((a, b) => b.season_year - a.season_year || a.piece_label.localeCompare(b.piece_label));
-  if (!rows.length) {
-    pieceMetricsList.innerHTML = "No piece metrics for current filters.";
-    return;
-  }
-  pieceMetricsList.innerHTML = rows.map(pieceMetricCard).join("");
-}
-
 function renderInsights() {
   renderKpis();
   renderSeasonTable();
@@ -571,7 +559,6 @@ function renderInsights() {
   renderDiagnostics();
   renderYearlyChart();
   renderPieceChart();
-  renderPieceMetricList();
 }
 
 async function requestJson(url, options = {}) {
@@ -600,70 +587,11 @@ async function fetchAll() {
 
   seasons = seasonData || [];
   pieceMetrics = pieceData || [];
+  analyticsPieceMetrics = buildAnalyticsPieceMetrics();
 
   populateFilterOptions();
   applyFilters();
 }
-
-pieceForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const metricId = String(pieceForm.elements.metric_id.value || "").trim();
-  const payload = {
-    season_year: Number(pieceForm.elements.season_year.value),
-    piece_label: String(pieceForm.elements.piece_label.value || "").trim(),
-    harvested_kg: Number(pieceForm.elements.harvested_kg.value),
-    tanks_20l: String(pieceForm.elements.tanks_20l.value || "").trim() ? Number(pieceForm.elements.tanks_20l.value) : null,
-    notes: String(pieceForm.elements.notes.value || "").trim() || null,
-  };
-
-  setPieceMessage("Saving piece metric...", true);
-
-  try {
-    await requestJson(`${API_BASE}/olive-piece-metrics${metricId ? `/${metricId}` : ""}`, {
-      method: metricId ? "PATCH" : "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-
-    await fetchAll();
-    resetPieceForm();
-    setPieceMessage("Piece metric saved.", true);
-  } catch (error) {
-    setPieceMessage(error.message || "Could not save piece metric", false);
-  }
-});
-
-deletePieceBtn.addEventListener("click", async () => {
-  const metricId = String(pieceForm.elements.metric_id.value || "").trim();
-  if (!metricId) return;
-  if (!window.confirm("Delete this piece metric record?")) return;
-
-  try {
-    await requestJson(`${API_BASE}/olive-piece-metrics/${metricId}`, {
-      method: "DELETE",
-      headers: authHeaders(),
-    });
-
-    await fetchAll();
-    resetPieceForm();
-    setPieceMessage("Piece metric deleted.", true);
-  } catch (error) {
-    setPieceMessage(error.message || "Could not delete piece metric", false);
-  }
-});
-
-pieceMetricsList.addEventListener("click", (event) => {
-  const editBtn = event.target.closest("button[data-edit-piece-metric]");
-  if (!editBtn) return;
-
-  const metricId = editBtn.dataset.editPieceMetric;
-  const metric = pieceMetrics.find((item) => item.id === metricId);
-  if (!metric) return;
-
-  fillPieceForm(metric);
-  window.scrollTo({ top: pieceForm.getBoundingClientRect().top + window.scrollY - 40, behavior: "smooth" });
-});
 
 filterApplyBtn.addEventListener("click", () => {
   const yearFrom = String(filterYearFrom.value || "").trim();
@@ -708,9 +636,6 @@ filtersForm.addEventListener("submit", (event) => {
 });
 
 refreshBtn.addEventListener("click", fetchAll);
-resetPieceFormBtn.addEventListener("click", resetPieceForm);
-
-resetPieceForm();
 fetchAll().catch((error) => {
   insightKpis.innerHTML = `<p class="message error">${error.message || "Could not load insights"}</p>`;
 });

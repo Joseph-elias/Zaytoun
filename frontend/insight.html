@@ -128,30 +128,6 @@
         </div>
       </section>
 
-      <section class="card">
-        <div class="list-head">
-          <h2>Piece Metrics Entry</h2>
-          <button class="btn ghost" id="reset-piece-form-btn" type="button">New Record</button>
-        </div>
-        <form id="piece-metric-form" class="form-grid">
-          <input type="hidden" name="metric_id" />
-          <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
-          <label>Piece Label<input name="piece_label" type="text" maxlength="120" required /></label>
-          <label>Harvested KG<input name="harvested_kg" type="number" min="0" step="0.01" required /></label>
-          <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
-          <label class="full">Notes<textarea name="notes" rows="2" maxlength="400" placeholder="Optional notes"></textarea></label>
-          <div class="actions-row full">
-            <button class="btn" type="submit">Save Piece Metric</button>
-            <button class="btn danger" id="delete-piece-metric-btn" type="button" hidden>Delete</button>
-          </div>
-          <p id="piece-metric-message" class="message full"></p>
-        </form>
-      </section>
-
-      <section class="card">
-        <h2>Saved Piece Metrics</h2>
-        <div id="piece-metrics-list" class="workers-list"></div>
-      </section>
     </main>
     <script type="module" src="./src/insight.js"></script>
   </body>

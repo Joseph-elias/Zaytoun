@@ -336,3 +336,37 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
   font-weight:800;
   color:var(--olive-800);
 }
+
+.season-year-group {
+  border:1px solid #cfdbc1;
+  border-radius:12px;
+  background:rgba(255,255,255,.68);
+  overflow:hidden;
+}
+
+.season-year-summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.65rem;
+  padding:.65rem .8rem;
+  cursor:pointer;
+  font-weight:800;
+  color:var(--olive-900);
+  background:linear-gradient(180deg,#f5faea,#edf5de);
+}
+
+.season-year-title {
+  font-size:1.05rem;
+}
+
+.season-year-meta {
+  font-size:.85rem;
+  color:var(--olive-700);
+}
+
+.season-year-list {
+  display:grid;
+  gap:.75rem;
+  padding:.75rem;
+}

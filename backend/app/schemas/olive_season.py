@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class OliveSeasonBase(BaseModel):
     season_year: int = Field(ge=2000, le=2100)
     land_pieces: int = Field(ge=1, le=200000)
-    land_piece_name: str | None = Field(default=None, max_length=120)
+    land_piece_name: str = Field(min_length=1, max_length=120)
     estimated_chonbol: Decimal | None = Field(default=None, ge=0)
     actual_chonbol: Decimal | None = Field(default=None, ge=0)
     kg_per_land_piece: Decimal | None = Field(default=None, ge=0)
