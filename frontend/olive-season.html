@@ -11,60 +11,239 @@
   </head>
   <body>
     <div class="backdrop"></div>
-    <main class="page">
-      <header class="hero">
+    <main class="page page-wide olive-app">
+      <header class="hero olive-hero">
         <div class="list-head">
           <p class="eyebrow">Worker Radar</p>
           <button class="btn ghost" id="logout-btn" type="button">Logout</button>
         </div>
         <h1>Olive Season Tracker</h1>
-        <p class="sub" id="role-hint">Store olive season numbers for this year and future planning.</p>
+        <p class="sub" id="role-hint">Store olive season numbers and full financial performance per piece.</p>
         <nav id="app-tabs" class="tabs"></nav>
       </header>
 
-      <section class="card">
-        <div class="list-head">
-          <h2>Season Entry</h2>
-          <button class="btn ghost" id="reset-form-btn" type="button">New Record</button>
+      <section class="card olive-mode-tabs">
+        <div class="actions-row">
+          <button class="btn" id="olive-mode-season" type="button">Season Data & Insights</button>
+          <button class="btn ghost" id="olive-mode-budget" type="button">Budgeting</button>
+          <button class="btn ghost" id="olive-mode-usage" type="button">Usage / Consumption</button>
+          <button class="btn ghost" id="olive-mode-inventory" type="button">Inventory</button>
         </div>
-        <form id="olive-season-form" class="form-grid">
-          <input type="hidden" name="season_id" />
-          <input type="hidden" name="land_pieces" value="1" />
-          <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
-          <label>Land Piece Name<input name="land_piece_name" type="text" maxlength="120" placeholder="Example: North Plot" required /></label>
-          <label>Estimated Chonbol<input name="estimated_chonbol" type="number" min="0" step="0.01" /></label>
-          <label>Actual Chonbol<input name="actual_chonbol" type="number" min="0" step="0.01" /></label>
-          <label>KG per Land Piece<input name="kg_per_land_piece" type="number" min="0" step="0.01" /></label>
-          <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
-          <label class="full">Calculated KG Needed per Tank<input id="kg-needed-per-tank" type="text" readonly /></label>
-          <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional notes"></textarea></label>
-          <div class="actions-row full">
-            <button class="btn" type="submit">Save Season</button>
-            <button class="btn danger" id="delete-season-btn" type="button" hidden>Delete</button>
+      </section>
+
+      <section id="olive-view-season" class="olive-view">
+        <section class="card season-start-panel">
+          <div class="list-head">
+            <h2>Season Start</h2>
+            <button class="btn ghost" id="refresh-land-pieces-btn" type="button">Refresh</button>
           </div>
-          <p id="olive-season-message" class="message full"></p>
-        </form>
+          <p class="season-progress">Register your land pieces once, then reuse them every year.</p>
+          <form id="land-piece-form" class="form-grid compact">
+            <label class="full">Land Piece Name<input name="piece_name" type="text" maxlength="120" placeholder="Example: North Plot" required /></label>
+            <label class="inline-check full"><input id="land-piece-season-year-toggle" type="checkbox" />Set Season Year</label>
+            <label id="land-piece-season-year-field" class="full is-hidden">Season Year<input name="season_year" type="number" min="2000" max="2100" placeholder="Example: 2026" /></label>
+            <div class="actions-row full">
+              <button class="btn" type="submit">Add Piece</button>
+            </div>
+            <p id="land-piece-message" class="message full"></p>
+          </form>
+          <div id="land-pieces-list" class="workers-list"></div>
+        </section>
+
+        <section class="olive-layout-grid">
+          <section class="card olive-entry-panel">
+            <div class="list-head">
+              <h2>Season Entry</h2>
+              <button class="btn ghost" id="reset-form-btn" type="button">New Record</button>
+            </div>
+            <form id="olive-season-form" class="form-grid">
+              <input type="hidden" name="season_id" />
+              <input type="hidden" name="land_pieces" value="1" />
+              <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
+              <label>Land Piece Name<select name="land_piece_name" id="season-land-piece-select" required></select></label>
+              <label>Estimated Chonbol<input name="estimated_chonbol" type="number" min="0" step="0.01" /></label>
+              <label>Actual Chonbol<input name="actual_chonbol" type="number" min="0" step="0.01" /></label>
+              <label>KG per Land Piece<input name="kg_per_land_piece" type="number" min="0" step="0.01" /></label>
+              <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
+              <label>Pressing Cost<input name="pressing_cost" type="number" min="0" step="0.01" placeholder="Total pressing fees" /></label>
+              <label class="full">Calculated KG Needed per Tank<input id="kg-needed-per-tank" type="text" readonly /></label>
+              <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional notes"></textarea></label>
+              <div class="actions-row full">
+                <button class="btn" type="submit">Save Season</button>
+                <button class="btn danger" id="delete-season-btn" type="button" hidden>Delete</button>
+              </div>
+              <p id="olive-season-message" class="message full"></p>
+            </form>
+          </section>
+
+          <section class="olive-right-stack">
+            <section class="card olive-history-panel">
+              <div class="list-head">
+                <h2>History</h2>
+                <button class="btn ghost" id="refresh-seasons-btn" type="button">Refresh</button>
+              </div>
+              <p id="season-progress" class="season-progress">Drafts: 0 / 0</p>
+              <div id="olive-seasons-list" class="workers-list"></div>
+            </section>
+
+            <section class="card olive-insights-panel">
+              <div class="list-head">
+                <h2>Insights</h2>
+                <button class="btn ghost" id="toggle-insights-btn" type="button">Show Insights</button>
+              </div>
+              <div id="olive-insights-embed" class="is-hidden">
+                <iframe id="olive-insights-frame" class="insight-embed-frame" src="./insight.html?embedded=1" title="Olive insights"></iframe>
+              </div>
+            </section>
+          </section>
+        </section>
       </section>
 
-      <section class="card">
-        <div class="list-head">
-          <h2>History</h2>
-          <button class="btn ghost" id="refresh-seasons-btn" type="button">Refresh</button>
-        </div>
-        <p id="season-progress" class="season-progress">Drafts: 0 / 0</p>
-        <div id="olive-seasons-list" class="workers-list"></div>
+      <section id="olive-view-budget" class="olive-view is-hidden">
+        <section class="card olive-finance-panel">
+          <div class="list-head">
+            <h2>Budgeting</h2>
+            <button class="btn ghost" id="refresh-finance-btn" type="button">Refresh</button>
+          </div>
+          <form id="finance-target-form" class="form-grid compact">
+            <label class="full">Target Piece / Season
+              <select id="finance-season-id"></select>
+            </label>
+          </form>
+          <section class="budget-insights-block">
+            <div class="list-head">
+              <h3>Cost vs Profit Overview</h3>
+              <p class="season-progress">Per piece and total portfolio</p>
+            </div>
+            <div id="budget-summary-kpis" class="insight-kpis"></div>
+            <div class="insight-chart-wrap insight-chart-lg">
+              <svg id="budget-comparison-chart" class="insight-chart" viewBox="0 0 960 320" role="img" aria-label="Cost and profit comparison by land piece"></svg>
+            </div>
+            <div class="table-wrap">
+              <table class="insight-table">
+                <thead>
+                  <tr>
+                    <th>Piece / Season</th>
+                    <th>Total Cost</th>
+                    <th>Revenue</th>
+                    <th>Profit</th>
+                    <th>Margin</th>
+                  </tr>
+                </thead>
+                <tbody id="budget-piece-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="olive-finance-columns">
+            <article>
+              <h3>Harvest Labor</h3>
+              <form id="labor-day-form" class="form-grid compact">
+                <label>Work Date<input name="work_date" type="date" required /></label>
+                <label>Men Count<input name="men_count" type="number" min="0" value="0" required /></label>
+                <label>Women Count<input name="women_count" type="number" min="0" value="0" required /></label>
+                <label>Men Rate<input name="men_rate" type="number" min="0" step="0.01" value="0" required /></label>
+                <label>Women Rate<input name="women_rate" type="number" min="0" step="0.01" value="0" required /></label>
+                <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional note"></textarea></label>
+                <div class="actions-row full">
+                  <button class="btn" type="submit">Add Labor Day</button>
+                </div>
+                <p id="labor-day-message" class="message full"></p>
+              </form>
+              <div id="labor-days-list" class="workers-list"></div>
+            </article>
+
+            <article>
+              <h3>Sales</h3>
+              <form id="sale-form" class="form-grid compact">
+                <label>Sold On<input name="sold_on" type="date" /></label>
+                <label>Sale Type
+                  <select name="sale_type" id="sale-type-select">
+                    <option value="oil_tank">Oil Tanks</option>
+                    <option value="raw_kg">Raw Olives (KG)</option>
+                    <option value="processed_container">Processed Containers</option>
+                    <option value="soap">Soap</option>
+                    <option value="custom_item">Custom Item</option>
+                  </select>
+                </label>
+
+                <label data-sale-type="oil_tank">Tanks Sold<input name="tanks_sold" type="number" min="0" step="0.01" /></label>
+                <label data-sale-type="oil_tank">Price / Tank<input name="price_per_tank" type="number" min="0" step="0.01" /></label>
+
+                <label data-sale-type="raw_kg" class="is-hidden">Raw KG Sold<input name="raw_kg_sold" type="number" min="0" step="0.01" /></label>
+                <label data-sale-type="raw_kg" class="is-hidden">Price / KG<input name="price_per_kg" type="number" min="0" step="0.01" /></label>
+
+                <label data-sale-type="processed_container" class="is-hidden">Containers Sold<input name="containers_sold" type="number" min="0" step="0.01" /></label>
+                <label data-sale-type="processed_container" class="is-hidden">Container Size<input name="container_size_label" maxlength="120" placeholder="e.g. 5L jar" /></label>
+                <label data-sale-type="processed_container" class="is-hidden">KG / Container<input name="kg_per_container" type="number" min="0" step="0.01" /></label>
+                <label data-sale-type="processed_container" class="is-hidden">Price / Container<input name="price_per_container" type="number" min="0" step="0.01" /></label>
+
+                <label data-sale-type="custom_item,soap" class="is-hidden">Inventory Item<select name="custom_inventory_item_id" id="sale-custom-item-select"><option value="">Select inventory item</option></select></label>
+                <label data-sale-type="custom_item,soap" class="is-hidden">Item Name (manual)<input name="custom_item_name" maxlength="120" placeholder="e.g. Olive Soap" /></label>
+                <label data-sale-type="custom_item,soap" class="is-hidden">Quantity Sold<input name="custom_quantity_sold" type="number" min="0" step="0.01" /></label>
+                <label data-sale-type="custom_item,soap" class="is-hidden">Unit Label<input name="custom_unit_label" maxlength="60" placeholder="e.g. box, bottle, pack, bar" /></label>
+                <label data-sale-type="custom_item,soap" class="is-hidden">Price / Unit<input name="custom_price_per_unit" type="number" min="0" step="0.01" /></label>
+                <label data-sale-type="custom_item,soap" class="is-hidden">Inventory Delta (tanks)<input name="custom_inventory_tanks_delta" type="number" min="0" step="0.01" placeholder="0 if not oil inventory" /></label>
+                <label>Buyer<input name="buyer" maxlength="120" /></label>
+                <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional note"></textarea></label>
+                <div class="actions-row full">
+                  <button class="btn" type="submit">Add Sale</button>
+                </div>
+                <p id="sale-message" class="message full"></p>
+              </form>
+              <div id="sales-list" class="workers-list"></div>
+            </article>
+          </div>
+        </section>
       </section>
 
-      <section class="card">
-        <div class="list-head">
-          <h2>Insights</h2>
-          <button class="btn ghost" id="toggle-insights-btn" type="button">Show Insights</button>
-        </div>
-        <div id="olive-insights-embed" class="is-hidden">
-          <iframe id="olive-insights-frame" class="insight-embed-frame" src="./insight.html?embedded=1" title="Olive insights"></iframe>
-        </div>
+      <section id="olive-view-usage" class="olive-view is-hidden">
+        <section class="card olive-finance-panel">
+          <div class="list-head">
+            <h2>Usage / Consumption</h2>
+            <button class="btn ghost" id="refresh-usage-btn" type="button">Refresh</button>
+          </div>
+          <form id="usage-target-form" class="form-grid compact">
+            <label class="full">Target Piece / Season
+              <select id="usage-season-id"></select>
+            </label>
+          </form>
+
+          <article>
+            <form id="usage-form" class="form-grid compact">
+              <label>Inventory Item
+                <select name="usage_inventory_item_id" id="usage-inventory-item-id"></select>
+              </label>
+              <label>Quantity Used<input name="usage_quantity_used" type="number" min="0" step="0.01" required /></label>
+              <label>Usage Type<input name="usage_type" maxlength="120" placeholder="Home use, gifts, processing..." /></label>
+              <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional note"></textarea></label>
+              <div class="actions-row full">
+                <button class="btn" type="submit">Add Usage</button>
+              </div>
+              <p id="usage-message" class="message full"></p>
+            </form>
+            <div id="usage-list" class="workers-list"></div>
+          </article>
+        </section>
+      </section>
+
+      <section id="olive-view-inventory" class="olive-view is-hidden">
+        <section class="card olive-insights-panel">
+          <div class="list-head">
+            <h2>Inventory</h2>
+            <button class="btn ghost" id="refresh-inventory-embed-btn" type="button">Refresh</button>
+          </div>
+          <iframe
+            id="olive-inventory-frame"
+            class="insight-embed-frame"
+            src="./inventory.html?embedded=1"
+            title="Olive inventory"
+          ></iframe>
+        </section>
       </section>
     </main>
     <script type="module" src="./src/olive-season.js"></script>
+    <script type="module" src="./src/olive-land-pieces.js"></script>
+    <script type="module" src="./src/olive-season-edit-fix.js"></script>
   </body>
 </html>

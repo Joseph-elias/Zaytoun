@@ -16,6 +16,13 @@ const pieceDiagnosticsBody = document.getElementById("piece-diagnostics-body");
 const insightNotes = document.getElementById("insight-notes");
 const yearlyChart = document.getElementById("yearly-chart");
 const pieceChart = document.getElementById("piece-chart");
+const trendStory = document.getElementById("trend-story");
+const insightRisks = document.getElementById("insight-risks");
+const dataQualityBody = document.getElementById("data-quality-body");
+const salesInventoryKpis = document.getElementById("sales-inventory-kpis");
+const salesInventoryNotes = document.getElementById("sales-inventory-notes");
+const salesInventoryBody = document.getElementById("sales-inventory-body");
+const inventoryChart = document.getElementById("inventory-chart");
 
 const filtersForm = document.getElementById("insight-filters-form");
 const filterYearFrom = document.getElementById("filter-year-from");
@@ -27,14 +34,19 @@ const filterApplyBtn = document.getElementById("filter-apply");
 const filterResetBtn = document.getElementById("filter-reset");
 const filterSelectAllBtn = document.getElementById("filter-select-all-pieces");
 const filterClearPiecesBtn = document.getElementById("filter-clear-pieces");
+const rangeLast3Btn = document.getElementById("range-last-3");
+const rangeLast5Btn = document.getElementById("range-last-5");
 
 let seasons = [];
 let pieceMetrics = [];
+let sales = [];
+let usages = [];
 let analyticsPieceMetrics = [];
 let filteredSeasons = [];
 let filteredPieceMetrics = [];
 let activeYearlySeries = [];
 let pieceDiagnostics = [];
+let activeInventoryRows = [];
 
 const filtersState = {
   yearFrom: null,
@@ -51,6 +63,7 @@ if (session && appTabs) {
 }
 
 if (isEmbedded) {
+  document.querySelector(".page")?.classList.add("embedded-view");
   document.querySelector(".hero")?.classList.add("is-hidden");
 }
 
@@ -109,12 +122,81 @@ function linearSlope(points) {
   return (n * sumXY - sumX * sumY) / denominator;
 }
 
+function linearProjection(points, targetX) {
+  if (points.length < 2) return null;
+  const slope = linearSlope(points);
+  if (slope === null) return null;
+
+  const xAvg = mean(points.map((p) => p.x));
+  const yAvg = mean(points.map((p) => p.y));
+  if (xAvg === null || yAvg === null) return null;
+
+  const intercept = yAvg - slope * xAvg;
+  return slope * targetX + intercept;
+}
+
+function aggregateSeasonYears(rows) {
+  const yearMap = new Map();
+
+  for (const row of rows) {
+    const year = Number(row.season_year);
+    const actual = toNumber(row.actual_chonbol) ?? 0;
+    const estimated = toNumber(row.estimated_chonbol) ?? 0;
+    const tanks = toNumber(row.tanks_20l) ?? 0;
+    const kgBase = toNumber(row.kg_per_land_piece) ?? toNumber(row.actual_chonbol) ?? 0;
+    const sold = toNumber(row.sold_tanks) ?? 0;
+    const used = toNumber(row.used_tanks) ?? 0;
+    const revenue = toNumber(row.sales_revenue_total) ?? 0;
+    const cost = toNumber(row.total_cost) ?? 0;
+    const profit = toNumber(row.profit) ?? 0;
+    const remaining = toNumber(row.remaining_tanks) ?? 0;
+
+    const entry =
+      yearMap.get(year) ||
+      {
+        year,
+        pieces: 0,
+        actualTotal: 0,
+        estimatedTotal: 0,
+        tanksTotal: 0,
+        kgBaseTotal: 0,
+        soldTotal: 0,
+        usedTotal: 0,
+        revenueTotal: 0,
+        costTotal: 0,
+        profitTotal: 0,
+        remainingTotal: 0,
+        rows: [],
+      };
+
+    entry.pieces += 1;
+    entry.actualTotal += actual;
+    entry.estimatedTotal += estimated;
+    entry.tanksTotal += tanks;
+    entry.kgBaseTotal += kgBase;
+    entry.soldTotal += sold;
+    entry.usedTotal += used;
+    entry.revenueTotal += revenue;
+    entry.costTotal += cost;
+    entry.profitTotal += profit;
+    entry.remainingTotal += remaining;
+    entry.rows.push(row);
+
+    yearMap.set(year, entry);
+  }
+
+  const years = Array.from(yearMap.values()).sort((a, b) => a.year - b.year);
+  for (const row of years) {
+    row.kgPerTank = row.tanksTotal > 0 ? row.kgBaseTotal / row.tanksTotal : null;
+  }
+  return years;
+}
 
 function aggregatePieces(metrics) {
   const map = new Map();
 
   for (const item of metrics) {
-    const key = String(item.piece_label || "").trim() || "Unnamed";
+    const key = normalizePieceLabel(item.piece_label);
     const kg = toNumber(item.harvested_kg) ?? 0;
     const tanks = toNumber(item.tanks_20l) ?? 0;
     const year = Number(item.season_year);
@@ -177,13 +259,19 @@ function getMetricTypeLabel(metricType) {
   if (metricType === "tanks_20l") return "Tanks 20L";
   if (metricType === "kg_needed_per_tank") return "KG per Tank";
   if (metricType === "piece_harvested_kg") return "Piece Harvested KG";
+  if (metricType === "sales_revenue_total") return "Sales Revenue";
+  if (metricType === "profit") return "Profit";
+  if (metricType === "remaining_tanks") return "Remaining Tanks";
   return "Actual Chonbol";
 }
 
-function getMetricFromSeason(row, metricType) {
-  if (metricType === "tanks_20l") return toNumber(row.tanks_20l);
-  if (metricType === "kg_needed_per_tank") return toNumber(row.kg_needed_per_tank);
-  return toNumber(row.actual_chonbol);
+function getMetricFromYearRow(row, metricType) {
+  if (metricType === "tanks_20l") return row.tanksTotal;
+  if (metricType === "kg_needed_per_tank") return row.kgPerTank;
+  if (metricType === "sales_revenue_total") return row.revenueTotal;
+  if (metricType === "profit") return row.profitTotal;
+  if (metricType === "remaining_tanks") return row.remainingTotal;
+  return row.actualTotal;
 }
 
 function buildAutoPieceMetricFromSeason(season) {
@@ -212,9 +300,7 @@ function buildAnalyticsPieceMetrics() {
     is_auto_generated: false,
   }));
 
-  const existingKeys = new Set(
-    manualMetrics.map((metric) => `${metric.season_year}::${normalizePieceLabel(metric.piece_label).toLowerCase()}`),
-  );
+  const existingKeys = new Set(manualMetrics.map((metric) => `${metric.season_year}::${normalizePieceLabel(metric.piece_label).toLowerCase()}`));
 
   const inferredMetrics = [];
   for (const season of seasons) {
@@ -246,8 +332,9 @@ function buildYearlySeries() {
       .sort((a, b) => a.year - b.year);
   }
 
-  return [...filteredSeasons]
-    .map((row) => ({ year: Number(row.season_year), value: getMetricFromSeason(row, metricType) }))
+  const seasonYears = aggregateSeasonYears(filteredSeasons);
+  return seasonYears
+    .map((row) => ({ year: row.year, value: getMetricFromYearRow(row, metricType) }))
     .filter((item) => item.value !== null)
     .sort((a, b) => a.year - b.year);
 }
@@ -257,7 +344,7 @@ function updateFilterSummary() {
   const yearText = years.length === 2 ? `${filtersState.yearFrom} -> ${filtersState.yearTo}` : "All years";
   const piecesText = filtersState.selectedPieces.length ? `${filtersState.selectedPieces.length} selected` : "All pieces";
   const metricText = getMetricTypeLabel(filtersState.metricType);
-  filterSummary.textContent = `Range: ${yearText} | Pieces: ${piecesText} | Metric: ${metricText}`;
+  filterSummary.textContent = `Scope: ${yearText} | Pieces: ${piecesText} | Lens: ${metricText}`;
   filterSummary.className = "message success";
 }
 
@@ -274,7 +361,7 @@ function applyFilters() {
 
   filteredPieceMetrics = analyticsPieceMetrics.filter((row) => {
     const year = Number(row.season_year);
-    const piece = String(row.piece_label || "").trim() || "Unnamed";
+    const piece = normalizePieceLabel(row.piece_label);
     if (yearFrom !== null && year < yearFrom) return false;
     if (yearTo !== null && year > yearTo) return false;
     if (filtersState.selectedPieces.length && !filtersState.selectedPieces.includes(piece)) return false;
@@ -287,18 +374,11 @@ function applyFilters() {
 }
 
 function populateFilterOptions() {
-  const allYears = Array.from(
-    new Set([
-      ...seasons.map((s) => Number(s.season_year)),
-      ...analyticsPieceMetrics.map((p) => Number(p.season_year)),
-    ]),
-  )
+  const allYears = Array.from(new Set([...seasons.map((s) => Number(s.season_year)), ...analyticsPieceMetrics.map((p) => Number(p.season_year))]))
     .filter((v) => Number.isFinite(v))
     .sort((a, b) => a - b);
 
-  const allPieces = Array.from(
-    new Set(analyticsPieceMetrics.map((item) => normalizePieceLabel(item.piece_label))),
-  ).sort((a, b) => a.localeCompare(b));
+  const allPieces = Array.from(new Set(analyticsPieceMetrics.map((item) => normalizePieceLabel(item.piece_label)))).sort((a, b) => a.localeCompare(b));
 
   if (!allYears.length) {
     filterYearFrom.innerHTML = '<option value="">No data</option>';
@@ -330,70 +410,61 @@ function populateFilterOptions() {
   filterMetricType.value = filtersState.metricType;
 }
 
-function chartPoints(values, width, height, pad) {
-  if (!values.length) return "";
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const spread = max - min || 1;
-  const usableW = width - pad * 2;
-  const usableH = height - pad * 2;
-
-  return values
-    .map((value, idx) => {
-      const x = pad + (usableW * idx) / Math.max(values.length - 1, 1);
-      const y = pad + usableH - ((value - min) / spread) * usableH;
-      return `${x},${y}`;
-    })
-    .join(" ");
+function calcYoYSeries(series) {
+  return series.map((item, idx) => {
+    if (idx === 0 || !series[idx - 1] || series[idx - 1].value === 0) {
+      return { ...item, yoy: null };
+    }
+    return { ...item, yoy: ((item.value - series[idx - 1].value) / series[idx - 1].value) * 100 };
+  });
 }
 
 function renderKpis() {
-  const seasonRows = [...filteredSeasons].sort((a, b) => a.season_year - b.season_year);
+  const seasonYears = aggregateSeasonYears(filteredSeasons);
   const pieceRows = aggregatePieces(filteredPieceMetrics);
+  const yoySeries = calcYoYSeries(activeYearlySeries);
 
-  const bestSeason =
-    [...seasonRows].sort((a, b) => (toNumber(b.actual_chonbol) ?? -1) - (toNumber(a.actual_chonbol) ?? -1))[0] || null;
+  const latest = yoySeries[yoySeries.length - 1] || null;
+  const totalPieces = filteredPieceMetrics.length;
+  const totalYears = new Set(filteredSeasons.map((row) => Number(row.season_year))).size;
+  const efficiency = seasonYears.length ? mean(seasonYears.map((row) => row.kgPerTank).filter((v) => v !== null)) : null;
+  const forecast = latest ? linearProjection(activeYearlySeries.map((i) => ({ x: i.year, y: i.value })), latest.year + 1) : null;
+  const topPiece = pieceRows[0] || null;
 
-  const totalKg = seasonRows.reduce((acc, item) => acc + (toNumber(item.actual_chonbol) ?? 0), 0);
-  const totalTanks = seasonRows.reduce((acc, item) => acc + (toNumber(item.tanks_20l) ?? 0), 0);
-  const avgKgPerTankOverall = totalTanks > 0 ? totalKg / totalTanks : null;
-
-  const latestPoint = activeYearlySeries[activeYearlySeries.length - 1] || null;
-  const previousPoint = activeYearlySeries[activeYearlySeries.length - 2] || null;
-  const yoy =
-    latestPoint && previousPoint && previousPoint.value !== 0
-      ? ((latestPoint.value - previousPoint.value) / previousPoint.value) * 100
-      : null;
-
-  const bestPiece = pieceRows[0] || null;
-
-  insightKpis.innerHTML = [
+  const cards = [
     {
-      title: "Best Season",
-      value: bestSeason ? `${bestSeason.season_year}` : "-",
-      caption: bestSeason ? `${safeDecimal(bestSeason.actual_chonbol)} actual chonbol` : "Add season records",
+      title: "Latest Metric",
+      value: latest ? `${safeDecimal(latest.value)} ${filtersState.metricType === "tanks_20l" ? "tanks" : ""}` : "-",
+      delta: latest?.yoy !== null && latest?.yoy !== undefined ? `${latest.yoy >= 0 ? "+" : ""}${safeDecimal(latest.yoy)}%` : "n/a",
+      caption: latest ? `Year ${latest.year}` : "Need records",
     },
     {
-      title: "Overall KG / Tank",
-      value: avgKgPerTankOverall === null ? "-" : safeDecimal(avgKgPerTankOverall),
-      caption: totalTanks > 0 ? `${totalTanks} tanks in filtered range` : "No tanks recorded",
+      title: "Forecast Next Year",
+      value: forecast === null ? "-" : safeDecimal(forecast),
+      delta: "model: linear",
+      caption: latest ? `Projected for ${latest.year + 1}` : "Need at least 2 years",
     },
     {
-      title: `Latest YoY (${getMetricTypeLabel(filtersState.metricType)})`,
-      value: yoy === null ? "-" : `${safeDecimal(yoy)}%`,
-      caption: latestPoint ? `Latest year: ${latestPoint.year}` : "Need at least 2 years",
+      title: "Avg Efficiency",
+      value: efficiency === null ? "-" : safeDecimal(efficiency),
+      delta: "kg/tank",
+      caption: seasonYears.length ? `${seasonYears.length} seasonal aggregates` : "No valid tank data",
     },
     {
       title: "Top Piece",
-      value: bestPiece ? bestPiece.piece : "-",
-      caption: bestPiece ? `${safeDecimal(bestPiece.totalKg)} kg total` : "No filtered piece data",
+      value: topPiece ? topPiece.piece : "-",
+      delta: topPiece ? `${safeDecimal(topPiece.totalKg, 0)} kg` : "n/a",
+      caption: `${totalPieces} piece-year records across ${totalYears} years`,
     },
-  ]
+  ];
+
+  insightKpis.innerHTML = cards
     .map(
       (card) => `
         <article class="insight-kpi-card">
           <p class="insight-kpi-title">${card.title}</p>
           <p class="insight-kpi-value">${card.value}</p>
+          <p class="insight-kpi-delta">${card.delta}</p>
           <p class="insight-kpi-caption">${card.caption}</p>
         </article>
       `,
@@ -402,7 +473,7 @@ function renderKpis() {
 }
 
 function renderSeasonTable() {
-  const rows = [...filteredSeasons].sort((a, b) => a.season_year - b.season_year);
+  const rows = aggregateSeasonYears(filteredSeasons);
   if (!rows.length) {
     seasonComparisonBody.innerHTML = '<tr><td colspan="6">No season data for current filters.</td></tr>';
     return;
@@ -411,20 +482,20 @@ function renderSeasonTable() {
   let prev = null;
   seasonComparisonBody.innerHTML = rows
     .map((row) => {
-      const actual = toNumber(row.actual_chonbol);
       let yoy = "-";
-      if (actual !== null && prev !== null && prev !== 0) {
-        yoy = `${safeDecimal(((actual - prev) / prev) * 100)}%`;
+      if (prev !== null && prev !== 0) {
+        const delta = ((row.actualTotal - prev) / prev) * 100;
+        yoy = `${delta >= 0 ? "+" : ""}${safeDecimal(delta)}%`;
       }
-      if (actual !== null) prev = actual;
+      prev = row.actualTotal;
 
       return `
         <tr>
-          <td>${row.season_year}</td>
-          <td>${row.land_pieces}</td>
-          <td>${safeDecimal(row.actual_chonbol)}</td>
-          <td>${row.tanks_20l ?? "-"}</td>
-          <td>${safeDecimal(row.kg_needed_per_tank)}</td>
+          <td>${row.year}</td>
+          <td>${row.pieces}</td>
+          <td>${safeDecimal(row.actualTotal)}</td>
+          <td>${safeDecimal(row.tanksTotal, 0)}</td>
+          <td>${safeDecimal(row.kgPerTank)}</td>
           <td>${yoy}</td>
         </tr>
       `;
@@ -482,22 +553,277 @@ function renderDiagnostics() {
 
   const strongestUp = pieceDiagnostics[0];
   const mostVolatile = [...pieceDiagnostics].sort((a, b) => (toNumber(b.cv) ?? 0) - (toNumber(a.cv) ?? 0))[0];
-  const lowQuality = pieceDiagnostics.filter((item) => (toNumber(item.quality) ?? 0) < 60);
+  const lowQuality = pieceDiagnostics.filter((item) => (toNumber(item.quality) ?? 0) < 70);
 
   const notes = [];
   if (strongestUp && toNumber(strongestUp.slope) !== null) {
-    notes.push(`Strongest upward trend: ${strongestUp.piece} (${safeDecimal(strongestUp.slope)} kg/year).`);
+    notes.push(`Momentum: ${strongestUp.piece} shows the strongest positive slope (${safeDecimal(strongestUp.slope)} kg/year).`);
   }
   if (mostVolatile && toNumber(mostVolatile.cv) !== null) {
-    notes.push(`Highest volatility: ${mostVolatile.piece} (${safeDecimal(mostVolatile.cv)}% CV).`);
+    notes.push(`Volatility watch: ${mostVolatile.piece} has highest CV at ${safeDecimal(mostVolatile.cv)}%.`);
   }
   if (lowQuality.length) {
-    notes.push(`Low tank-data quality pieces: ${lowQuality.map((item) => item.piece).join(", ")}.`);
+    notes.push(`Data quality risk on: ${lowQuality.map((item) => item.piece).join(", ")}. Fill tanks consistently.`);
   }
 
-  insightNotes.innerHTML = notes.length
-    ? notes.map((text) => `<p class="insight-note">${text}</p>`).join("")
-    : '<p class="insight-note">No major anomalies detected in current filter scope.</p>';
+  insightNotes.innerHTML = notes.length ? notes.map((text) => `<p class="insight-note">${text}</p>`).join("") : '<p class="insight-note">No major anomalies detected.</p>';
+}
+
+function renderDataQuality() {
+  const rows = aggregateSeasonYears(filteredSeasons);
+  if (!rows.length) {
+    dataQualityBody.innerHTML = '<tr><td colspan="5">No data for quality analysis.</td></tr>';
+    return;
+  }
+
+  dataQualityBody.innerHTML = rows
+    .map((yearRow) => {
+      const actualCoverage = yearRow.rows.filter((r) => toNumber(r.actual_chonbol) !== null).length;
+      const tanksCoverage = yearRow.rows.filter((r) => (toNumber(r.tanks_20l) ?? 0) > 0).length;
+      const total = yearRow.rows.length;
+      const actualPct = total > 0 ? (actualCoverage / total) * 100 : 0;
+      const tanksPct = total > 0 ? (tanksCoverage / total) * 100 : 0;
+      const qualityScore = (actualPct + tanksPct) / 2;
+
+      return `
+        <tr>
+          <td>${yearRow.year}</td>
+          <td>${total}</td>
+          <td>${safeDecimal(actualPct)}%</td>
+          <td>${safeDecimal(tanksPct)}%</td>
+          <td>${safeDecimal(qualityScore)}%</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function buildInventoryRows() {
+  const byYear = new Map();
+  const selectedSeasonIds = new Set(filteredSeasons.map((row) => row.id));
+  const seasonById = new Map(filteredSeasons.map((row) => [row.id, row]));
+  const filteredSales = sales.filter((row) => selectedSeasonIds.has(row.season_id));
+  const filteredUsages = usages.filter((row) => selectedSeasonIds.has(row.season_id));
+
+  for (const season of filteredSeasons) {
+    const year = Number(season.season_year);
+    const produced = toNumber(season.tanks_20l) ?? 0;
+    const sold = toNumber(season.sold_tanks) ?? 0;
+    const used = toNumber(season.used_tanks) ?? 0;
+    const revenue = toNumber(season.sales_revenue_total) ?? 0;
+    const cost = toNumber(season.total_cost) ?? 0;
+    const profit = toNumber(season.profit) ?? 0;
+
+    const entry =
+      byYear.get(year) ||
+      {
+        year,
+        produced: 0,
+        sold: 0,
+        used: 0,
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+        remaining: 0,
+        salesTransactions: 0,
+        usageTransactions: 0,
+      };
+
+    entry.produced += produced;
+    entry.sold += sold;
+    entry.used += used;
+    entry.revenue += revenue;
+    entry.cost += cost;
+    entry.profit += profit;
+    entry.remaining += produced - sold - used;
+    byYear.set(year, entry);
+  }
+
+  for (const row of filteredSales) {
+    const season = seasonById.get(row.season_id);
+    if (!season) continue;
+    const year = Number(season.season_year);
+    const entry = byYear.get(year);
+    if (!entry) continue;
+    entry.salesTransactions += 1;
+  }
+
+  for (const row of filteredUsages) {
+    const season = seasonById.get(row.season_id);
+    if (!season) continue;
+    const year = Number(season.season_year);
+    const entry = byYear.get(year);
+    if (!entry) continue;
+    entry.usageTransactions += 1;
+  }
+
+  return Array.from(byYear.values())
+    .sort((a, b) => a.year - b.year)
+    .map((row) => ({
+      ...row,
+      avgSellPrice: row.sold > 0 ? row.revenue / row.sold : null,
+    }));
+}
+
+function renderInventoryChart() {
+  const rows = activeInventoryRows;
+  if (!rows.length) {
+    inventoryChart.innerHTML = "";
+    return;
+  }
+
+  const width = 900;
+  const height = 320;
+  const geo = chartGeometry(rows.map((r) => r.remaining), width, height, 46, 28);
+
+  const points = rows.map((row, idx) => {
+    const x = geo.padX + (geo.innerW * idx) / Math.max(rows.length - 1, 1);
+    const y = geo.padY + geo.innerH - ((row.remaining - geo.min) / geo.spread) * geo.innerH;
+    return { ...row, x, y };
+  });
+
+  const polyline = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const yTicks = [0, 1, 2, 3, 4].map((idx) => {
+    const y = geo.padY + (geo.innerH * idx) / 4;
+    const value = geo.max - (geo.spread * idx) / 4;
+    return `<line x1="${geo.padX}" y1="${y}" x2="${width - geo.padX}" y2="${y}" class="chart-grid"></line><text x="8" y="${y + 4}" class="chart-axis">${safeDecimal(value)}</text>`;
+  });
+
+  const xLabels = points.map((p) => `<text x="${p.x}" y="${height - 8}" text-anchor="middle" class="chart-axis">${p.year}</text>`);
+  const markers = points.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="4" class="chart-point"></circle>`);
+
+  inventoryChart.innerHTML = `
+    <rect x="0" y="0" width="${width}" height="${height}" class="chart-bg"></rect>
+    ${yTicks.join("")}
+    <polyline points="${polyline}" class="chart-line"></polyline>
+    ${markers.join("")}
+    ${xLabels.join("")}
+  `;
+}
+
+function renderSalesInventory() {
+  activeInventoryRows = buildInventoryRows();
+
+  if (!activeInventoryRows.length) {
+    salesInventoryKpis.innerHTML = '<p class="insight-note">No season rows for sales/inventory under current filters.</p>';
+    salesInventoryNotes.innerHTML = "";
+    salesInventoryBody.innerHTML = '<tr><td colspan="8">No inventory analytics available.</td></tr>';
+    renderInventoryChart();
+    return;
+  }
+
+  const totals = activeInventoryRows.reduce(
+    (acc, row) => {
+      acc.produced += row.produced;
+      acc.sold += row.sold;
+      acc.used += row.used;
+      acc.revenue += row.revenue;
+      acc.cost += row.cost;
+      acc.profit += row.profit;
+      acc.remaining += row.remaining;
+      acc.salesTransactions += row.salesTransactions;
+      acc.usageTransactions += row.usageTransactions;
+      return acc;
+    },
+    { produced: 0, sold: 0, used: 0, revenue: 0, cost: 0, profit: 0, remaining: 0, salesTransactions: 0, usageTransactions: 0 },
+  );
+
+  const avgPrice = totals.sold > 0 ? totals.revenue / totals.sold : null;
+
+  const cards = [
+    { title: "Current Inventory", value: safeDecimal(totals.remaining), caption: "Total tanks produced - sold - used" },
+    { title: "Sales Revenue", value: safeDecimal(totals.revenue), caption: `${totals.salesTransactions} sale transaction(s)` },
+    { title: "Total Usage", value: safeDecimal(totals.used), caption: `${totals.usageTransactions} usage record(s)` },
+    { title: "Avg Sell Price", value: avgPrice === null ? "-" : safeDecimal(avgPrice), caption: "Revenue per sold tank" },
+  ];
+
+  salesInventoryKpis.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="insight-kpi-card">
+          <p class="insight-kpi-title">${card.title}</p>
+          <p class="insight-kpi-value">${card.value}</p>
+          <p class="insight-kpi-caption">${card.caption}</p>
+        </article>
+      `,
+    )
+    .join("");
+
+  salesInventoryNotes.innerHTML = `
+    <p class="insight-note">Totals in scope: produced ${safeDecimal(totals.produced)} | sold ${safeDecimal(totals.sold)} | used ${safeDecimal(totals.used)} | remaining ${safeDecimal(totals.remaining)}.</p>
+    <p class="insight-note">Profit in scope: ${safeDecimal(totals.profit)} (revenue ${safeDecimal(totals.revenue)} - cost ${safeDecimal(totals.cost)}).</p>
+  `;
+
+  salesInventoryBody.innerHTML = activeInventoryRows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.year}</td>
+          <td>${safeDecimal(row.produced)}</td>
+          <td>${safeDecimal(row.sold)}</td>
+          <td>${safeDecimal(row.used)}</td>
+          <td>${safeDecimal(row.revenue)}</td>
+          <td>${safeDecimal(row.cost)}</td>
+          <td>${safeDecimal(row.profit)}</td>
+          <td>${safeDecimal(row.remaining)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  renderInventoryChart();
+}
+
+function renderNarrative() {
+  const series = activeYearlySeries;
+  if (!series.length) {
+    trendStory.innerHTML = '<p class="insight-note">No trend narrative yet. Add records and run analysis.</p>';
+    insightRisks.innerHTML = "";
+    return;
+  }
+
+  const yoy = calcYoYSeries(series);
+  const latest = yoy[yoy.length - 1];
+  const slope = linearSlope(series.map((p) => ({ x: p.year, y: p.value })));
+  const projection = linearProjection(series.map((p) => ({ x: p.year, y: p.value })), series[series.length - 1].year + 1);
+
+  const storyLines = [];
+  storyLines.push(`Lens in focus: ${getMetricTypeLabel(filtersState.metricType)} across ${series.length} year points.`);
+  if (latest?.yoy !== null && latest?.yoy !== undefined) {
+    storyLines.push(`Latest YoY for ${latest.year} is ${latest.yoy >= 0 ? "+" : ""}${safeDecimal(latest.yoy)}%.`);
+  }
+  if (slope !== null) {
+    storyLines.push(`Trend slope is ${safeDecimal(slope)} units per year, indicating ${slope >= 0 ? "growth" : "decline"}.`);
+  }
+  if (projection !== null) {
+    storyLines.push(`Simple linear projection for ${series[series.length - 1].year + 1}: ${safeDecimal(projection)}.`);
+  }
+
+  trendStory.innerHTML = storyLines.map((line) => `<p class="insight-note">${line}</p>`).join("");
+
+  const riskLines = [];
+  const steepDrops = yoy.filter((point) => point.yoy !== null && point.yoy < -20);
+  if (steepDrops.length) {
+    riskLines.push(`Sharp drop risk: ${steepDrops.map((d) => `${d.year} (${safeDecimal(d.yoy)}%)`).join(", ")}.`);
+  }
+  const lowQualityPieces = pieceDiagnostics.filter((d) => (toNumber(d.quality) ?? 0) < 70).slice(0, 3);
+  if (lowQualityPieces.length) {
+    riskLines.push(`Instrumentation risk: low tank coverage on ${lowQualityPieces.map((p) => p.piece).join(", ")}.`);
+  }
+
+  insightRisks.innerHTML = riskLines.length
+    ? riskLines.map((line) => `<p class="insight-note insight-risk">${line}</p>`).join("")
+    : '<p class="insight-note">No critical risk patterns under current filters.</p>';
+}
+
+function chartGeometry(values, width, height, padX, padY) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = max - min || 1;
+  const innerW = width - padX * 2;
+  const innerH = height - padY * 2;
+
+  return { min, max, spread, innerW, innerH, padX, padY };
 }
 
 function renderYearlyChart() {
@@ -507,20 +833,35 @@ function renderYearlyChart() {
     return;
   }
 
-  const values = rows.map((item) => item.value);
-  const points = chartPoints(values, 800, 260, 24);
+  const width = 900;
+  const height = 320;
+  const geo = chartGeometry(rows.map((r) => r.value), width, height, 46, 28);
 
-  const labels = rows
-    .map((row, idx) => {
-      const x = 24 + ((800 - 48) * idx) / Math.max(rows.length - 1, 1);
-      return `<text x="${x}" y="252" text-anchor="middle" class="chart-label">${row.year}</text>`;
-    })
-    .join("");
+  const points = rows.map((row, idx) => {
+    const x = geo.padX + (geo.innerW * idx) / Math.max(rows.length - 1, 1);
+    const y = geo.padY + geo.innerH - ((row.value - geo.min) / geo.spread) * geo.innerH;
+    return { ...row, x, y };
+  });
+
+  const polyline = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const areaPath = `M ${points[0].x} ${height - geo.padY} L ${polyline.replace(/ /g, " L ")} L ${points[points.length - 1].x} ${height - geo.padY} Z`;
+
+  const yTicks = [0, 1, 2, 3, 4].map((idx) => {
+    const y = geo.padY + (geo.innerH * idx) / 4;
+    const value = geo.max - (geo.spread * idx) / 4;
+    return `<line x1="${geo.padX}" y1="${y}" x2="${width - geo.padX}" y2="${y}" class="chart-grid"></line><text x="8" y="${y + 4}" class="chart-axis">${safeDecimal(value)}</text>`;
+  });
+
+  const xLabels = points.map((p) => `<text x="${p.x}" y="${height - 8}" text-anchor="middle" class="chart-axis">${p.year}</text>`);
+  const markers = points.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="4" class="chart-point"></circle>`);
 
   yearlyChart.innerHTML = `
-    <rect x="0" y="0" width="800" height="260" class="chart-bg"></rect>
-    <polyline points="${points}" class="chart-line"></polyline>
-    ${labels}
+    <rect x="0" y="0" width="${width}" height="${height}" class="chart-bg"></rect>
+    ${yTicks.join("")}
+    <path d="${areaPath}" class="chart-area"></path>
+    <polyline points="${polyline}" class="chart-line"></polyline>
+    ${markers.join("")}
+    ${xLabels.join("")}
   `;
 }
 
@@ -531,32 +872,38 @@ function renderPieceChart() {
     return;
   }
 
-  const maxValue = Math.max(...rows.map((item) => item.totalKg), 1);
-  const barWidth = 68;
-  const gap = 20;
-  const baseY = 230;
+  const width = 900;
+  const height = 320;
+  const padX = 140;
+  const padY = 24;
+  const innerW = width - padX - 24;
+  const rowH = (height - padY * 2) / rows.length;
+  const maxValue = Math.max(...rows.map((row) => row.totalKg), 1);
 
   const bars = rows
-    .map((row, index) => {
-      const x = 42 + index * (barWidth + gap);
-      const h = Math.max(8, (row.totalKg / maxValue) * 170);
-      const y = baseY - h;
+    .map((row, idx) => {
+      const y = padY + idx * rowH + rowH * 0.14;
+      const barH = rowH * 0.72;
+      const barW = (row.totalKg / maxValue) * innerW;
       return `
-        <rect x="${x}" y="${y}" width="${barWidth}" height="${h}" class="chart-bar"></rect>
-        <text x="${x + barWidth / 2}" y="246" text-anchor="middle" class="chart-label">${row.piece}</text>
-        <text x="${x + barWidth / 2}" y="${y - 6}" text-anchor="middle" class="chart-value">${safeDecimal(row.totalKg, 0)}</text>
+        <text x="14" y="${y + barH / 2 + 4}" class="chart-axis">${row.piece}</text>
+        <rect x="${padX}" y="${y}" width="${barW}" height="${barH}" rx="8" class="chart-bar"></rect>
+        <text x="${padX + barW + 8}" y="${y + barH / 2 + 4}" class="chart-value">${safeDecimal(row.totalKg, 0)}</text>
       `;
     })
     .join("");
 
-  pieceChart.innerHTML = `<rect x="0" y="0" width="800" height="280" class="chart-bg"></rect>${bars}`;
+  pieceChart.innerHTML = `<rect x="0" y="0" width="${width}" height="${height}" class="chart-bg"></rect>${bars}`;
 }
 
 function renderInsights() {
   renderKpis();
   renderSeasonTable();
   renderPieceTable();
+  renderSalesInventory();
   renderDiagnostics();
+  renderDataQuality();
+  renderNarrative();
   renderYearlyChart();
   renderPieceChart();
 }
@@ -580,16 +927,32 @@ async function requestJson(url, options = {}) {
 }
 
 async function fetchAll() {
-  const [seasonData, pieceData] = await Promise.all([
+  const [seasonData, pieceData, salesData, usageData] = await Promise.all([
     requestJson(`${API_BASE}/olive-seasons/mine`),
     requestJson(`${API_BASE}/olive-piece-metrics/mine`),
+    requestJson(`${API_BASE}/olive-sales/mine`),
+    requestJson(`${API_BASE}/olive-usages/mine`),
   ]);
 
   seasons = seasonData || [];
   pieceMetrics = pieceData || [];
+  sales = salesData || [];
+  usages = usageData || [];
   analyticsPieceMetrics = buildAnalyticsPieceMetrics();
 
   populateFilterOptions();
+  applyFilters();
+}
+
+function applyQuickRange(lastNYears) {
+  const allYears = Array.from(new Set(seasons.map((s) => Number(s.season_year)).filter((y) => Number.isFinite(y)))).sort((a, b) => a - b);
+  if (!allYears.length) return;
+
+  const max = allYears[allYears.length - 1];
+  filtersState.yearTo = max;
+  filtersState.yearFrom = Math.max(allYears[0], max - (lastNYears - 1));
+  filterYearFrom.value = String(filtersState.yearFrom);
+  filterYearTo.value = String(filtersState.yearTo);
   applyFilters();
 }
 
@@ -630,6 +993,9 @@ filterClearPiecesBtn.addEventListener("click", () => {
   for (const option of filterPieceSelect.options) option.selected = false;
 });
 
+rangeLast3Btn.addEventListener("click", () => applyQuickRange(3));
+rangeLast5Btn.addEventListener("click", () => applyQuickRange(5));
+
 filtersForm.addEventListener("submit", (event) => {
   event.preventDefault();
   filterApplyBtn.click();
@@ -639,7 +1005,3 @@ refreshBtn.addEventListener("click", fetchAll);
 fetchAll().catch((error) => {
   insightKpis.innerHTML = `<p class="message error">${error.message || "Could not load insights"}</p>`;
 });
-
-
-
-

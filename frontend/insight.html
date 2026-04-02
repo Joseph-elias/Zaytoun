@@ -6,28 +6,28 @@
     <title>Worker Radar | Insights</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
     <div class="backdrop"></div>
-    <main class="page">
-      <header class="hero">
+    <main class="page insight-dashboard">
+      <header class="hero insight-hero">
         <div class="list-head">
           <p class="eyebrow">Worker Radar</p>
           <button class="btn ghost" id="logout-btn" type="button">Logout</button>
         </div>
-        <h1>Farm Insights</h1>
-        <p class="sub" id="role-hint">Compare olive season output over years and between pieces of land.</p>
+        <h1>Insight Lab</h1>
+        <p class="sub" id="role-hint">Data-driven view of season output, piece performance, and operational risks.</p>
         <nav id="app-tabs" class="tabs"></nav>
       </header>
 
-      <section class="card">
+      <section class="card insight-controls">
         <div class="list-head">
-          <h2>Analyst Filters</h2>
-          <button class="btn ghost" id="refresh-insights-btn" type="button">Refresh</button>
+          <h2>Analysis Controls</h2>
+          <button class="btn ghost" id="refresh-insights-btn" type="button">Refresh Data</button>
         </div>
-        <form id="insight-filters-form" class="form-grid compact">
+        <form id="insight-filters-form" class="form-grid compact insight-filter-grid">
           <label>
             From Year
             <select id="filter-year-from"></select>
@@ -37,97 +37,156 @@
             <select id="filter-year-to"></select>
           </label>
           <label>
-            Metric Type
+            Metric Lens
             <select id="filter-metric-type">
-              <option value="actual_chonbol">Actual Chonbol (season)</option>
-              <option value="tanks_20l">Tanks 20L (season)</option>
-              <option value="kg_needed_per_tank">KG per Tank (season)</option>
-              <option value="piece_harvested_kg">Harvested KG (pieces)</option>
+              <option value="actual_chonbol">Actual Chonbol (season total)</option>
+              <option value="tanks_20l">Tanks 20L (season total)</option>
+              <option value="kg_needed_per_tank">KG per Tank (season efficiency)</option>
+              <option value="piece_harvested_kg">Harvested KG (piece total)</option>
+              <option value="sales_revenue_total">Sales Revenue (season total)</option>
+              <option value="profit">Profit (season total)</option>
+              <option value="remaining_tanks">Remaining Tanks (inventory)</option>
             </select>
           </label>
           <label class="full">
-            Piece Selection (Ctrl/Cmd + click for multi select)
+            Piece Scope (Ctrl/Cmd + click for multi select)
             <select id="filter-piece-select" multiple size="6"></select>
           </label>
           <div class="actions-row full">
-            <button class="btn ghost" type="button" id="filter-select-all-pieces">Select All Pieces</button>
-            <button class="btn ghost" type="button" id="filter-clear-pieces">Clear Piece Filter</button>
-            <button class="btn" type="button" id="filter-apply">Apply Filters</button>
-            <button class="btn ghost" type="button" id="filter-reset">Reset Filters</button>
+            <button class="btn ghost" type="button" id="filter-select-all-pieces">All Pieces</button>
+            <button class="btn ghost" type="button" id="filter-clear-pieces">Clear Pieces</button>
+            <button class="btn ghost" type="button" id="range-last-3">Last 3 Years</button>
+            <button class="btn ghost" type="button" id="range-last-5">Last 5 Years</button>
+            <button class="btn" type="button" id="filter-apply">Run Analysis</button>
+            <button class="btn ghost" type="button" id="filter-reset">Reset</button>
           </div>
           <p id="filter-summary" class="message full"></p>
         </form>
       </section>
 
-      <section class="card">
-        <h2>Summary</h2>
-        <div class="insight-kpis" id="insight-kpis"></div>
+      <section class="insight-grid-top">
+        <article class="card">
+          <h2>Executive Snapshot</h2>
+          <div class="insight-kpis" id="insight-kpis"></div>
+        </article>
+        <article class="card">
+          <h2>Analyst Narrative</h2>
+          <div id="trend-story" class="insight-notes"></div>
+          <div id="insight-risks" class="insight-notes"></div>
+        </article>
       </section>
 
-      <section class="card">
-        <h2>Year Over Year Output</h2>
-        <div class="insight-chart-wrap">
-          <svg id="yearly-chart" class="insight-chart" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="table-wrap">
-          <table class="insight-table">
-            <thead>
-              <tr>
-                <th>Year</th>
-                <th>Pieces</th>
-                <th>Actual Chonbol</th>
-                <th>Tanks</th>
-                <th>KG / Tank</th>
-                <th>YoY Change</th>
-              </tr>
-            </thead>
-            <tbody id="season-comparison-body"></tbody>
-          </table>
-        </div>
+      <section class="insight-grid-mid">
+        <article class="card">
+          <h2>Yearly Trend</h2>
+          <div class="insight-chart-wrap insight-chart-lg">
+            <svg id="yearly-chart" class="insight-chart" viewBox="0 0 900 320" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="table-wrap">
+            <table class="insight-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Pieces</th>
+                  <th>Actual Chonbol</th>
+                  <th>Tanks</th>
+                  <th>KG / Tank</th>
+                  <th>YoY</th>
+                </tr>
+              </thead>
+              <tbody id="season-comparison-body"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Piece Leaderboard</h2>
+          <div class="insight-chart-wrap insight-chart-lg">
+            <svg id="piece-chart" class="insight-chart" viewBox="0 0 900 320" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="table-wrap">
+            <table class="insight-table">
+              <thead>
+                <tr>
+                  <th>Piece</th>
+                  <th>Seasons</th>
+                  <th>Total KG</th>
+                  <th>Total Tanks</th>
+                  <th>Avg KG / Tank</th>
+                  <th>Avg KG / Season</th>
+                </tr>
+              </thead>
+              <tbody id="piece-comparison-body"></tbody>
+            </table>
+          </div>
+        </article>
       </section>
 
-      <section class="card">
-        <h2>Piece Comparison</h2>
-        <div class="insight-chart-wrap">
-          <svg id="piece-chart" class="insight-chart" viewBox="0 0 800 280" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="table-wrap">
-          <table class="insight-table">
-            <thead>
-              <tr>
-                <th>Piece</th>
-                <th>Seasons</th>
-                <th>Total KG</th>
-                <th>Total Tanks</th>
-                <th>Avg KG / Tank</th>
-                <th>Avg KG / Season</th>
-              </tr>
-            </thead>
-            <tbody id="piece-comparison-body"></tbody>
-          </table>
-        </div>
-      </section>
+      <section class="insight-grid-bottom">
+        <article class="card">
+          <h2>Sales & Inventory Intelligence</h2>
+          <div class="insight-kpis" id="sales-inventory-kpis"></div>
+          <div id="sales-inventory-notes" class="insight-notes"></div>
+          <div class="insight-chart-wrap insight-chart-lg">
+            <svg id="inventory-chart" class="insight-chart" viewBox="0 0 900 320" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="table-wrap">
+            <table class="insight-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Produced</th>
+                  <th>Sold</th>
+                  <th>Used</th>
+                  <th>Revenue</th>
+                  <th>Cost</th>
+                  <th>Profit</th>
+                  <th>End Inventory</th>
+                </tr>
+              </thead>
+              <tbody id="sales-inventory-body"></tbody>
+            </table>
+          </div>
+        </article>
 
-      <section class="card">
-        <h2>Analyst Diagnostics</h2>
-        <div class="insight-notes" id="insight-notes"></div>
-        <div class="table-wrap">
-          <table class="insight-table">
-            <thead>
-              <tr>
-                <th>Piece</th>
-                <th>Trend Slope (kg/year)</th>
-                <th>Volatility (CV%)</th>
-                <th>Best Year KG</th>
-                <th>Worst Year KG</th>
-                <th>Data Quality</th>
-              </tr>
-            </thead>
-            <tbody id="piece-diagnostics-body"></tbody>
-          </table>
-        </div>
-      </section>
+        <article class="card">
+          <h2>Diagnostics</h2>
+          <div class="insight-notes" id="insight-notes"></div>
+          <div class="table-wrap">
+            <table class="insight-table">
+              <thead>
+                <tr>
+                  <th>Piece</th>
+                  <th>Trend Slope</th>
+                  <th>Volatility (CV%)</th>
+                  <th>Best Year</th>
+                  <th>Worst Year</th>
+                  <th>Data Quality</th>
+                </tr>
+              </thead>
+              <tbody id="piece-diagnostics-body"></tbody>
+            </table>
+          </div>
+        </article>
 
+        <article class="card">
+          <h2>Data Quality Matrix</h2>
+          <div class="table-wrap">
+            <table class="insight-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Pieces Logged</th>
+                  <th>Actual Chonbol Coverage</th>
+                  <th>Tank Coverage</th>
+                  <th>Quality Score</th>
+                </tr>
+              </thead>
+              <tbody id="data-quality-body"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
     </main>
     <script type="module" src="./src/insight.js"></script>
   </body>

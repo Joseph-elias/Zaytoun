@@ -6,12 +6,22 @@ from app.models.user import User
 from app.models.worker import Worker
 from app.models.olive_season import FarmerOliveSeason
 from app.models.olive_piece_metric import FarmerOlivePieceMetric
+from app.models.olive_labor_day import FarmerOliveLaborDay
+from app.models.olive_sale import FarmerOliveSale
+from app.models.olive_usage import FarmerOliveUsage
+from app.models.olive_inventory_item import FarmerOliveInventoryItem
+from app.models.olive_land_piece import FarmerOliveLandPiece
 
 client = TestClient(app)
 
 
 def _clear_tables() -> None:
     with SessionLocal() as session:
+        session.query(FarmerOliveSale).delete()
+        session.query(FarmerOliveInventoryItem).delete()
+        session.query(FarmerOliveLandPiece).delete()
+        session.query(FarmerOliveUsage).delete()
+        session.query(FarmerOliveLaborDay).delete()
         session.query(FarmerOlivePieceMetric).delete()
         session.query(FarmerOliveSeason).delete()
         session.query(Worker).delete()
@@ -510,3 +520,269 @@ def test_farmer_olive_piece_metric_crud() -> None:
 
 
 
+
+def test_farmer_olive_financial_layer() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127012450")
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2031,
+            "land_pieces": 10,
+            "land_piece_name": "East Plot",
+            "estimated_chonbol": 1200,
+            "actual_chonbol": 1100,
+            "kg_per_land_piece": 110,
+            "tanks_20l": 60,
+            "pressing_cost": 180,
+            "notes": "finance test",
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 201
+    season_id = create_season.json()["id"]
+
+    labor_day_1 = client.post(
+        "/olive-labor-days",
+        json={
+            "season_id": season_id,
+            "work_date": "2031-10-01",
+            "men_count": 4,
+            "women_count": 2,
+            "men_rate": 150,
+            "women_rate": 120,
+        },
+        headers=farmer_headers,
+    )
+    assert labor_day_1.status_code == 201
+    assert labor_day_1.json()["total_day_cost"] == "840.00"
+
+    labor_day_2 = client.post(
+        "/olive-labor-days",
+        json={
+            "season_id": season_id,
+            "work_date": "2031-10-02",
+            "men_count": 3,
+            "women_count": 3,
+            "men_rate": 150,
+            "women_rate": 120,
+        },
+        headers=farmer_headers,
+    )
+    assert labor_day_2.status_code == 201
+
+    sale_1 = client.post(
+        "/olive-sales",
+        json={
+            "season_id": season_id,
+            "sold_on": "2031-11-01",
+            "tanks_sold": 20,
+            "price_per_tank": 95,
+            "buyer": "Local Mill",
+        },
+        headers=farmer_headers,
+    )
+    assert sale_1.status_code == 201
+    assert sale_1.json()["total_revenue"] == "1900.00"
+
+    raw_sale = client.post(
+        "/olive-sales",
+        json={
+            "season_id": season_id,
+            "sold_on": "2031-11-02",
+            "sale_type": "raw_kg",
+            "raw_kg_sold": 100,
+            "price_per_kg": 2,
+            "buyer": "Raw Buyer",
+        },
+        headers=farmer_headers,
+    )
+    assert raw_sale.status_code == 201
+    assert raw_sale.json()["total_revenue"] == "200.00"
+    assert raw_sale.json()["inventory_tanks_delta"] == "0.00"
+
+    container_sale = client.post(
+        "/olive-sales",
+        json={
+            "season_id": season_id,
+            "sold_on": "2031-11-03",
+            "sale_type": "processed_container",
+            "containers_sold": 3,
+            "container_size_label": "5L jar",
+            "kg_per_container": 1.83,
+            "price_per_container": 70,
+            "buyer": "Retail Shop",
+        },
+        headers=farmer_headers,
+    )
+    assert container_sale.status_code == 201
+    assert container_sale.json()["total_revenue"] == "210.00"
+    assert container_sale.json()["inventory_tanks_delta"] == "3.00"
+    custom_sale = client.post(
+        "/olive-sales",
+        json={
+            "season_id": season_id,
+            "sold_on": "2031-11-04",
+            "sale_type": "custom_item",
+            "custom_item_name": "Olive Soap",
+            "custom_quantity_sold": 40,
+            "custom_unit_label": "bar",
+            "custom_price_per_unit": 3,
+            "custom_inventory_tanks_delta": 1.5,
+            "buyer": "Shop X",
+        },
+        headers=farmer_headers,
+    )
+    assert custom_sale.status_code == 201
+    assert custom_sale.json()["total_revenue"] == "120.00"
+    assert custom_sale.json()["inventory_tanks_delta"] == "1.50"
+    season_rows = client.get("/olive-seasons/mine", headers=farmer_headers)
+    assert season_rows.status_code == 200
+    row = season_rows.json()[0]
+
+    assert row["harvest_days"] == 2
+    assert row["worker_days"] == 12
+    assert row["labor_cost_total"] == "1650.00"
+    assert row["pressing_cost"] == "180.00"
+    assert row["total_cost"] == "1830.00"
+    assert row["sold_tanks"] == "24.50"
+    assert row["used_tanks"] == "0.00"
+    assert row["sales_revenue_total"] == "2430.00"
+    assert row["profit"] == "600.00"
+    assert row["remaining_tanks"] == "35.50"
+
+    add_usage = client.post(
+        "/olive-usages",
+        json={
+            "season_id": season_id,
+            "used_on": "2031-11-05",
+            "tanks_used": 5,
+            "usage_type": "home_use",
+        },
+        headers=farmer_headers,
+    )
+    assert add_usage.status_code == 201
+
+    season_rows_after_usage = client.get("/olive-seasons/mine", headers=farmer_headers)
+    assert season_rows_after_usage.status_code == 200
+    row_after_usage = season_rows_after_usage.json()[0]
+    assert row_after_usage["used_tanks"] == "5.00"
+    assert row_after_usage["remaining_tanks"] == "30.50"
+
+    labor_list = client.get(f"/olive-labor-days/mine?season_id={season_id}", headers=farmer_headers)
+    assert labor_list.status_code == 200
+    assert len(labor_list.json()) == 2
+
+    sales_list = client.get(f"/olive-sales/mine?season_id={season_id}", headers=farmer_headers)
+    assert sales_list.status_code == 200
+    assert len(sales_list.json()) == 4
+
+
+
+
+
+
+
+def test_farmer_inventory_page_flow_and_custom_sale_stock_deduction() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127012999")
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2032,
+            "land_pieces": 5,
+            "land_piece_name": "West Plot",
+            "estimated_chonbol": 900,
+            "actual_chonbol": 850,
+            "kg_per_land_piece": 850,
+            "tanks_20l": 50,
+            "pressing_cost": 100,
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 201
+    season_id = create_season.json()["id"]
+
+    create_item = client.post(
+        "/olive-inventory-items",
+        json={
+            "item_name": "Olive Soap",
+            "unit_label": "bar",
+            "quantity_on_hand": 100,
+            "default_price_per_unit": 3,
+        },
+        headers=farmer_headers,
+    )
+    assert create_item.status_code == 201
+    item_id = create_item.json()["id"]
+
+    sale = client.post(
+        "/olive-sales",
+        json={
+            "season_id": season_id,
+            "sold_on": "2032-11-01",
+            "sale_type": "custom_item",
+            "custom_inventory_item_id": item_id,
+            "custom_quantity_sold": 15,
+            "buyer": "Market A",
+        },
+        headers=farmer_headers,
+    )
+    assert sale.status_code == 201
+    assert sale.json()["custom_item_name"] == "Olive Soap"
+    assert sale.json()["custom_unit_label"] == "bar"
+    assert sale.json()["custom_price_per_unit"] == "3.00"
+    assert sale.json()["total_revenue"] == "45.00"
+
+    inventory_rows = client.get("/olive-inventory-items/mine", headers=farmer_headers)
+    assert inventory_rows.status_code == 200
+    assert len(inventory_rows.json()) == 1
+    assert inventory_rows.json()[0]["quantity_on_hand"] == "85.00"
+
+
+
+def test_farmer_olive_land_pieces_registry() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127012777")
+
+    create_one = client.post(
+        "/olive-land-pieces",
+        json={"piece_name": "North Plot"},
+        headers=farmer_headers,
+    )
+    assert create_one.status_code == 201
+
+    duplicate = client.post(
+        "/olive-land-pieces",
+        json={"piece_name": "  north   plot  "},
+        headers=farmer_headers,
+    )
+    assert duplicate.status_code == 400
+
+    rows = client.get("/olive-land-pieces/mine", headers=farmer_headers)
+    assert rows.status_code == 200
+    assert len(rows.json()) == 1
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2034,
+            "land_pieces": 4,
+            "land_piece_name": "North Plot",
+            "estimated_chonbol": 500,
+            "actual_chonbol": 480,
+            "kg_per_land_piece": 480,
+            "tanks_20l": 24,
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 201
+
+    piece_id = create_one.json()["id"]
+    delete_used = client.delete(f"/olive-land-pieces/{piece_id}", headers=farmer_headers)
+    assert delete_used.status_code == 400

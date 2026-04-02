@@ -1,0 +1,39 @@
+﻿from datetime import datetime
+from decimal import Decimal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class OliveInventoryItemBase(BaseModel):
+    item_name: str = Field(min_length=1, max_length=120)
+    unit_label: str = Field(min_length=1, max_length=60)
+    quantity_on_hand: Decimal = Field(ge=0)
+    default_price_per_unit: Decimal | None = Field(default=None, ge=0)
+    notes: str | None = Field(default=None, max_length=400)
+
+
+class OliveInventoryItemCreate(OliveInventoryItemBase):
+    pass
+
+
+class OliveInventoryItemUpdate(BaseModel):
+    item_name: str | None = Field(default=None, min_length=1, max_length=120)
+    unit_label: str | None = Field(default=None, min_length=1, max_length=60)
+    quantity_on_hand: Decimal | None = Field(default=None, ge=0)
+    default_price_per_unit: Decimal | None = Field(default=None, ge=0)
+    notes: str | None = Field(default=None, max_length=400)
+
+
+class OliveInventoryItemOut(BaseModel):
+    id: UUID
+    farmer_user_id: UUID
+    item_name: str
+    unit_label: str
+    quantity_on_hand: Decimal
+    default_price_per_unit: Decimal | None
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

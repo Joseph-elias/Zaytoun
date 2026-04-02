@@ -18,12 +18,9 @@ export default defineConfig({
         workers: resolve(__dirname, "workers.html"),
         bookings: resolve(__dirname, "bookings.html"),
         oliveSeason: resolve(__dirname, "olive-season.html"),
+        inventory: resolve(__dirname, "inventory.html"),
         insight: resolve(__dirname, "insight.html"),
       },
     },
   },
 });
-
-
-
-

@@ -1,0 +1,55 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page page-wide">
+      <header class="hero">
+        <div class="list-head">
+          <p class="eyebrow">Worker Radar</p>
+          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+        </div>
+        <h1>Inventory</h1>
+        <p class="sub" id="role-hint">Track produced stock and custom sale items.</p>
+        <nav id="app-tabs" class="tabs"></nav>
+      </header>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Season Stock Summary</h2>
+          <button class="btn ghost" id="refresh-summary-btn" type="button">Refresh</button>
+        </div>
+        <div class="insight-kpis" id="inventory-kpis"></div>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Custom Inventory Items</h2>
+          <button class="btn ghost" id="refresh-items-btn" type="button">Refresh</button>
+        </div>
+        <form id="inventory-item-form" class="form-grid compact">
+          <label>Item Name<input name="item_name" maxlength="120" required /></label>
+          <label>Unit Label<input name="unit_label" maxlength="60" placeholder="box, bottle, bar" required /></label>
+          <label>Quantity On Hand<input name="quantity_on_hand" type="number" min="0" step="0.01" required /></label>
+          <label>Default Price / Unit<input name="default_price_per_unit" type="number" min="0" step="0.01" /></label>
+          <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional notes"></textarea></label>
+          <div class="actions-row full">
+            <button class="btn" type="submit">Save Item</button>
+          </div>
+          <p id="inventory-item-message" class="message full"></p>
+        </form>
+
+        <div id="inventory-items-list" class="workers-list"></div>
+      </section>
+    </main>
+    <script type="module" src="./src/inventory.js"></script>
+  </body>
+</html>

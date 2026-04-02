@@ -79,13 +79,52 @@ export function redirectToRoleHome(session) {
 }
 
 export function renderAppTabs(container, role, currentPage) {
+  const session = getSession();
+  const pageEl = container.closest(".page");
+  if (pageEl && !pageEl.classList.contains("auth-page") && !pageEl.classList.contains("embedded-view")) {
+    const existingWrapper = pageEl.querySelector(":scope > .app-content-stack");
+    if (!existingWrapper) {
+      const contentWrapper = document.createElement("div");
+      contentWrapper.className = "app-content-stack";
+
+      const directChildren = Array.from(pageEl.children);
+      for (const child of directChildren) {
+        if (child.classList.contains("hero")) continue;
+        contentWrapper.appendChild(child);
+      }
+      pageEl.appendChild(contentWrapper);
+    }
+  }
+
   const tabs = ROLE_TABS[role] || [];
-  container.innerHTML = tabs
-    .map((tab) => {
-      const activeClass = tab.page === currentPage ? " active" : "";
-      return `<a class="tab${activeClass}" href="${tab.href}">${tab.label}</a>`;
-    })
-    .join("");
+  const fullName = session?.user?.full_name || "User";
+  const initials = fullName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+  const roleLabel = session?.user?.role ? String(session.user.role).toUpperCase() : "USER";
+
+  container.innerHTML = `
+    <section class="side-profile-banner">
+      <div class="side-avatar">${initials}</div>
+      <div class="side-profile-meta">
+        <p class="side-profile-name">${fullName}</p>
+        <p class="side-profile-role">${roleLabel}</p>
+      </div>
+      <a class="side-settings-link" href="./settings.html">Account & Settings</a>
+    </section>
+    <p class="side-nav-title">Workspace</p>
+    <div class="side-nav-links">
+      ${tabs
+        .map((tab) => {
+          const activeClass = tab.page === currentPage ? " active" : "";
+          return `<a class="tab side-nav-link${activeClass}" href="${tab.href}">${tab.label}</a>`;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 export async function login(phone, password) {
@@ -119,3 +158,5 @@ export async function registerAccount(payload) {
 
   return response.json();
 }
+
+

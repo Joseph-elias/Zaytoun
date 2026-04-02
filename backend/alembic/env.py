@@ -12,6 +12,11 @@ from app.models.user import User
 from app.models.olive_season import FarmerOliveSeason
 from app.models.olive_piece_metric import FarmerOlivePieceMetric
 from app.models.worker import Worker
+from app.models.olive_labor_day import FarmerOliveLaborDay
+from app.models.olive_sale import FarmerOliveSale
+from app.models.olive_usage import FarmerOliveUsage
+from app.models.olive_inventory_item import FarmerOliveInventoryItem
+from app.models.olive_land_piece import FarmerOliveLandPiece
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.resolved_database_url)
@@ -54,6 +59,8 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+
 
 
 

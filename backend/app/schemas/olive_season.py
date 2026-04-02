@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,6 +13,7 @@ class OliveSeasonBase(BaseModel):
     actual_chonbol: Decimal | None = Field(default=None, ge=0)
     kg_per_land_piece: Decimal | None = Field(default=None, ge=0)
     tanks_20l: int | None = Field(default=None, ge=0, le=200000)
+    pressing_cost: Decimal | None = Field(default=None, ge=0)
     notes: str | None = Field(default=None, max_length=500)
 
 
@@ -20,7 +21,6 @@ class OliveSeasonCreate(OliveSeasonBase):
     @model_validator(mode="after")
     def validate_inputs(self) -> "OliveSeasonCreate":
         if self.actual_chonbol is not None and self.kg_per_land_piece is None:
-            # allow empty, frontend can still compute later
             return self
         return self
 
@@ -34,12 +34,22 @@ class OliveSeasonOut(BaseModel):
     farmer_user_id: UUID
     season_year: int
     land_pieces: int
-    land_piece_name: str | None
+    land_piece_name: str
     estimated_chonbol: Decimal | None
     actual_chonbol: Decimal | None
     kg_per_land_piece: Decimal | None
     tanks_20l: int | None
     kg_needed_per_tank: Decimal | None
+    pressing_cost: Decimal | None
+    labor_cost_total: Decimal
+    total_cost: Decimal
+    sold_tanks: Decimal
+    used_tanks: Decimal
+    sales_revenue_total: Decimal
+    profit: Decimal
+    remaining_tanks: Decimal | None
+    harvest_days: int
+    worker_days: int
     notes: str | None
     created_at: datetime
     updated_at: datetime

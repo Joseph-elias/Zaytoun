@@ -16,6 +16,11 @@ from app.models.user import User  # noqa: F401,E402
 from app.models.worker import Worker  # noqa: F401,E402
 from app.models.olive_season import FarmerOliveSeason  # noqa: F401,E402
 from app.models.olive_piece_metric import FarmerOlivePieceMetric  # noqa: F401,E402
+from app.models.olive_labor_day import FarmerOliveLaborDay  # noqa: F401,E402
+from app.models.olive_sale import FarmerOliveSale  # noqa: F401,E402
+from app.models.olive_usage import FarmerOliveUsage  # noqa: F401,E402
+from app.models.olive_inventory_item import FarmerOliveInventoryItem  # noqa: F401,E402
+from app.models.olive_land_piece import FarmerOliveLandPiece  # noqa: F401,E402
 
 
 def pytest_sessionstart(session):
@@ -28,6 +33,9 @@ def pytest_sessionfinish(session, exitstatus):
     engine.dispose()
     if TEST_DB_PATH.exists():
         TEST_DB_PATH.unlink()
+
+
+
 
 
 
