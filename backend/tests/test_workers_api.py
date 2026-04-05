@@ -45,6 +45,13 @@ def _register_and_login(role: str, phone: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+def _create_land_piece(headers: dict[str, str], piece_name: str, season_year: int | None = None) -> None:
+    payload = {"piece_name": piece_name}
+    if season_year is not None:
+        payload["season_year"] = season_year
+    response = client.post("/olive-land-pieces", json=payload, headers=headers)
+    assert response.status_code == 201
+
 def _worker_payload(phone: str, name: str = "Ali Ahmed") -> dict:
     return {
         "name": name,
@@ -387,6 +394,8 @@ def test_farmer_olive_season_crud() -> None:
     _clear_tables()
 
     farmer_headers = _register_and_login("farmer", "+2127012345")
+    _create_land_piece(farmer_headers, "North Plot")
+    _create_land_piece(farmer_headers, "South Plot")
 
     create = client.post(
         "/olive-seasons",
@@ -525,6 +534,7 @@ def test_farmer_olive_financial_layer() -> None:
     _clear_tables()
 
     farmer_headers = _register_and_login("farmer", "+2127012450")
+    _create_land_piece(farmer_headers, "East Plot")
 
     create_season = client.post(
         "/olive-seasons",
@@ -689,6 +699,7 @@ def test_farmer_inventory_page_flow_and_custom_sale_stock_deduction() -> None:
     _clear_tables()
 
     farmer_headers = _register_and_login("farmer", "+2127012999")
+    _create_land_piece(farmer_headers, "West Plot")
 
     create_season = client.post(
         "/olive-seasons",
@@ -786,3 +797,140 @@ def test_farmer_olive_land_pieces_registry() -> None:
     piece_id = create_one.json()["id"]
     delete_used = client.delete(f"/olive-land-pieces/{piece_id}", headers=farmer_headers)
     assert delete_used.status_code == 400
+
+def test_farmer_olive_season_supports_pressing_cost_in_oil_tanks() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127013555")
+    _create_land_piece(farmer_headers, "Mill Piece")
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2035,
+            "land_pieces": 3,
+            "land_piece_name": "Mill Piece",
+            "estimated_chonbol": 300,
+            "actual_chonbol": 280,
+            "kg_per_land_piece": 280,
+            "tanks_20l": 9,
+            "tanks_taken_home_20l": 8,
+            "pressing_cost_mode": "oil_tanks",
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 201
+    row = create_season.json()
+    assert row["pressing_cost_mode"] == "oil_tanks"
+    assert row["pressing_cost"] == "1.00"
+    assert row["pressing_cost_oil_tanks_20l"] == "1.00"
+    assert row["tanks_taken_home_20l"] == "8.00"
+
+    sale = client.post(
+        "/olive-sales",
+        json={
+            "season_id": row["id"],
+            "sold_on": "2035-11-10",
+            "tanks_sold": 5,
+            "price_per_tank": 100,
+        },
+        headers=farmer_headers,
+    )
+    assert sale.status_code == 201
+
+    season_rows = client.get("/olive-seasons/mine", headers=farmer_headers)
+    assert season_rows.status_code == 200
+    updated = season_rows.json()[0]
+    assert updated["remaining_tanks"] == "3.00"
+
+
+def test_farmer_olive_season_rejects_taken_home_above_produced() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127013666")
+    _create_land_piece(farmer_headers, "Validation Piece")
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2036,
+            "land_pieces": 2,
+            "land_piece_name": "Validation Piece",
+            "estimated_chonbol": 200,
+            "actual_chonbol": 190,
+            "kg_per_land_piece": 190,
+            "tanks_20l": 10,
+            "tanks_taken_home_20l": 12,
+            "pressing_cost_mode": "money",
+            "pressing_cost": 50,
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 400
+
+
+def test_farmer_olive_season_oil_mode_requires_produced_and_taken_home() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127013777")
+    _create_land_piece(farmer_headers, "Missing Tanks Piece")
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2037,
+            "land_pieces": 2,
+            "land_piece_name": "Missing Tanks Piece",
+            "pressing_cost_mode": "oil_tanks",
+            "tanks_20l": 9,
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 400
+
+
+
+
+def test_farmer_olive_season_rejects_unregistered_land_piece() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127013888")
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2038,
+            "land_pieces": 2,
+            "land_piece_name": "Unknown Piece",
+            "tanks_20l": 10,
+            "pressing_cost_mode": "money",
+            "pressing_cost": 10,
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 400
+
+
+def test_farmer_olive_season_rejects_land_piece_year_mismatch() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127013999")
+    _create_land_piece(farmer_headers, "Year Locked Piece", 2025)
+
+    create_season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2026,
+            "land_pieces": 2,
+            "land_piece_name": "Year Locked Piece",
+            "tanks_20l": 10,
+            "pressing_cost_mode": "money",
+            "pressing_cost": 10,
+        },
+        headers=farmer_headers,
+    )
+    assert create_season.status_code == 400
+
+
+
+

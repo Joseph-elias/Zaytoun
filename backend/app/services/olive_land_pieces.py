@@ -53,6 +53,17 @@ def find_land_piece_by_name(db: Session, farmer_user_id: UUID, piece_name: str) 
     return None
 
 
+def validate_land_piece_for_season(db: Session, farmer_user_id: UUID, piece_name: str, season_year: int) -> FarmerOliveLandPiece:
+    existing = find_land_piece_by_name(db, farmer_user_id, piece_name)
+    if not existing:
+        raise ValueError("Land piece not found. Add it first in Season Start.")
+
+    if existing.season_year is not None and int(existing.season_year) != int(season_year):
+        raise ValueError(f"Land piece '{existing.piece_name}' is linked to season year {existing.season_year}.")
+
+    return existing
+
+
 def ensure_land_piece_exists(db: Session, farmer_user_id: UUID, piece_name: str) -> FarmerOliveLandPiece:
     existing = find_land_piece_by_name(db, farmer_user_id, piece_name)
     if existing:

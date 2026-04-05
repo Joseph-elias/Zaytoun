@@ -1,8 +1,12 @@
 ﻿from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+PressingCostMode = Literal["money", "oil_tanks"]
 
 
 class OliveSeasonBase(BaseModel):
@@ -13,7 +17,10 @@ class OliveSeasonBase(BaseModel):
     actual_chonbol: Decimal | None = Field(default=None, ge=0)
     kg_per_land_piece: Decimal | None = Field(default=None, ge=0)
     tanks_20l: int | None = Field(default=None, ge=0, le=200000)
+    tanks_taken_home_20l: Decimal | None = Field(default=None, ge=0)
+    pressing_cost_mode: PressingCostMode = "money"
     pressing_cost: Decimal | None = Field(default=None, ge=0)
+    pressing_cost_oil_tanks_20l: Decimal | None = Field(default=None, ge=0)
     notes: str | None = Field(default=None, max_length=500)
 
 
@@ -26,7 +33,9 @@ class OliveSeasonCreate(OliveSeasonBase):
 
 
 class OliveSeasonUpdate(OliveSeasonBase):
-    pass
+    @model_validator(mode="after")
+    def validate_inputs(self) -> "OliveSeasonUpdate":
+        return self
 
 
 class OliveSeasonOut(BaseModel):
@@ -39,8 +48,11 @@ class OliveSeasonOut(BaseModel):
     actual_chonbol: Decimal | None
     kg_per_land_piece: Decimal | None
     tanks_20l: int | None
+    tanks_taken_home_20l: Decimal | None
     kg_needed_per_tank: Decimal | None
+    pressing_cost_mode: PressingCostMode
     pressing_cost: Decimal | None
+    pressing_cost_oil_tanks_20l: Decimal | None
     labor_cost_total: Decimal
     total_cost: Decimal
     sold_tanks: Decimal
@@ -55,3 +67,4 @@ class OliveSeasonOut(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+

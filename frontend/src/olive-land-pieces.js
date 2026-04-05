@@ -36,16 +36,40 @@ async function requestJson(url, options = {}) {
   return response.json();
 }
 
+function selectedSeasonYear() {
+  const raw = String(seasonForm?.elements?.season_year?.value || "").trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function renderLandPieceOptions() {
   if (!seasonLandPieceSelect) return;
   const current = String(seasonLandPieceSelect.value || "").trim();
+  const selectedYear = selectedSeasonYear();
+
+  const eligiblePieces = landPieces.filter((piece) => {
+    if (piece.season_year === null || piece.season_year === undefined) return true;
+    if (selectedYear === null) return false;
+    return Number(piece.season_year) === selectedYear;
+  });
+
   if (!landPieces.length) {
     seasonLandPieceSelect.innerHTML = '<option value="">No land pieces yet (add one in Season Start)</option>';
     return;
   }
 
-  seasonLandPieceSelect.innerHTML = ['<option value="">Select land piece</option>', ...landPieces.map((piece) => `<option value="${piece.piece_name}">${piece.piece_name}</option>`)].join("");
-  const stillExists = landPieces.some((piece) => piece.piece_name === current);
+  if (!eligiblePieces.length) {
+    seasonLandPieceSelect.innerHTML = '<option value="">No land pieces for this season year</option>';
+    return;
+  }
+
+  seasonLandPieceSelect.innerHTML = [
+    '<option value="">Select land piece</option>',
+    ...eligiblePieces.map((piece) => `<option value="${piece.piece_name}">${piece.piece_name}</option>`),
+  ].join("");
+
+  const stillExists = eligiblePieces.some((piece) => piece.piece_name === current);
   seasonLandPieceSelect.value = stillExists ? current : "";
 }
 
@@ -83,6 +107,16 @@ if (seasonForm) {
       if (!selected) {
         event.preventDefault();
         setLandPieceMessage("Add a land piece in Season Start, then select it.", false);
+        return;
+      }
+
+      const selectedYear = selectedSeasonYear();
+      const selectedPiece = landPieces.find((piece) => piece.piece_name === selected);
+      if (selectedPiece?.season_year !== null && selectedPiece?.season_year !== undefined) {
+        if (selectedYear === null || Number(selectedPiece.season_year) !== selectedYear) {
+          event.preventDefault();
+          setLandPieceMessage(`This land piece is linked to season year ${selectedPiece.season_year}.`, false);
+        }
       }
     },
     true,
@@ -154,6 +188,10 @@ if (landPieceSeasonYearToggle && landPieceSeasonYearField) {
       landPieceForm.elements.season_year.value = "";
     }
   });
+}
+
+if (seasonForm?.elements?.season_year) {
+  seasonForm.elements.season_year.addEventListener("input", renderLandPieceOptions);
 }
 
 fetchLandPieces();

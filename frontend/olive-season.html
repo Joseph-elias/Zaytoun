@@ -65,7 +65,15 @@
               <label>Actual Chonbol<input name="actual_chonbol" type="number" min="0" step="0.01" /></label>
               <label>KG per Land Piece<input name="kg_per_land_piece" type="number" min="0" step="0.01" /></label>
               <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
-              <label>Pressing Cost<input name="pressing_cost" type="number" min="0" step="0.01" placeholder="Total pressing fees" /></label>
+              <label>Tanks Taken Home (20L)<input name="tanks_taken_home_20l" type="number" min="0" step="0.01" placeholder="Tanks that enter inventory" /></label>
+              <label>Pressing Cost Type
+                <select name="pressing_cost_mode" id="pressing-cost-mode-select">
+                  <option value="money">Money</option>
+                  <option value="oil_tanks">Oil Tanks</option>
+                </select>
+              </label>
+              <label data-pressing-mode="money">Pressing Cost (Money)<input name="pressing_cost" type="number" min="0" step="0.01" placeholder="Total pressing fees" /></label>
+              <label data-pressing-mode="oil_tanks" class="is-hidden">Pressing Cost (Oil Tanks 20L)<input name="pressing_cost_oil_tanks_20l" type="number" min="0" step="0.01" placeholder="Example: 2" /></label>
               <label class="full">Calculated KG Needed per Tank<input id="kg-needed-per-tank" type="text" readonly /></label>
               <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional notes"></textarea></label>
               <div class="actions-row full">
@@ -247,3 +255,4 @@
     <script type="module" src="./src/olive-season-edit-fix.js"></script>
   </body>
 </html>
+
