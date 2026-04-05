@@ -59,6 +59,7 @@
             <form id="olive-season-form" class="form-grid">
               <input type="hidden" name="season_id" />
               <input type="hidden" name="land_pieces" value="1" />
+              <input type="hidden" name="pressing_cost_oil_tank_unit_price" value="" />
               <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
               <label>Land Piece Name<select name="land_piece_name" id="season-land-piece-select" required></select></label>
               <label>Estimated Chonbol<input name="estimated_chonbol" type="number" min="0" step="0.01" /></label>
@@ -117,6 +118,13 @@
             <label class="full">Target Piece / Season
               <select id="finance-season-id"></select>
             </label>
+            <label>Oil Tank Price (20L)
+              <input id="budget-oil-tank-price" type="number" min="0" step="0.01" placeholder="e.g. 35" />
+            </label>
+            <div class="actions-row" style="align-items:end;">
+              <button class="btn ghost" id="save-oil-tank-price-btn" type="button">Save Tank Price</button>
+            </div>
+            <p id="budget-oil-tank-price-message" class="message full"></p>
           </form>
           <section class="budget-insights-block">
             <div class="list-head">
@@ -255,4 +263,6 @@
     <script type="module" src="./src/olive-season-edit-fix.js"></script>
   </body>
 </html>
+
+
 

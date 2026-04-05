@@ -101,6 +101,9 @@ function fillForm(item) {
   if (form.elements.pressing_cost_oil_tanks_20l) {
     form.elements.pressing_cost_oil_tanks_20l.value = item.pressing_cost_oil_tanks_20l ?? "";
   }
+  if (form.elements.pressing_cost_oil_tank_unit_price) {
+    form.elements.pressing_cost_oil_tank_unit_price.value = item.pressing_cost_oil_tank_unit_price ?? "";
+  }
   form.elements.notes.value = item.notes || "";
   if (deleteBtn) deleteBtn.hidden = false;
 
@@ -202,5 +205,96 @@ if (seasonsList && form) {
 }
 
 
+
+
+
+const financeSeasonSelect = document.getElementById("finance-season-id");
+const budgetOilTankPriceInput = document.getElementById("budget-oil-tank-price");
+const saveOilTankPriceBtn = document.getElementById("save-oil-tank-price-btn");
+const budgetOilTankPriceMessage = document.getElementById("budget-oil-tank-price-message");
+
+function seasonPayloadFromRow(row, overrides = {}) {
+  return {
+    season_year: Number(row.season_year),
+    land_pieces: Number(row.land_pieces ?? 1),
+    land_piece_name: String(row.land_piece_name || "").trim(),
+    estimated_chonbol: row.estimated_chonbol === null ? null : Number(row.estimated_chonbol),
+    actual_chonbol: row.actual_chonbol === null ? null : Number(row.actual_chonbol),
+    kg_per_land_piece: row.kg_per_land_piece === null ? null : Number(row.kg_per_land_piece),
+    tanks_20l: row.tanks_20l === null ? null : Number(row.tanks_20l),
+    tanks_taken_home_20l: row.tanks_taken_home_20l === null ? null : Number(row.tanks_taken_home_20l),
+    pressing_cost_mode: String(row.pressing_cost_mode || "money"),
+    pressing_cost: row.pressing_cost === null ? null : Number(row.pressing_cost),
+    pressing_cost_oil_tanks_20l: row.pressing_cost_oil_tanks_20l === null ? null : Number(row.pressing_cost_oil_tanks_20l),
+    pressing_cost_oil_tank_unit_price:
+      row.pressing_cost_oil_tank_unit_price === null ? null : Number(row.pressing_cost_oil_tank_unit_price),
+    notes: row.notes || null,
+    ...overrides,
+  };
+}
+
+async function syncBudgetTankPriceInput() {
+  if (!financeSeasonSelect || !budgetOilTankPriceInput) return;
+  const seasonId = String(financeSeasonSelect.value || "").trim();
+  if (!seasonId) {
+    budgetOilTankPriceInput.value = "";
+    return;
+  }
+
+  try {
+    const rows = (await requestJson(`${API_BASE}/olive-seasons/mine`)) || [];
+    const row = rows.find((item) => item.id === seasonId);
+    if (!row) {
+      budgetOilTankPriceInput.value = "";
+      return;
+    }
+    budgetOilTankPriceInput.value = row.pressing_cost_oil_tank_unit_price ?? "";
+  } catch {
+    // keep UI quiet on passive sync
+  }
+}
+
+financeSeasonSelect?.addEventListener("change", syncBudgetTankPriceInput);
+
+saveOilTankPriceBtn?.addEventListener("click", async () => {
+  if (!financeSeasonSelect || !budgetOilTankPriceInput || !budgetOilTankPriceMessage) return;
+
+  const seasonId = String(financeSeasonSelect.value || "").trim();
+  if (!seasonId) {
+    budgetOilTankPriceMessage.textContent = "Select a season first.";
+    budgetOilTankPriceMessage.className = "message error";
+    return;
+  }
+
+  const raw = String(budgetOilTankPriceInput.value || "").trim();
+  const parsed = raw ? Number(raw) : null;
+  if (raw && (!Number.isFinite(parsed) || parsed < 0)) {
+    budgetOilTankPriceMessage.textContent = "Enter a valid non-negative tank price.";
+    budgetOilTankPriceMessage.className = "message error";
+    return;
+  }
+
+  budgetOilTankPriceMessage.textContent = "Saving tank price...";
+  budgetOilTankPriceMessage.className = "message success";
+
+  try {
+    await requestJson(`${API_BASE}/olive-seasons/${seasonId}/oil-tank-price`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ unit_price: parsed }),
+    });
+
+    budgetOilTankPriceMessage.textContent = "Tank price saved.";
+    budgetOilTankPriceMessage.className = "message success";
+
+    document.getElementById("refresh-finance-btn")?.click();
+    document.getElementById("refresh-seasons-btn")?.click();
+  } catch (error) {
+    budgetOilTankPriceMessage.textContent = error.message || "Could not save tank price";
+    budgetOilTankPriceMessage.className = "message error";
+  }
+});
+
+window.setTimeout(syncBudgetTankPriceInput, 300);
 
 

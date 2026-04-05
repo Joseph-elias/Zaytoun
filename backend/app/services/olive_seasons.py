@@ -39,11 +39,12 @@ def _validate_piece_name(value: str | None) -> str:
     return normalized
 
 
-def _normalize_tank_values(payload: OliveSeasonCreate | OliveSeasonUpdate) -> tuple[Decimal | None, Decimal, Decimal | None]:
+def _normalize_tank_values(payload: OliveSeasonCreate | OliveSeasonUpdate) -> tuple[Decimal | None, Decimal, Decimal | None, Decimal | None]:
     produced = Decimal(str(payload.tanks_20l)) if payload.tanks_20l is not None else None
     pressing_mode = str(payload.pressing_cost_mode or "money")
     pressing_money = _round2(Decimal(str(payload.pressing_cost))) if payload.pressing_cost is not None else ZERO
     pressing_oil_tanks = _round2(Decimal(str(payload.pressing_cost_oil_tanks_20l))) if payload.pressing_cost_oil_tanks_20l is not None else None
+    pressing_oil_tank_unit_price = _round2(Decimal(str(payload.pressing_cost_oil_tank_unit_price))) if payload.pressing_cost_oil_tank_unit_price is not None else None
     taken_home = _round2(Decimal(str(payload.tanks_taken_home_20l))) if payload.tanks_taken_home_20l is not None else None
 
     if pressing_mode == "oil_tanks":
@@ -59,12 +60,13 @@ def _normalize_tank_values(payload: OliveSeasonCreate | OliveSeasonUpdate) -> tu
         pressing_money = pressing_oil_tanks
     else:
         pressing_oil_tanks = None
+        pressing_oil_tank_unit_price = None
         if produced is not None and taken_home is None:
             taken_home = _round2(produced)
         if produced is not None and taken_home is not None and taken_home > produced:
             raise ValueError("Tanks taken home cannot exceed tanks produced")
 
-    return taken_home, pressing_money, pressing_oil_tanks
+    return taken_home, pressing_money, pressing_oil_tanks, pressing_oil_tank_unit_price
 
 
 def _build_financial_maps(db: Session, farmer_user_id: UUID) -> tuple[dict, dict, dict]:
@@ -211,13 +213,24 @@ def _build_financial_maps(db: Session, farmer_user_id: UUID) -> tuple[dict, dict
 
 def _to_out(item: FarmerOliveSeason, labor_map: dict, sales_map: dict, usage_map: dict) -> dict:
     pressing_cost = _round2(Decimal(str(item.pressing_cost))) if item.pressing_cost is not None else ZERO
+    pressing_cost_oil_tanks_20l = _round2(Decimal(str(item.pressing_cost_oil_tanks_20l))) if item.pressing_cost_oil_tanks_20l is not None else None
+    pressing_cost_oil_tank_unit_price = _round2(Decimal(str(item.pressing_cost_oil_tank_unit_price))) if item.pressing_cost_oil_tank_unit_price is not None else None
 
     labor_info = labor_map.get(item.id, {"labor_cost_total": ZERO, "harvest_days": 0, "worker_days": 0})
     sales_info = sales_map.get(item.id, {"sold_tanks": ZERO, "sales_revenue_total": ZERO})
     usage_info = usage_map.get(item.id, {"used_tanks": ZERO})
 
     labor_cost_total = labor_info["labor_cost_total"]
-    total_cost = _round2(pressing_cost + labor_cost_total)
+    pressing_cost_money_equivalent = None
+    if item.pressing_cost_mode == "oil_tanks" and pressing_cost_oil_tanks_20l is not None and pressing_cost_oil_tank_unit_price is not None:
+        pressing_cost_money_equivalent = _round2(pressing_cost_oil_tanks_20l * pressing_cost_oil_tank_unit_price)
+
+    if item.pressing_cost_mode == "oil_tanks":
+        pressing_cost_for_total = pressing_cost_money_equivalent if pressing_cost_money_equivalent is not None else ZERO
+    else:
+        pressing_cost_for_total = pressing_cost
+
+    total_cost = _round2(pressing_cost_for_total + labor_cost_total)
     sold_tanks = sales_info["sold_tanks"]
     sales_revenue_total = sales_info["sales_revenue_total"]
     used_tanks = usage_info["used_tanks"]
@@ -240,8 +253,10 @@ def _to_out(item: FarmerOliveSeason, labor_map: dict, sales_map: dict, usage_map
         "tanks_taken_home_20l": item.tanks_taken_home_20l,
         "kg_needed_per_tank": _kg_needed_per_tank(item.kg_per_land_piece, item.actual_chonbol, item.tanks_20l),
         "pressing_cost_mode": item.pressing_cost_mode,
-        "pressing_cost": _round2(Decimal(str(item.pressing_cost))) if item.pressing_cost is not None else ZERO,
-        "pressing_cost_oil_tanks_20l": _round2(Decimal(str(item.pressing_cost_oil_tanks_20l))) if item.pressing_cost_oil_tanks_20l is not None else None,
+        "pressing_cost": pressing_cost,
+        "pressing_cost_oil_tanks_20l": pressing_cost_oil_tanks_20l,
+        "pressing_cost_oil_tank_unit_price": pressing_cost_oil_tank_unit_price,
+        "pressing_cost_money_equivalent": pressing_cost_money_equivalent,
         "labor_cost_total": labor_cost_total,
         "total_cost": total_cost,
         "sold_tanks": sold_tanks,
@@ -255,7 +270,6 @@ def _to_out(item: FarmerOliveSeason, labor_map: dict, sales_map: dict, usage_map
         "created_at": item.created_at,
         "updated_at": item.updated_at,
     }
-
 
 def list_my_olive_seasons(db: Session, farmer_user_id: UUID) -> list[dict]:
     rows = db.scalars(
@@ -281,7 +295,7 @@ def create_olive_season(db: Session, farmer_user_id: UUID, payload: OliveSeasonC
 
     validate_land_piece_for_season(db, farmer_user_id, str(payload.land_piece_name), payload.season_year)
 
-    tanks_taken_home_20l, pressing_cost, pressing_cost_oil_tanks_20l = _normalize_tank_values(payload)
+    tanks_taken_home_20l, pressing_cost, pressing_cost_oil_tanks_20l, pressing_cost_oil_tank_unit_price = _normalize_tank_values(payload)
 
     item = FarmerOliveSeason(
         farmer_user_id=farmer_user_id,
@@ -296,6 +310,7 @@ def create_olive_season(db: Session, farmer_user_id: UUID, payload: OliveSeasonC
         pressing_cost_mode=payload.pressing_cost_mode,
         pressing_cost=pressing_cost,
         pressing_cost_oil_tanks_20l=pressing_cost_oil_tanks_20l,
+        pressing_cost_oil_tank_unit_price=pressing_cost_oil_tank_unit_price,
         notes=payload.notes,
     )
     db.add(item)
@@ -322,7 +337,7 @@ def update_olive_season(db: Session, season_id: UUID, farmer_user_id: UUID, payl
 
     validate_land_piece_for_season(db, farmer_user_id, str(payload.land_piece_name), payload.season_year)
 
-    tanks_taken_home_20l, pressing_cost, pressing_cost_oil_tanks_20l = _normalize_tank_values(payload)
+    tanks_taken_home_20l, pressing_cost, pressing_cost_oil_tanks_20l, pressing_cost_oil_tank_unit_price = _normalize_tank_values(payload)
 
     item.season_year = payload.season_year
     item.land_pieces = payload.land_pieces
@@ -335,6 +350,7 @@ def update_olive_season(db: Session, season_id: UUID, farmer_user_id: UUID, payl
     item.pressing_cost_mode = payload.pressing_cost_mode
     item.pressing_cost = pressing_cost
     item.pressing_cost_oil_tanks_20l = pressing_cost_oil_tanks_20l
+    item.pressing_cost_oil_tank_unit_price = pressing_cost_oil_tank_unit_price
     item.notes = payload.notes
 
     db.commit()
@@ -364,3 +380,24 @@ def delete_olive_season(db: Session, season_id: UUID, farmer_user_id: UUID) -> b
 
 
 
+
+
+
+
+def update_olive_season_oil_tank_price(
+    db: Session,
+    season_id: UUID,
+    farmer_user_id: UUID,
+    unit_price: Decimal | None,
+) -> dict | None:
+    item = db.get(FarmerOliveSeason, season_id)
+    if not item or item.farmer_user_id != farmer_user_id:
+        return None
+
+    item.pressing_cost_oil_tank_unit_price = _round2(Decimal(str(unit_price))) if unit_price is not None else None
+
+    db.commit()
+    db.refresh(item)
+
+    labor_map, sales_map, usage_map = _build_financial_maps(db, farmer_user_id)
+    return _to_out(item, labor_map, sales_map, usage_map)

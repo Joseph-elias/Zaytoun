@@ -825,6 +825,7 @@ def test_farmer_olive_season_supports_pressing_cost_in_oil_tanks() -> None:
     assert row["pressing_cost"] == "1.00"
     assert row["pressing_cost_oil_tanks_20l"] == "1.00"
     assert row["tanks_taken_home_20l"] == "8.00"
+    assert row["total_cost"] == "0.00"
 
     sale = client.post(
         "/olive-sales",
@@ -1252,4 +1253,86 @@ def test_olive_season_single_season_includes_unlinked_confirmed_bookings() -> No
     row = rows.json()[0]
     assert row["harvest_days"] == 1
     assert row["labor_cost_total"] == "180.00"
+
+
+
+def test_oil_tanks_pressing_cost_converts_to_money_when_tank_price_is_set() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127014031")
+    _create_land_piece(farmer_headers, "Conversion Piece")
+
+    created = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2042,
+            "land_pieces": 1,
+            "land_piece_name": "Conversion Piece",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 9,
+            "tanks_taken_home_20l": 8,
+            "pressing_cost_mode": "oil_tanks",
+        },
+        headers=farmer_headers,
+    )
+    assert created.status_code == 201
+    row = created.json()
+    season_id = row["id"]
+    assert row["pressing_cost_oil_tanks_20l"] == "1.00"
+    assert row["total_cost"] == "0.00"
+
+    updated = client.patch(
+        f"/olive-seasons/{season_id}",
+        json={
+            "season_year": 2042,
+            "land_pieces": 1,
+            "land_piece_name": "Conversion Piece",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 9,
+            "tanks_taken_home_20l": 8,
+            "pressing_cost_mode": "oil_tanks",
+            "pressing_cost_oil_tank_unit_price": 50,
+        },
+        headers=farmer_headers,
+    )
+    assert updated.status_code == 200
+    row2 = updated.json()
+    assert row2["pressing_cost_oil_tank_unit_price"] == "50.00"
+    assert row2["pressing_cost_money_equivalent"] == "50.00"
+    assert row2["total_cost"] == "50.00"
+
+
+def test_setting_oil_tank_price_does_not_overwrite_tank_pressing_values() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127014041")
+    _create_land_piece(farmer_headers, "No Overwrite Piece")
+
+    created = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2043,
+            "land_pieces": 1,
+            "land_piece_name": "No Overwrite Piece",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 11,
+            "tanks_taken_home_20l": 8,
+            "pressing_cost_mode": "oil_tanks",
+        },
+        headers=farmer_headers,
+    )
+    assert created.status_code == 201
+    season_id = created.json()["id"]
+
+    updated_price = client.patch(
+        f"/olive-seasons/{season_id}/oil-tank-price",
+        json={"unit_price": 130},
+        headers=farmer_headers,
+    )
+    assert updated_price.status_code == 200
+    row = updated_price.json()
+    assert row["pressing_cost_oil_tanks_20l"] == "3.00"
+    assert row["pressing_cost_oil_tank_unit_price"] == "130.00"
+    assert row["pressing_cost_money_equivalent"] == "390.00"
+    assert row["total_cost"] == "390.00"
 

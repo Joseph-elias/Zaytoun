@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class OliveInventoryItemBase(BaseModel):
+    inventory_year: int = Field(ge=2000, le=2100)
     item_name: str = Field(min_length=1, max_length=120)
     unit_label: str = Field(min_length=1, max_length=60)
     quantity_on_hand: Decimal = Field(ge=0)
@@ -18,6 +19,7 @@ class OliveInventoryItemCreate(OliveInventoryItemBase):
 
 
 class OliveInventoryItemUpdate(BaseModel):
+    inventory_year: int | None = Field(default=None, ge=2000, le=2100)
     item_name: str | None = Field(default=None, min_length=1, max_length=120)
     unit_label: str | None = Field(default=None, min_length=1, max_length=60)
     quantity_on_hand: Decimal | None = Field(default=None, ge=0)
@@ -25,9 +27,19 @@ class OliveInventoryItemUpdate(BaseModel):
     notes: str | None = Field(default=None, max_length=400)
 
 
+class OliveInventoryCarryOverPayload(BaseModel):
+    from_year: int = Field(ge=2000, le=2100)
+    to_year: int = Field(ge=2000, le=2100)
+
+
+class OliveInventoryCarryOverOut(BaseModel):
+    copied_count: int
+
+
 class OliveInventoryItemOut(BaseModel):
     id: UUID
     farmer_user_id: UUID
+    inventory_year: int
     item_name: str
     unit_label: str
     quantity_on_hand: Decimal

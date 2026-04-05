@@ -21,6 +21,7 @@ class OliveSeasonBase(BaseModel):
     pressing_cost_mode: PressingCostMode = "money"
     pressing_cost: Decimal | None = Field(default=None, ge=0)
     pressing_cost_oil_tanks_20l: Decimal | None = Field(default=None, ge=0)
+    pressing_cost_oil_tank_unit_price: Decimal | None = Field(default=None, ge=0)
     notes: str | None = Field(default=None, max_length=500)
 
 
@@ -38,6 +39,9 @@ class OliveSeasonUpdate(OliveSeasonBase):
         return self
 
 
+
+class OliveSeasonTankPriceUpdate(BaseModel):
+    unit_price: Decimal | None = Field(default=None, ge=0)
 class OliveSeasonOut(BaseModel):
     id: UUID
     farmer_user_id: UUID
@@ -53,6 +57,8 @@ class OliveSeasonOut(BaseModel):
     pressing_cost_mode: PressingCostMode
     pressing_cost: Decimal | None
     pressing_cost_oil_tanks_20l: Decimal | None
+    pressing_cost_oil_tank_unit_price: Decimal | None
+    pressing_cost_money_equivalent: Decimal | None
     labor_cost_total: Decimal
     total_cost: Decimal
     sold_tanks: Decimal

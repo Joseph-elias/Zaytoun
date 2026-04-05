@@ -28,6 +28,7 @@ class FarmerOliveSeason(Base):
     pressing_cost_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="money")
     pressing_cost: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     pressing_cost_oil_tanks_20l: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    pressing_cost_oil_tank_unit_price: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
