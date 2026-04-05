@@ -24,6 +24,7 @@ const isWorker = session?.user?.role === "worker";
 const isFarmer = session?.user?.role === "farmer";
 const capacityCache = new Map();
 const workersById = new Map();
+let farmerSeasons = [];
 
 let map = null;
 let markersLayer = null;
@@ -73,6 +74,25 @@ function distanceBadgeClass(worker) {
   return "far";
 }
 
+function seasonOptions() {
+  if (!isFarmer) return "";
+  if (!farmerSeasons.length) return '<option value="">No seasons yet</option>';
+  return ['<option value="">Select season</option>', ...farmerSeasons.map((s) => `<option value="${s.id}">${s.season_year} - ${s.land_piece_name}</option>`)].join("");
+}
+
+async function fetchFarmerSeasons() {
+  if (!isFarmer) return;
+  try {
+    const response = await fetch(`${API_BASE}/olive-seasons/mine`, { headers: authHeaders() });
+    if (!response.ok) {
+      farmerSeasons = [];
+      return;
+    }
+    farmerSeasons = await response.json();
+  } catch {
+    farmerSeasons = [];
+  }
+}
 function bookingRequestRow(defaultDate = "") {
   return `
     <div class="worker-grid full booking-request-row">
@@ -98,6 +118,11 @@ function bookingForm(worker) {
   return `
     <form class="booking-form" data-worker-id="${worker.id}">
       <h4>Book This Team</h4>
+      <label class="full">Season
+        <select name="season_id" required>
+          ${seasonOptions()}
+        </select>
+      </label>
       <div class="full"><strong>Date:</strong> ${filterDate ? formatDate(filterDate) : "Pick date(s) below"}</div>
       <div class="full"><strong>Remaining Capacity:</strong> ${remainingMen} men, ${remainingWomen} women${liveRemaining ? " (live for selected date)" : ""}</div>
       <p class="message">You can add multiple dates and choose different men/women for each date.</p>
@@ -439,7 +464,7 @@ useMyLocationBtn?.addEventListener("click", () => {
       nearLatInput.value = String(position.coords.latitude);
       nearLngInput.value = String(position.coords.longitude);
       if (sortByInput) sortByInput.value = "distance";
-      fetchWorkers();
+      fetchFarmerSeasons().then(fetchWorkers);
     },
     () => {
       mapHint.textContent = "Could not get your location.";
@@ -528,7 +553,7 @@ listEl.addEventListener("click", async (event) => {
     }
 
     if (!response.ok) throw new Error("Could not update availability");
-    await fetchWorkers();
+    await fetchFarmerSeasons().then(fetchWorkers);
   } catch (error) {
     button.disabled = false;
     alert(error.message);
@@ -553,7 +578,9 @@ listEl.addEventListener("submit", async (event) => {
 
   const messageEl = bookingFormEl.querySelector(".booking-submit-message");
   const workerId = bookingFormEl.dataset.workerId;
-  const note = String(new FormData(bookingFormEl).get("note") || "").trim() || null;
+  const formData = new FormData(bookingFormEl);
+  const note = String(formData.get("note") || "").trim() || null;
+  const seasonId = String(formData.get("season_id") || "").trim() || null;
 
   const rows = [...bookingFormEl.querySelectorAll(".booking-request-row")];
   const requests = [];
@@ -588,6 +615,12 @@ listEl.addEventListener("submit", async (event) => {
     });
   }
 
+  if (!seasonId) {
+    messageEl.textContent = "Select a season before booking.";
+    messageEl.className = "message error";
+    return;
+  }
+
   if (!requests.length) {
     messageEl.textContent = "Add at least one date request.";
     messageEl.className = "message error";
@@ -601,7 +634,7 @@ listEl.addEventListener("submit", async (event) => {
     const response = await fetch(`${API_BASE}/workers/${workerId}/bookings`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ requests, note }),
+      body: JSON.stringify({ season_id: seasonId, requests, note }),
     });
 
     if (response.status === 401 || response.status === 403) {
@@ -618,7 +651,7 @@ listEl.addEventListener("submit", async (event) => {
     const created = await response.json();
     messageEl.textContent = `${created.length} booking request${created.length > 1 ? "s" : ""} sent.`;
     messageEl.className = "message success";
-    await fetchWorkers();
+    await fetchFarmerSeasons().then(fetchWorkers);
   } catch (error) {
     messageEl.textContent = error.message || "Booking request failed";
     messageEl.className = "message error";
@@ -627,9 +660,10 @@ listEl.addEventListener("submit", async (event) => {
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  fetchWorkers();
+  fetchFarmerSeasons().then(fetchWorkers);
 });
 
 refreshBtn.addEventListener("click", fetchWorkers);
-fetchWorkers();
+fetchFarmerSeasons().then(fetchWorkers);
+
 

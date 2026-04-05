@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.booking import Booking
 from app.models.booking_event import BookingEvent
 from app.models.booking_message import BookingMessage
+from app.models.olive_season import FarmerOliveSeason
 from app.models.user import User
 from app.models.worker import Worker
 from app.schemas.booking import BookingCreate, BookingProposalUpdate, BookingStatus, WorkerBookingResponse
@@ -25,6 +26,7 @@ def _to_out_row(row) -> dict:
 
     return {
         "id": booking.id,
+        "season_id": booking.season_id,
         "worker_id": booking.worker_id,
         "worker_name": worker.name,
         "worker_phone": worker.phone,
@@ -100,6 +102,16 @@ def _ensure_capacity(
 def create_bookings_for_worker(db: Session, worker: Worker, farmer: User, payload: BookingCreate) -> list[dict]:
     created: list[Booking] = []
 
+    if payload.season_id is not None:
+        season = db.scalar(
+            select(FarmerOliveSeason).where(
+                FarmerOliveSeason.id == payload.season_id,
+                FarmerOliveSeason.farmer_user_id == farmer.id,
+            )
+        )
+        if not season:
+            raise ValueError("Season record not found for booking")
+
     for item in payload.requests:
         if not worker_available_on_date(worker, item.work_date):
             raise ValueError(f"Worker is not available on selected date {item.work_date.isoformat()}")
@@ -120,6 +132,7 @@ def create_bookings_for_worker(db: Session, worker: Worker, farmer: User, payloa
         booking = Booking(
             worker_id=worker.id,
             farmer_user_id=farmer.id,
+            season_id=payload.season_id,
             work_date=item.work_date,
             day=weekday_name(item.work_date),
             requested_men=item.requested_men,
@@ -336,13 +349,15 @@ def delete_booking_proposal(
     db: Session,
     booking_id: UUID,
     current_user: User,
+    *,
+    force: bool = False,
 ) -> bool | None:
     row = db.execute(_booking_select().where(Booking.id == booking_id)).first()
     if not _assert_booking_access(row, current_user):
         return None
 
     booking, _, _ = row
-    if _is_confirmed(booking.status):
+    if _is_confirmed(booking.status) and not force:
         raise ValueError("Confirmed bookings cannot be deleted")
 
     db.execute(delete(BookingMessage).where(BookingMessage.booking_id == booking_id))
@@ -437,3 +452,7 @@ def list_booking_events(db: Session, booking_id: UUID, current_user: User) -> Se
         }
         for event, actor in rows
     ]
+
+
+
+

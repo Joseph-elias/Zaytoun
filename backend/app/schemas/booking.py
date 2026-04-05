@@ -29,6 +29,7 @@ class BookingRequestItem(BaseModel):
 
 
 class BookingCreate(BaseModel):
+    season_id: UUID | None = None
     requests: list[BookingRequestItem] = Field(min_length=1, max_length=31)
     note: str | None = Field(default=None, max_length=300)
 
@@ -90,6 +91,7 @@ class BookingProposalUpdate(BaseModel):
 
 class BookingOut(BaseModel):
     id: UUID
+    season_id: UUID | None
     worker_id: UUID
     worker_name: str
     worker_phone: str
@@ -135,3 +137,4 @@ class BookingEventOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+

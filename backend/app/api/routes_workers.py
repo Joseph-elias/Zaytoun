@@ -222,11 +222,12 @@ def update_booking_proposal_endpoint(
 @router.delete("/bookings/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_booking_endpoint(
     booking_id: UUID,
+    force: bool = Query(default=False),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles("worker", "farmer")),
 ) -> None:
     try:
-        deleted = delete_booking_proposal(db, booking_id, current_user)
+        deleted = delete_booking_proposal(db, booking_id, current_user, force=force)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
@@ -269,5 +270,6 @@ def list_booking_events_endpoint(
     if rows is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     return [BookingEventOut.model_validate(item) for item in rows]
+
 
 

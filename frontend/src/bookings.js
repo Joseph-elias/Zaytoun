@@ -169,6 +169,7 @@ function bookingCard(booking) {
       }
       ${proposalEditor(booking, s)}
       <div class="actions-row">
+        <button class="btn danger" type="button" data-delete-booking="${booking.id}">Delete (Test)</button>
         <a class="btn ghost" href="${whatsappLink(booking.worker_phone)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         <button class="btn ghost" type="button" data-chat-toggle="${booking.id}">Open Chat</button>
       </div>
@@ -377,7 +378,7 @@ bookingsList.addEventListener("click", async (event) => {
           return;
         }
 
-        const response = await fetch(`${API_BASE}/bookings/${bookingId}`, {
+        const response = await fetch(`${API_BASE}/bookings/${bookingId}?force=true`, {
           method: "DELETE",
           headers: authHeaders(),
         });
@@ -449,6 +450,38 @@ bookingsList.addEventListener("click", async (event) => {
     }
   }
 
+  const deleteBookingButton = event.target.closest("button[data-delete-booking]");
+  if (deleteBookingButton) {
+    const bookingId = deleteBookingButton.dataset.deleteBooking;
+    const ok = window.confirm("Delete this booking? This is for testing only.");
+    if (!ok) return;
+
+    deleteBookingButton.disabled = true;
+    try {
+      const response = await fetch(`${API_BASE}/bookings/${bookingId}?force=true`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        clearSession();
+        window.location.href = "./login.html";
+        return;
+      }
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || "Could not delete booking");
+      }
+
+      await fetchBookings();
+      return;
+    } catch (error) {
+      deleteBookingButton.disabled = false;
+      alert(error.message || "Could not delete booking");
+      return;
+    }
+  }
+
   const toggleButton = event.target.closest("button[data-chat-toggle]");
   if (!toggleButton) return;
 
@@ -510,6 +543,7 @@ filtersForm.addEventListener("submit", (event) => {
 
 refreshBtn.addEventListener("click", fetchBookings);
 fetchBookings();
+
 
 
 

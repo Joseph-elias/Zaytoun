@@ -5,6 +5,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.olive_labor_day import FarmerOliveLaborDay
+from app.models.booking import Booking
+from app.models.worker import Worker
 from app.models.olive_sale import FarmerOliveSale
 from app.models.olive_usage import FarmerOliveUsage
 from app.models.olive_season import FarmerOliveSeason
@@ -104,6 +106,90 @@ def _build_financial_maps(db: Session, farmer_user_id: UUID) -> tuple[dict, dict
         }
         for row in labor_rows
     }
+
+    season_rows = db.execute(
+        select(FarmerOliveSeason.id, FarmerOliveSeason.season_year).where(FarmerOliveSeason.farmer_user_id == farmer_user_id)
+    ).all()
+    season_ids = {row[0] for row in season_rows}
+    single_season_id = season_rows[0][0] if len(season_rows) == 1 else None
+
+    booking_rows = db.execute(
+        select(
+            Booking.season_id,
+            Booking.work_date,
+            Booking.requested_men,
+            Booking.requested_women,
+            Worker.men_rate_value,
+            Worker.women_rate_value,
+        )
+        .join(Worker, Worker.id == Booking.worker_id)
+        .where(
+            Booking.farmer_user_id == farmer_user_id,
+            Booking.status.in_(["confirmed", "accepted"]),
+            Booking.work_date.is_not(None),
+        )
+    ).all()
+
+    booking_season_map: dict = {}
+    booking_year_map: dict[int, dict] = {}
+
+    for season_id, work_date, requested_men, requested_women, men_rate, women_rate in booking_rows:
+        if work_date is None:
+            continue
+
+        men_count = int(requested_men or 0)
+        women_count = int(requested_women or 0)
+        men_rate_value = Decimal(str(men_rate or ZERO))
+        women_rate_value = Decimal(str(women_rate or ZERO))
+        row_cost = _round2(Decimal(men_count) * men_rate_value + Decimal(women_count) * women_rate_value)
+
+        # Preferred mapping: keep explicit season links when they still point
+        # to one of the farmer's current season rows.
+        if season_id is not None and season_id in season_ids:
+            if season_id not in booking_season_map:
+                booking_season_map[season_id] = {
+                    "labor_cost_total": ZERO,
+                    "days": set(),
+                }
+            booking_season_map[season_id]["labor_cost_total"] = _round2(booking_season_map[season_id]["labor_cost_total"] + row_cost)
+            booking_season_map[season_id]["days"].add(work_date)
+            continue
+
+        # Recovery path: when the farmer has exactly one season row, attach
+        # orphan or unlinked bookings to that row to avoid dropping labor totals.
+        if single_season_id is not None:
+            if single_season_id not in booking_season_map:
+                booking_season_map[single_season_id] = {
+                    "labor_cost_total": ZERO,
+                    "days": set(),
+                }
+            booking_season_map[single_season_id]["labor_cost_total"] = _round2(
+                booking_season_map[single_season_id]["labor_cost_total"] + row_cost
+            )
+            booking_season_map[single_season_id]["days"].add(work_date)
+            continue
+
+        # Backward compatibility for old bookings without season_id.
+        year_key = int(work_date.year)
+        if year_key not in booking_year_map:
+            booking_year_map[year_key] = {
+                "labor_cost_total": ZERO,
+                "days": set(),
+            }
+        booking_year_map[year_key]["labor_cost_total"] = _round2(booking_year_map[year_key]["labor_cost_total"] + row_cost)
+        booking_year_map[year_key]["days"].add(work_date)
+
+    for season_id, season_year in season_rows:
+        booking_info = booking_season_map.get(season_id)
+        if booking_info is None:
+            booking_info = booking_year_map.get(int(season_year))
+        if booking_info is None:
+            continue
+        labor_map[season_id] = {
+            "labor_cost_total": _round2(Decimal(str(booking_info["labor_cost_total"]))),
+            "harvest_days": len(booking_info["days"]),
+            "worker_days": 0,
+        }
 
     sales_map = {
         row[0]: {
@@ -266,6 +352,15 @@ def delete_olive_season(db: Session, season_id: UUID, farmer_user_id: UUID) -> b
     db.delete(item)
     db.commit()
     return True
+
+
+
+
+
+
+
+
+
 
 
 
