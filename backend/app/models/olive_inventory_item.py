@@ -17,7 +17,7 @@ class FarmerOliveInventoryItem(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     farmer_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    inventory_year: Mapped[int] = mapped_column(Integer, nullable=False, default=2026)
+    inventory_year: Mapped[int] = mapped_column(Integer, nullable=False, default=lambda: datetime.utcnow().year)
     item_name: Mapped[str] = mapped_column(String(120), nullable=False)
     unit_label: Mapped[str] = mapped_column(String(60), nullable=False)
     quantity_on_hand: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
@@ -25,3 +25,4 @@ class FarmerOliveInventoryItem(Base):
     notes: Mapped[str | None] = mapped_column(String(400), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+

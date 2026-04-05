@@ -121,8 +121,10 @@
             <label>Oil Tank Price (20L)
               <input id="budget-oil-tank-price" type="number" min="0" step="0.01" placeholder="e.g. 35" />
             </label>
-            <div class="actions-row" style="align-items:end;">
+            <div class="actions-row" style="align-items:end; gap:0.5rem; flex-wrap:wrap;">
               <button class="btn ghost" id="save-oil-tank-price-btn" type="button">Save Tank Price</button>
+              <button class="btn ghost" id="delete-oil-tank-price-btn" type="button">Delete This Price</button>
+              <button class="btn danger" id="clear-all-oil-tank-prices-btn" type="button">Clear All Prices</button>
             </div>
             <p id="budget-oil-tank-price-message" class="message full"></p>
           </form>
@@ -152,7 +154,7 @@
           </section>
 
           <div class="olive-finance-columns">
-            <article>
+            <article style="display:none;">
               <h3>Harvest Labor</h3>
               <form id="labor-day-form" class="form-grid compact">
                 <label>Work Date<input name="work_date" type="date" required /></label>
@@ -263,6 +265,7 @@
     <script type="module" src="./src/olive-season-edit-fix.js"></script>
   </body>
 </html>
+
 
 
 

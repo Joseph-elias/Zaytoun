@@ -1,7 +1,7 @@
 ﻿from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models.olive_labor_day import FarmerOliveLaborDay
@@ -401,3 +401,32 @@ def update_olive_season_oil_tank_price(
 
     labor_map, sales_map, usage_map = _build_financial_maps(db, farmer_user_id)
     return _to_out(item, labor_map, sales_map, usage_map)
+def clear_olive_season_oil_tank_price(
+    db: Session,
+    season_id: UUID,
+    farmer_user_id: UUID,
+) -> dict | None:
+    item = db.get(FarmerOliveSeason, season_id)
+    if not item or item.farmer_user_id != farmer_user_id:
+        return None
+
+    item.pressing_cost_oil_tank_unit_price = None
+    db.commit()
+    db.refresh(item)
+
+    labor_map, sales_map, usage_map = _build_financial_maps(db, farmer_user_id)
+    return _to_out(item, labor_map, sales_map, usage_map)
+
+
+def clear_all_olive_season_oil_tank_prices(
+    db: Session,
+    farmer_user_id: UUID,
+) -> int:
+    result = db.execute(
+        update(FarmerOliveSeason)
+        .where(FarmerOliveSeason.farmer_user_id == farmer_user_id)
+        .values(pressing_cost_oil_tank_unit_price=None)
+        .execution_options(synchronize_session=False)
+    )
+    db.commit()
+    return int(result.rowcount or 0)

@@ -1,3 +1,4 @@
+﻿import "./ui-feedback.js";
 import { getSession, login, redirectToRoleHome } from "./session.js";
 
 const existing = getSession();
@@ -29,3 +30,4 @@ loginForm.addEventListener("submit", async (event) => {
     setMessage(loginMessage, error.message || "Login failed", false);
   }
 });
+

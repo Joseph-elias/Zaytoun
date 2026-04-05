@@ -1,4 +1,5 @@
-﻿import { API_BASE } from "./config.js";
+﻿import "./ui-feedback.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
 const session = requireRole("farmer", "./workers.html");
@@ -1005,3 +1006,4 @@ refreshBtn.addEventListener("click", fetchAll);
 fetchAll().catch((error) => {
   insightKpis.innerHTML = `<p class="message error">${error.message || "Could not load insights"}</p>`;
 });
+

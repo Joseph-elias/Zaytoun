@@ -1,4 +1,5 @@
-﻿import { API_BASE } from "./config.js";
+﻿import "./ui-feedback.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession } from "./session.js";
 
 const landPieceForm = document.getElementById("land-piece-form");
@@ -195,3 +196,4 @@ if (seasonForm?.elements?.season_year) {
 }
 
 fetchLandPieces();
+

@@ -1,4 +1,5 @@
-﻿import { initLocationPicker } from "./location-picker.js";
+﻿import "./ui-feedback.js";
+import { initLocationPicker } from "./location-picker.js";
 import { getSession, login, redirectToRoleHome, registerAccount } from "./session.js";
 
 const existing = getSession();
@@ -48,3 +49,4 @@ registerForm.addEventListener("submit", async (event) => {
     setMessage(registerMessage, error.message || "Registration failed", false);
   }
 });
+

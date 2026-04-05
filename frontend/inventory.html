@@ -27,6 +27,15 @@
           <h2>Season Stock Summary</h2>
           <button class="btn ghost" id="refresh-summary-btn" type="button">Refresh</button>
         </div>
+        <form id="inventory-year-form" class="form-grid compact">
+          <label>Inventory Year
+            <input id="inventory-year-input" type="number" min="2000" max="2100" />
+          </label>
+          <div class="actions-row" style="align-items:end;">
+            <button class="btn ghost" id="carry-over-btn" type="button">Carry Over Last Year</button>
+          </div>
+          <p id="inventory-year-message" class="message full"></p>
+        </form>
         <div class="insight-kpis" id="inventory-kpis"></div>
       </section>
 
@@ -53,3 +62,4 @@
     <script type="module" src="./src/inventory.js"></script>
   </body>
 </html>
+

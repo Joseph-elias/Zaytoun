@@ -1,17 +1,20 @@
 ﻿from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import require_roles
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.olive_inventory_item import (
+    OliveInventoryCarryOverOut,
+    OliveInventoryCarryOverPayload,
     OliveInventoryItemCreate,
     OliveInventoryItemOut,
     OliveInventoryItemUpdate,
 )
 from app.services.olive_inventory_items import (
+    carry_over_inventory_year,
     create_inventory_item,
     delete_inventory_item,
     list_my_inventory_items,
@@ -23,10 +26,11 @@ router = APIRouter(tags=["Olive Inventory"])
 
 @router.get("/olive-inventory-items/mine", response_model=list[OliveInventoryItemOut])
 def list_my_inventory_items_endpoint(
+    inventory_year: int | None = Query(default=None, ge=2000, le=2100),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles("farmer")),
 ) -> list[OliveInventoryItemOut]:
-    rows = list_my_inventory_items(db, current_user.id)
+    rows = list_my_inventory_items(db, current_user.id, inventory_year=inventory_year)
     return [OliveInventoryItemOut.model_validate(row) for row in rows]
 
 
@@ -51,6 +55,19 @@ def update_inventory_item_endpoint(
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inventory item not found")
     return OliveInventoryItemOut.model_validate(row)
+
+
+@router.post("/olive-inventory-items/carry-over", response_model=OliveInventoryCarryOverOut)
+def carry_over_inventory_items_endpoint(
+    payload: OliveInventoryCarryOverPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("farmer")),
+) -> OliveInventoryCarryOverOut:
+    try:
+        copied = carry_over_inventory_year(db, current_user.id, payload.from_year, payload.to_year)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return OliveInventoryCarryOverOut(copied_count=copied)
 
 
 @router.delete("/olive-inventory-items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

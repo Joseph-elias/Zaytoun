@@ -1,12 +1,13 @@
 ﻿from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.olive_inventory_item import FarmerOliveInventoryItem
 from app.models.olive_sale import FarmerOliveSale
 from app.models.olive_season import FarmerOliveSeason
+from app.models.olive_usage import FarmerOliveUsage
 from app.schemas.olive_sale import OliveSaleCreate
 
 
@@ -66,6 +67,29 @@ def _get_owned_season(db: Session, season_id: UUID, farmer_user_id: UUID) -> Far
 
 def _get_owned_inventory_item(db: Session, item_id: UUID, farmer_user_id: UUID) -> FarmerOliveInventoryItem | None:
     return db.scalar(select(FarmerOliveInventoryItem).where(FarmerOliveInventoryItem.id == item_id, FarmerOliveInventoryItem.farmer_user_id == farmer_user_id))
+
+
+def _remaining_tanks_before_new_move(db: Session, season: FarmerOliveSeason, farmer_user_id: UUID) -> Decimal:
+    if season.tanks_taken_home_20l is None:
+        raise ValueError("Set tanks taken home before recording sales/usage")
+
+    sold_sum = db.scalar(
+        select(func.coalesce(func.sum(FarmerOliveSale.inventory_tanks_delta), 0)).where(
+            FarmerOliveSale.farmer_user_id == farmer_user_id,
+            FarmerOliveSale.season_id == season.id,
+        )
+    )
+    used_sum = db.scalar(
+        select(func.coalesce(func.sum(FarmerOliveUsage.tanks_used), 0)).where(
+            FarmerOliveUsage.farmer_user_id == farmer_user_id,
+            FarmerOliveUsage.season_id == season.id,
+        )
+    )
+
+    taken_home = _round2(Decimal(str(season.tanks_taken_home_20l)))
+    sold = _round2(Decimal(str(sold_sum or ZERO)))
+    used = _round2(Decimal(str(used_sum or ZERO)))
+    return _round2(taken_home - sold - used)
 
 
 def list_my_sales(db: Session, farmer_user_id: UUID, season_id: UUID | None = None) -> list[dict]:
@@ -133,6 +157,14 @@ def create_sale(db: Session, farmer_user_id: UUID, payload: OliveSaleCreate) -> 
         total_revenue = _round2(custom_qty * custom_price)
         inventory_tanks_delta = _round2(Decimal(str(payload.custom_inventory_tanks_delta or ZERO)))
 
+    # Logical guard: you cannot sell more tanks than what is left.
+    if inventory_tanks_delta > ZERO:
+        remaining_before = _remaining_tanks_before_new_move(db, season, farmer_user_id)
+        if inventory_tanks_delta > remaining_before:
+            raise ValueError(
+                f"Not enough tanks remaining for this sale. Remaining: {remaining_before:.2f}, requested: {inventory_tanks_delta:.2f}"
+            )
+
     item = FarmerOliveSale(
         farmer_user_id=farmer_user_id,
         season_id=payload.season_id,
@@ -170,4 +202,3 @@ def delete_sale(db: Session, sale_id: UUID, farmer_user_id: UUID) -> bool:
     db.delete(item)
     db.commit()
     return True
-

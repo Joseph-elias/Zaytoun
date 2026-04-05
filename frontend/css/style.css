@@ -774,3 +774,16 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 .olive-mode-tabs .actions-row {
   margin-top: 0;
 }
+
+.btn.is-loading {
+  opacity: .88;
+  cursor: wait;
+}
+
+.btn.is-done {
+  box-shadow: 0 0 0 2px rgba(111, 154, 74, .25);
+}
+
+.btn.is-error {
+  box-shadow: 0 0 0 2px rgba(169, 68, 66, .2);
+}

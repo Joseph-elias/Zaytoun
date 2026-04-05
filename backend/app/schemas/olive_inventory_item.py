@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class OliveInventoryItemBase(BaseModel):
-    inventory_year: int = Field(ge=2000, le=2100)
+    inventory_year: int = Field(default_factory=lambda: datetime.utcnow().year, ge=2000, le=2100)
     item_name: str = Field(min_length=1, max_length=120)
     unit_label: str = Field(min_length=1, max_length=60)
     quantity_on_hand: Decimal = Field(ge=0)
@@ -49,3 +49,4 @@ class OliveInventoryItemOut(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+

@@ -1,4 +1,5 @@
-﻿import { API_BASE } from "./config.js";
+﻿import "./ui-feedback.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession } from "./session.js";
 
 const seasonsList = document.getElementById("olive-seasons-list");
@@ -64,6 +65,35 @@ function recomputePressingOilFromTakenHome() {
   }
 }
 
+function parseApiDetailMessage(payload) {
+  if (!payload) return null;
+  if (typeof payload === "string") return payload;
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const message = parseApiDetailMessage(item);
+      if (message) return message;
+    }
+    return null;
+  }
+
+  if (typeof payload === "object") {
+    if (typeof payload.msg === "string" && payload.msg.trim()) return payload.msg;
+    for (const key of ["detail", "error", "message"]) {
+      const nested = parseApiDetailMessage(payload[key]);
+      if (nested) return nested;
+    }
+    if (Array.isArray(payload.errors)) {
+      for (const item of payload.errors) {
+        const message = parseApiDetailMessage(item);
+        if (message) return message;
+      }
+    }
+  }
+
+  return null;
+}
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, { headers: authHeaders(), ...options });
   if (response.status === 401 || response.status === 403) {
@@ -72,9 +102,17 @@ async function requestJson(url, options = {}) {
     return null;
   }
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    const detail = err?.detail?.[0]?.msg || err?.detail || "Request failed";
-    throw new Error(typeof detail === "string" ? detail : "Request failed");
+    let payload = null;
+    let fallbackText = "";
+    try {
+      payload = await response.json();
+    } catch {
+      fallbackText = (await response.text().catch(() => "")).trim();
+    }
+
+    const detail =
+      parseApiDetailMessage(payload) || fallbackText || `Request failed (${response.status})`;
+    throw new Error(detail);
   }
   if (response.status === 204) return null;
   return response.json();
@@ -211,6 +249,8 @@ if (seasonsList && form) {
 const financeSeasonSelect = document.getElementById("finance-season-id");
 const budgetOilTankPriceInput = document.getElementById("budget-oil-tank-price");
 const saveOilTankPriceBtn = document.getElementById("save-oil-tank-price-btn");
+const deleteOilTankPriceBtn = document.getElementById("delete-oil-tank-price-btn");
+const clearAllOilTankPricesBtn = document.getElementById("clear-all-oil-tank-prices-btn");
 const budgetOilTankPriceMessage = document.getElementById("budget-oil-tank-price-message");
 
 function seasonPayloadFromRow(row, overrides = {}) {
@@ -286,7 +326,6 @@ saveOilTankPriceBtn?.addEventListener("click", async () => {
 
     budgetOilTankPriceMessage.textContent = "Tank price saved.";
     budgetOilTankPriceMessage.className = "message success";
-
     document.getElementById("refresh-finance-btn")?.click();
     document.getElementById("refresh-seasons-btn")?.click();
   } catch (error) {
@@ -295,6 +334,69 @@ saveOilTankPriceBtn?.addEventListener("click", async () => {
   }
 });
 
+
+deleteOilTankPriceBtn?.addEventListener("click", async () => {
+  if (!financeSeasonSelect || !budgetOilTankPriceInput || !budgetOilTankPriceMessage) return;
+
+  const seasonId = String(financeSeasonSelect.value || "").trim();
+  if (!seasonId) {
+    budgetOilTankPriceMessage.textContent = "Select a season first.";
+    budgetOilTankPriceMessage.className = "message error";
+    return;
+  }
+
+  if (!window.confirm("Delete tank price for this piece/season?")) return;
+
+  budgetOilTankPriceMessage.textContent = "Deleting tank price...";
+  budgetOilTankPriceMessage.className = "message success";
+
+  try {
+    await requestJson(`${API_BASE}/olive-seasons/${seasonId}/oil-tank-price`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+
+    budgetOilTankPriceInput.value = "";
+    budgetOilTankPriceMessage.textContent = "Tank price deleted.";
+    budgetOilTankPriceMessage.className = "message success";
+    document.getElementById("refresh-finance-btn")?.click();
+    document.getElementById("refresh-seasons-btn")?.click();
+  } catch (error) {
+    budgetOilTankPriceMessage.textContent = error.message || "Could not delete tank price";
+    budgetOilTankPriceMessage.className = "message error";
+  }
+});
+
+clearAllOilTankPricesBtn?.addEventListener("click", async () => {
+  if (!budgetOilTankPriceMessage) return;
+
+  if (!window.confirm("Clear oil tank prices for all seasons?")) return;
+
+  budgetOilTankPriceMessage.textContent = "Clearing all tank prices...";
+  budgetOilTankPriceMessage.className = "message success";
+
+  try {
+    const result = await requestJson(`${API_BASE}/olive-seasons/oil-tank-prices`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+
+    if (budgetOilTankPriceInput) budgetOilTankPriceInput.value = "";
+    const count = Number(result?.cleared_count || 0);
+    budgetOilTankPriceMessage.textContent = `Cleared ${count} tank price value(s).`;
+    budgetOilTankPriceMessage.className = "message success";
+    document.getElementById("refresh-finance-btn")?.click();
+    document.getElementById("refresh-seasons-btn")?.click();
+    await syncBudgetTankPriceInput();
+  } catch (error) {
+    budgetOilTankPriceMessage.textContent = error.message || "Could not clear tank prices";
+    budgetOilTankPriceMessage.className = "message error";
+  }
+});
 window.setTimeout(syncBudgetTankPriceInput, 300);
+
+
+
+
 
 

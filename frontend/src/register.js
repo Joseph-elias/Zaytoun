@@ -1,4 +1,5 @@
-﻿import { initLocationPicker } from "./location-picker.js";
+﻿import "./ui-feedback.js";
+import { initLocationPicker } from "./location-picker.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
@@ -245,5 +246,6 @@ form.addEventListener("submit", async (event) => {
 });
 
 renderAvailabilityPanel();
+
 
 

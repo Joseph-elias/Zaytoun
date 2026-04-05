@@ -1,4 +1,5 @@
-﻿import { API_BASE } from "./config.js";
+﻿import "./ui-feedback.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireAuth } from "./session.js";
 
 const session = requireAuth();
@@ -665,5 +666,6 @@ form.addEventListener("submit", (event) => {
 
 refreshBtn.addEventListener("click", fetchWorkers);
 fetchFarmerSeasons().then(fetchWorkers);
+
 
 

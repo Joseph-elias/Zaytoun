@@ -1,4 +1,5 @@
-﻿import { API_BASE } from "./config.js";
+﻿import "./ui-feedback.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
 const session = requireRole("farmer", "./workers.html");
@@ -11,6 +12,9 @@ const appTabs = document.getElementById("app-tabs");
 const refreshSummaryBtn = document.getElementById("refresh-summary-btn");
 const refreshItemsBtn = document.getElementById("refresh-items-btn");
 const inventoryKpis = document.getElementById("inventory-kpis");
+const inventoryYearInput = document.getElementById("inventory-year-input");
+const carryOverBtn = document.getElementById("carry-over-btn");
+const inventoryYearMessage = document.getElementById("inventory-year-message");
 
 const form = document.getElementById("inventory-item-form");
 const formMessage = document.getElementById("inventory-item-message");
@@ -18,6 +22,21 @@ const itemsList = document.getElementById("inventory-items-list");
 
 let seasons = [];
 let inventoryItems = [];
+
+function currentYear() {
+  return new Date().getFullYear();
+}
+
+function selectedYear() {
+  const raw = String(inventoryYearInput?.value || "").trim();
+  const year = Number(raw);
+  if (!Number.isFinite(year)) return currentYear();
+  return year;
+}
+
+if (inventoryYearInput && !inventoryYearInput.value) {
+  inventoryYearInput.value = String(currentYear());
+}
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (farmer).`;
@@ -38,6 +57,12 @@ logoutBtn.addEventListener("click", () => {
 function setMessage(text, ok = true) {
   formMessage.textContent = text;
   formMessage.className = `message ${ok ? "success" : "error"}`;
+}
+
+function setYearMessage(text, ok = true) {
+  if (!inventoryYearMessage) return;
+  inventoryYearMessage.textContent = text;
+  inventoryYearMessage.className = `message ${ok ? "success" : "error"}`;
 }
 
 function toNum(v) {
@@ -68,18 +93,21 @@ async function requestJson(url, options = {}) {
 }
 
 function renderSummary() {
-  const producedTanks = seasons.reduce((acc, row) => acc + toNum(row.tanks_20l), 0);
-  const producedKg = seasons.reduce((acc, row) => acc + toNum(row.kg_per_land_piece ?? row.actual_chonbol), 0);
-  const soldTanks = seasons.reduce((acc, row) => acc + toNum(row.sold_tanks), 0);
-  const usedTanks = seasons.reduce((acc, row) => acc + toNum(row.used_tanks), 0);
-  const remainingTanks = seasons.reduce((acc, row) => acc + toNum(row.remaining_tanks), 0);
+  const year = selectedYear();
+  const seasonRows = seasons.filter((row) => Number(row.season_year) === year);
+
+  const takenHomeTanks = seasonRows.reduce((acc, row) => acc + toNum(row.tanks_taken_home_20l), 0);
+  const producedKg = seasonRows.reduce((acc, row) => acc + toNum(row.kg_per_land_piece ?? row.actual_chonbol), 0);
+  const soldTanks = seasonRows.reduce((acc, row) => acc + toNum(row.sold_tanks), 0);
+  const usedTanks = seasonRows.reduce((acc, row) => acc + toNum(row.used_tanks), 0);
+  const remainingTanks = seasonRows.reduce((acc, row) => acc + toNum(row.remaining_tanks), 0);
 
   const cards = [
-    { title: "Produced Tanks", value: money(producedTanks), caption: "From season entries" },
-    { title: "Produced KG", value: money(producedKg), caption: "KG per piece or actual chonbol" },
-    { title: "Sold Tanks", value: money(soldTanks), caption: "From sales converted to tanks" },
-    { title: "Used Tanks", value: money(usedTanks), caption: "From usage tab" },
-    { title: "Remaining Tanks", value: money(remainingTanks), caption: "Produced - sold - used" },
+    { title: "Tanks Taken Home", value: money(takenHomeTanks), caption: `Tanks entered into inventory (${year})` },
+    { title: "Produced KG", value: money(producedKg), caption: `KG per piece or actual chonbol (${year})` },
+    { title: "Sold Tanks", value: money(soldTanks), caption: `From sales converted to tanks (${year})` },
+    { title: "Used Tanks", value: money(usedTanks), caption: `From usage tab (${year})` },
+    { title: "Remaining Tanks", value: money(remainingTanks), caption: `Produced - sold - used (${year})` },
   ];
 
   inventoryKpis.innerHTML = cards
@@ -103,6 +131,7 @@ function itemCard(item) {
         <span class="badge day">${money(item.quantity_on_hand)} ${item.unit_label}</span>
       </div>
       <div class="worker-grid">
+        <div><strong>Year:</strong> ${item.inventory_year}</div>
         <div><strong>Default Price:</strong> ${item.default_price_per_unit === null ? "-" : money(item.default_price_per_unit)}</div>
         <div><strong>Unit:</strong> ${item.unit_label}</div>
         <div class="full"><strong>Notes:</strong> ${item.notes || "-"}</div>
@@ -116,13 +145,14 @@ function itemCard(item) {
 }
 
 function renderItems() {
-  itemsList.innerHTML = inventoryItems.length ? inventoryItems.map(itemCard).join("") : "No custom inventory items yet.";
+  itemsList.innerHTML = inventoryItems.length ? inventoryItems.map(itemCard).join("") : "No custom inventory items yet for this year.";
 }
 
 async function loadData() {
+  const year = selectedYear();
   const [seasonRows, items] = await Promise.all([
     requestJson(`${API_BASE}/olive-seasons/mine`),
-    requestJson(`${API_BASE}/olive-inventory-items/mine`),
+    requestJson(`${API_BASE}/olive-inventory-items/mine?inventory_year=${encodeURIComponent(String(year))}`),
   ]);
 
   seasons = seasonRows || [];
@@ -135,6 +165,7 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const payload = {
+    inventory_year: selectedYear(),
     item_name: String(form.elements.item_name.value || "").trim(),
     unit_label: String(form.elements.unit_label.value || "").trim(),
     quantity_on_hand: Number(form.elements.quantity_on_hand.value || 0),
@@ -203,9 +234,37 @@ itemsList.addEventListener("click", async (event) => {
   }
 });
 
+carryOverBtn?.addEventListener("click", async () => {
+  const toYear = selectedYear();
+  const fromYear = toYear - 1;
+
+  if (!window.confirm(`Carry over all remaining inventory from ${fromYear} to ${toYear}?`)) return;
+
+  setYearMessage("Carrying over inventory...", true);
+  try {
+    const out = await requestJson(`${API_BASE}/olive-inventory-items/carry-over`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ from_year: fromYear, to_year: toYear }),
+    });
+    setYearMessage(`Carry over complete. ${out?.copied_count ?? 0} items copied.`, true);
+    await loadData();
+  } catch (error) {
+    setYearMessage(error.message || "Could not carry over inventory", false);
+  }
+});
+
+inventoryYearInput?.addEventListener("change", () => {
+  setYearMessage("");
+  loadData().catch((error) => {
+    inventoryKpis.innerHTML = `<p class="message error">${error.message || "Could not load inventory"}</p>`;
+  });
+});
+
 refreshSummaryBtn.addEventListener("click", loadData);
 refreshItemsBtn.addEventListener("click", loadData);
 
 loadData().catch((error) => {
   inventoryKpis.innerHTML = `<p class="message error">${error.message || "Could not load inventory"}</p>`;
 });
+
