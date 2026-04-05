@@ -1,0 +1,176 @@
+﻿:root {
+  --ds-font-sans: "Manrope", "Segoe UI", sans-serif;
+  --ds-font-display: "DM Serif Display", Georgia, serif;
+
+  --ds-text-strong: #29371f;
+  --ds-text: #334528;
+  --ds-text-soft: #5b7342;
+  --ds-surface-0: rgba(255, 255, 255, .92);
+  --ds-surface-1: rgba(251, 255, 246, .9);
+  --ds-surface-2: rgba(243, 250, 231, .82);
+
+  --ds-border-soft: #d3debf;
+  --ds-border: #c0d09f;
+  --ds-border-strong: #9fb97a;
+
+  --ds-success: #2f6a2f;
+  --ds-danger: #8a2f25;
+  --ds-warning: #8a5a14;
+
+  --ds-shadow-soft: 0 8px 18px rgba(49, 66, 35, .10);
+  --ds-shadow-md: 0 14px 28px rgba(47, 67, 33, .14);
+  --ds-shadow-lg: 0 22px 42px rgba(40, 58, 27, .18);
+
+  --ds-radius-sm: 10px;
+  --ds-radius-md: 14px;
+  --ds-radius-lg: 20px;
+
+  --ds-space-1: .35rem;
+  --ds-space-2: .55rem;
+  --ds-space-3: .8rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.3rem;
+}
+
+html, body {
+  font-family: var(--ds-font-sans);
+  color: var(--ds-text);
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+.card {
+  border: 1px solid var(--ds-border-soft);
+  border-radius: var(--ds-radius-lg);
+}
+
+.list-head {
+  margin-bottom: .2rem;
+}
+
+.list-head h2,
+.list-head h3 {
+  color: var(--ds-text-strong);
+}
+
+.form-grid {
+  gap: var(--ds-space-3);
+}
+
+.form-grid.compact {
+  gap: .7rem;
+}
+
+label {
+  color: var(--ds-text-strong);
+  font-weight: 700;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  min-height: 42px;
+}
+
+textarea {
+  min-height: 94px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--ds-border-strong);
+  box-shadow: 0 0 0 4px rgba(126, 158, 84, .16);
+}
+
+.actions-row {
+  gap: .55rem;
+}
+
+.btn {
+  border-radius: 11px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.btn.ghost {
+  border-color: #abc28b;
+}
+
+.btn.danger {
+  border-color: rgba(138, 47, 37, .35);
+}
+
+.badge {
+  border: 1px solid rgba(93, 112, 69, .22);
+}
+
+.worker-card,
+.request-group,
+.season-year-group,
+.map-selected-worker,
+.usage-history-wrap {
+  box-shadow: var(--ds-shadow-soft);
+}
+
+.worker-card .actions-row .btn,
+.request-group .actions-row .btn {
+  min-width: 92px;
+}
+
+.insight-kpi-card,
+.insight-note,
+.insight-chart-wrap,
+.table-wrap {
+  border-radius: var(--ds-radius-md);
+}
+
+.insight-table th {
+  color: #51683a;
+}
+
+.insight-table td {
+  color: #314325;
+}
+
+.message.success {
+  color: var(--ds-success);
+}
+
+.message.error {
+  color: var(--ds-danger);
+}
+
+.page:not(.auth-page):not(.embedded-view) > .hero {
+  box-shadow: var(--ds-shadow-md);
+}
+
+.hero .sub,
+.season-progress,
+.insight-kpi-caption {
+  color: var(--ds-text-soft);
+}
+
+/* utility hooks for future pages */
+.ds-grid-2 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ds-grid-3 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .ds-grid-2,
+  .ds-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}

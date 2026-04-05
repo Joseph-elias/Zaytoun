@@ -394,9 +394,191 @@ clearAllOilTankPricesBtn?.addEventListener("click", async () => {
   }
 });
 window.setTimeout(syncBudgetTankPriceInput, 300);
+const usageSeasonSelect = document.getElementById("usage-season-id");
+const usageHistoryList = document.getElementById("usage-history-list");
+const usageForm = document.getElementById("usage-form");
+const refreshUsageBtn = document.getElementById("refresh-usage-btn");
+let usageHistoryRows = [];
+let usageHistoryEditId = null;
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
+function usageSeasonId() {
+  return String(usageSeasonSelect?.value || "").trim();
+}
 
+function renderUsageHistory() {
+  if (!usageHistoryList) return;
 
+  if (!usageSeasonId()) {
+    usageHistoryList.innerHTML = "Select a target piece/season to see usage history.";
+    return;
+  }
 
+  if (!usageHistoryRows.length) {
+    usageHistoryList.innerHTML = "No usage history yet for selected season.";
+    return;
+  }
+
+  usageHistoryList.innerHTML = usageHistoryRows
+    .map((row) => {
+      const isEditing = usageHistoryEditId === row.id;
+      const usedOn = row.used_on ? escapeHtml(row.used_on) : "-";
+      const usageType = row.usage_type ? escapeHtml(row.usage_type) : "-";
+      const notes = row.notes ? escapeHtml(row.notes) : "-";
+      const tanksUsed = Number(row.tanks_used || 0).toFixed(2);
+
+      if (isEditing) {
+        return `
+          <article class="worker-card">
+            <h4>Edit Usage</h4>
+            <form data-usage-edit-form="${row.id}" class="form-grid compact">
+              <label>Used On
+                <input name="edit_used_on" type="date" value="${row.used_on || ""}" />
+              </label>
+              <label>Quantity Used
+                <input name="edit_tanks_used" type="number" min="0" step="0.01" value="${tanksUsed}" required />
+              </label>
+              <label>Usage Type
+                <input name="edit_usage_type" maxlength="120" value="${usageType === "-" ? "" : usageType}" />
+              </label>
+              <label class="full">Notes
+                <textarea name="edit_notes" rows="2" maxlength="400">${notes === "-" ? "" : notes}</textarea>
+              </label>
+              <div class="actions-row full">
+                <button class="btn" type="submit">Save Changes</button>
+                <button class="btn ghost" type="button" data-cancel-usage-edit="${row.id}">Cancel</button>
+              </div>
+            </form>
+          </article>
+        `;
+      }
+
+      return `
+        <article class="worker-card">
+          <h4>${usedOn}</h4>
+          <p><strong>Quantity:</strong> ${tanksUsed} tanks</p>
+          <p><strong>Type:</strong> ${usageType}</p>
+          <p><strong>Notes:</strong> ${notes}</p>
+          <div class="actions-row">
+            <button class="btn ghost" type="button" data-edit-usage="${row.id}">Modify</button>
+            <button class="btn danger" type="button" data-delete-usage="${row.id}">Delete</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+async function loadUsageHistory() {
+  if (!usageHistoryList) return;
+
+  const seasonId = usageSeasonId();
+  if (!seasonId) {
+    usageHistoryRows = [];
+    usageHistoryEditId = null;
+    renderUsageHistory();
+    return;
+  }
+
+  try {
+    usageHistoryRows = (await requestJson(`${API_BASE}/olive-usages/mine?season_id=${seasonId}`)) || [];
+    if (!usageHistoryRows.some((row) => row.id === usageHistoryEditId)) {
+      usageHistoryEditId = null;
+    }
+    renderUsageHistory();
+  } catch (error) {
+    usageHistoryList.innerHTML = `<p class="message error">${escapeHtml(error.message || "Could not load usage history")}</p>`;
+  }
+}
+
+usageSeasonSelect?.addEventListener("change", loadUsageHistory);
+refreshUsageBtn?.addEventListener("click", () => {
+  window.setTimeout(loadUsageHistory, 250);
+});
+usageForm?.addEventListener("submit", () => {
+  window.setTimeout(loadUsageHistory, 500);
+});
+
+usageHistoryList?.addEventListener("click", async (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target) return;
+
+  const editBtn = target.closest("button[data-edit-usage]");
+  if (editBtn) {
+    usageHistoryEditId = String(editBtn.getAttribute("data-edit-usage") || "").trim() || null;
+    renderUsageHistory();
+    return;
+  }
+
+  const cancelBtn = target.closest("button[data-cancel-usage-edit]");
+  if (cancelBtn) {
+    usageHistoryEditId = null;
+    renderUsageHistory();
+    return;
+  }
+
+  const deleteBtn = target.closest("button[data-delete-usage]");
+  if (!deleteBtn) return;
+
+  const usageId = String(deleteBtn.getAttribute("data-delete-usage") || "").trim();
+  if (!usageId) return;
+  if (!window.confirm("Delete this usage entry?")) return;
+
+  try {
+    await requestJson(`${API_BASE}/olive-usages/${usageId}`, { method: "DELETE", headers: authHeaders() });
+    usageHistoryRows = usageHistoryRows.filter((row) => row.id !== usageId);
+    if (usageHistoryEditId === usageId) usageHistoryEditId = null;
+    renderUsageHistory();
+  } catch (error) {
+    if (budgetOilTankPriceMessage) {
+      budgetOilTankPriceMessage.textContent = error.message || "Could not delete usage entry";
+      budgetOilTankPriceMessage.className = "message error";
+    }
+  }
+});
+
+usageHistoryList?.addEventListener("submit", async (event) => {
+  const formEl = event.target instanceof HTMLFormElement ? event.target : null;
+  if (!formEl) return;
+  const usageId = String(formEl.getAttribute("data-usage-edit-form") || "").trim();
+  if (!usageId) return;
+
+  event.preventDefault();
+
+  const tanksRaw = String(formEl.elements.edit_tanks_used?.value || "").trim();
+  const tanksVal = Number(tanksRaw);
+  if (!Number.isFinite(tanksVal) || tanksVal < 0) {
+    alert("Enter a valid usage quantity.");
+    return;
+  }
+
+  const payload = {
+    used_on: String(formEl.elements.edit_used_on?.value || "").trim() || null,
+    tanks_used: Number(tanksVal.toFixed(2)),
+    usage_type: String(formEl.elements.edit_usage_type?.value || "").trim() || null,
+    notes: String(formEl.elements.edit_notes?.value || "").trim() || null,
+  };
+
+  try {
+    await requestJson(`${API_BASE}/olive-usages/${usageId}`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    usageHistoryEditId = null;
+    await loadUsageHistory();
+  } catch (error) {
+    alert(error.message || "Could not update usage entry");
+  }
+});
+
+window.setTimeout(loadUsageHistory, 700);
 

@@ -1572,3 +1572,113 @@ def test_can_clear_all_oil_tank_price_values() -> None:
     assert rows.status_code == 200
     for row in rows.json():
         assert row["pressing_cost_oil_tank_unit_price"] is None
+
+def test_can_update_usage_entry_and_recalculate_limits() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127014065")
+    _create_land_piece(farmer_headers, "Usage Edit Piece")
+
+    season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2048,
+            "land_pieces": 1,
+            "land_piece_name": "Usage Edit Piece",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 5,
+            "tanks_taken_home_20l": 3,
+            "pressing_cost_mode": "money",
+            "pressing_cost": 0,
+        },
+        headers=farmer_headers,
+    )
+    assert season.status_code == 201
+    season_id = season.json()["id"]
+
+    created = client.post(
+        "/olive-usages",
+        json={
+            "season_id": season_id,
+            "tanks_used": 2,
+            "usage_type": "home_use",
+            "notes": "initial",
+        },
+        headers=farmer_headers,
+    )
+    assert created.status_code == 201
+    usage_id = created.json()["id"]
+
+    updated = client.patch(
+        f"/olive-usages/{usage_id}",
+        json={
+            "used_on": None,
+            "tanks_used": 1,
+            "usage_type": "home_use",
+            "notes": "corrected",
+        },
+        headers=farmer_headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["tanks_used"] == "1.00"
+    assert updated.json()["notes"] == "corrected"
+
+
+def test_cannot_update_usage_entry_above_remaining_tanks() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127014066")
+    _create_land_piece(farmer_headers, "Usage Edit Limits")
+
+    season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2049,
+            "land_pieces": 1,
+            "land_piece_name": "Usage Edit Limits",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 5,
+            "tanks_taken_home_20l": 3,
+            "pressing_cost_mode": "money",
+            "pressing_cost": 0,
+        },
+        headers=farmer_headers,
+    )
+    assert season.status_code == 201
+    season_id = season.json()["id"]
+
+    first = client.post(
+        "/olive-usages",
+        json={
+            "season_id": season_id,
+            "tanks_used": 1,
+            "usage_type": "home_use",
+        },
+        headers=farmer_headers,
+    )
+    assert first.status_code == 201
+    first_id = first.json()["id"]
+
+    second = client.post(
+        "/olive-usages",
+        json={
+            "season_id": season_id,
+            "tanks_used": 1,
+            "usage_type": "home_use",
+        },
+        headers=farmer_headers,
+    )
+    assert second.status_code == 201
+
+    # Remaining is 1, but first entry update requests 3 (should fail).
+    bad_update = client.patch(
+        f"/olive-usages/{first_id}",
+        json={
+            "used_on": None,
+            "tanks_used": 3,
+            "usage_type": "home_use",
+            "notes": None,
+        },
+        headers=farmer_headers,
+    )
+    assert bad_update.status_code == 400

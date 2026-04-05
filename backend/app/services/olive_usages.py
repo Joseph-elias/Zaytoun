@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.olive_sale import FarmerOliveSale
 from app.models.olive_season import FarmerOliveSeason
 from app.models.olive_usage import FarmerOliveUsage
-from app.schemas.olive_usage import OliveUsageCreate
+from app.schemas.olive_usage import OliveUsageCreate, OliveUsageUpdate
 
 
 ZERO = Decimal("0.00")
@@ -35,7 +35,12 @@ def _get_owned_season(db: Session, season_id: UUID, farmer_user_id: UUID) -> Far
     return db.scalar(select(FarmerOliveSeason).where(FarmerOliveSeason.id == season_id, FarmerOliveSeason.farmer_user_id == farmer_user_id))
 
 
-def _remaining_tanks_before_new_usage(db: Session, season: FarmerOliveSeason, farmer_user_id: UUID) -> Decimal:
+def _remaining_tanks_before_new_usage(
+    db: Session,
+    season: FarmerOliveSeason,
+    farmer_user_id: UUID,
+    exclude_usage_id: UUID | None = None,
+) -> Decimal:
     if season.tanks_taken_home_20l is None:
         raise ValueError("Set tanks taken home before recording usage")
 
@@ -45,12 +50,14 @@ def _remaining_tanks_before_new_usage(db: Session, season: FarmerOliveSeason, fa
             FarmerOliveSale.season_id == season.id,
         )
     )
-    used_sum = db.scalar(
-        select(func.coalesce(func.sum(FarmerOliveUsage.tanks_used), 0)).where(
-            FarmerOliveUsage.farmer_user_id == farmer_user_id,
-            FarmerOliveUsage.season_id == season.id,
-        )
+
+    usage_query = select(func.coalesce(func.sum(FarmerOliveUsage.tanks_used), 0)).where(
+        FarmerOliveUsage.farmer_user_id == farmer_user_id,
+        FarmerOliveUsage.season_id == season.id,
     )
+    if exclude_usage_id is not None:
+        usage_query = usage_query.where(FarmerOliveUsage.id != exclude_usage_id)
+    used_sum = db.scalar(usage_query)
 
     taken_home = _round2(Decimal(str(season.tanks_taken_home_20l)))
     sold = _round2(Decimal(str(sold_sum or ZERO)))
@@ -88,6 +95,33 @@ def create_usage(db: Session, farmer_user_id: UUID, payload: OliveUsageCreate) -
         notes=payload.notes,
     )
     db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _to_out(item)
+
+
+def update_usage(db: Session, usage_id: UUID, farmer_user_id: UUID, payload: OliveUsageUpdate) -> dict | None:
+    item = db.get(FarmerOliveUsage, usage_id)
+    if not item or item.farmer_user_id != farmer_user_id:
+        return None
+
+    season = _get_owned_season(db, item.season_id, farmer_user_id)
+    if not season:
+        raise ValueError("Season record not found")
+
+    tanks_used = _round2(Decimal(str(payload.tanks_used or ZERO)))
+    if tanks_used > ZERO:
+        remaining_before = _remaining_tanks_before_new_usage(db, season, farmer_user_id, exclude_usage_id=item.id)
+        if tanks_used > remaining_before:
+            raise ValueError(
+                f"Not enough tanks remaining for this usage. Remaining: {remaining_before:.2f}, requested: {tanks_used:.2f}"
+            )
+
+    item.used_on = payload.used_on
+    item.tanks_used = payload.tanks_used
+    item.usage_type = payload.usage_type
+    item.notes = payload.notes
+
     db.commit()
     db.refresh(item)
     return _to_out(item)

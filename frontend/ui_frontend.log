@@ -7,3 +7,37 @@ Re-optimizing dependencies because lockfile has changed
   [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m1011[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m10:35:04 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2molive-season.html[22m
+[2m10:35:04 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2molive-season.html[22m
+[2m10:35:55 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/olive-season-edit-fix.js[22m
+[2m10:35:55 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/olive-season-edit-fix.js[22m
+[2m10:36:07 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/olive-season-edit-fix.js[22m
+[2m10:52:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/ui-feedback.js[22m
+[2m11:01:25 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/css/style.css?direct[22m
+[2m11:03:18 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/ui-feedback.js[22m
+[2m11:03:24 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2molive-season.html[22m
+[2m11:03:27 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mworkers.html[22m
+[2m11:03:31 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbookings.html[22m
+[2m11:03:37 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2minventory.html[22m
+[2m11:04:01 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/css/style.css?direct[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbookings.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2minsight.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2minventory.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mlogin.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mmy-profiles.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2molive-season.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msettings.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msignup.html[22m
+[2m11:06:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mworkers.html[22m
+[2m11:12:58 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/ui-feedback.js[22m
+[2m11:13:16 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/css/style.css?direct[22m
+[2m11:13:38 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2molive-season.html[22m
+[2m11:13:42 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mworkers.html[22m
+[2m11:13:46 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbookings.html[22m
+[2m11:14:05 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2minventory.html[22m
+[2m11:14:09 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2minsight.html[22m
+[2m11:14:16 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mlogin.html[22m
+[2m11:14:30 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mregister.html[22m
+[2m11:14:34 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msettings.html[22m
+[2m11:14:39 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msignup.html[22m
+[2m11:14:44 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mmy-profiles.html[22m

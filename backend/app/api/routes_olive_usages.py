@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import require_roles
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.olive_usage import OliveUsageCreate, OliveUsageOut
-from app.services.olive_usages import create_usage, delete_usage, list_my_usages
+from app.schemas.olive_usage import OliveUsageCreate, OliveUsageOut, OliveUsageUpdate
+from app.services.olive_usages import create_usage, delete_usage, list_my_usages, update_usage
 
 router = APIRouter(tags=["Olive Usages"])
 
@@ -32,6 +32,23 @@ def create_usage_endpoint(
         row = create_usage(db, current_user.id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return OliveUsageOut.model_validate(row)
+
+
+@router.patch("/olive-usages/{usage_id}", response_model=OliveUsageOut)
+def update_usage_endpoint(
+    usage_id: UUID,
+    payload: OliveUsageUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("farmer")),
+) -> OliveUsageOut:
+    try:
+        row = update_usage(db, usage_id, current_user.id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usage record not found")
     return OliveUsageOut.model_validate(row)
 
 

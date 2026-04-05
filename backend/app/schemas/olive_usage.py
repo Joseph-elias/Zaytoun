@@ -17,6 +17,13 @@ class OliveUsageCreate(OliveUsageBase):
     pass
 
 
+class OliveUsageUpdate(BaseModel):
+    used_on: date | None = None
+    tanks_used: Decimal = Field(ge=0)
+    usage_type: str | None = Field(default=None, max_length=120)
+    notes: str | None = Field(default=None, max_length=400)
+
+
 class OliveUsageOut(BaseModel):
     id: UUID
     farmer_user_id: UUID
