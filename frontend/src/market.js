@@ -26,6 +26,8 @@ const listingContent = document.getElementById("listing-content");
 const marketItemForm = document.getElementById("market-item-form");
 const marketItemMessage = document.getElementById("market-item-message");
 const quantityLabel = document.getElementById("quantity-label");
+const linkedInventorySelect = document.getElementById("linked-inventory-select");
+const marketUnitLabelInput = document.getElementById("market-unit-label-input");
 
 const marketListTitle = document.getElementById("market-list-title");
 const marketFilterForm = document.getElementById("market-filter-form");
@@ -54,6 +56,7 @@ let currentOrders = [];
 let editingItemId = null;
 let selectedStoreId = null;
 let currentStoreProfile = null;
+let farmerInventoryItems = [];
 const cart = new Map();
 
 if (session && roleHint) roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
@@ -173,6 +176,40 @@ function ratingLabel(avg, count) {
   return `${Number(avg).toFixed(1)} ★ (${safeCount})`;
 }
 
+function findInventoryItemById(itemId) {
+  if (!itemId) return null;
+  return farmerInventoryItems.find((row) => row.id === itemId) || null;
+}
+
+function renderLinkedInventoryOptions(selectedId = "") {
+  if (!linkedInventorySelect) return;
+  const options = ['<option value="">None (standalone listing)</option>'];
+  for (const item of farmerInventoryItems) {
+    const selected = String(item.id) === String(selectedId) ? " selected" : "";
+    const label = `${item.item_name} (${money(item.quantity_on_hand)} ${item.unit_label} on hand)`;
+    options.push(`<option value="${escapeHtml(item.id)}"${selected}>${escapeHtml(label)}</option>`);
+  }
+  linkedInventorySelect.innerHTML = options.join("");
+}
+
+function applyCreateLinkedInventorySelection() {
+  if (!linkedInventorySelect || !marketUnitLabelInput) return;
+  const selected = findInventoryItemById(linkedInventorySelect.value);
+  if (selected) {
+    marketUnitLabelInput.value = selected.unit_label || "";
+    marketUnitLabelInput.readOnly = true;
+  } else {
+    marketUnitLabelInput.readOnly = false;
+  }
+}
+
+async function loadFarmerInventoryOptions() {
+  if (!isFarmer || !linkedInventorySelect) return;
+  farmerInventoryItems = (await requestJson(`${API_BASE}/olive-inventory-items/mine`)) || [];
+  renderLinkedInventoryOptions(linkedInventorySelect.value);
+  applyCreateLinkedInventorySelection();
+}
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, { headers: authHeaders(), ...options });
   if (response.status === 401 || response.status === 403) {
@@ -206,6 +243,9 @@ function farmerItemCard(item) {
   const activeBadge = item.is_active ? "available" : "busy";
   const isEditing = editingItemId === item.id;
   const tracksStock = item.quantity_available !== null;
+  const linkedInventory = findInventoryItemById(item.linked_inventory_item_id);
+  const linkedBadge = linkedInventory ? `<span class="badge">Inventory-linked: ${escapeHtml(linkedInventory.item_name)}</span>` : "";
+
   return `
     <article class="worker-card market-card" data-my-item-id="${item.id}">
       ${marketMediaBlock(item, session?.user?.full_name || item.farmer_name)}
@@ -218,6 +258,7 @@ function farmerItemCard(item) {
           <span class="badge day">${money(item.price_per_unit)} / ${escapeHtml(item.unit_label)}</span>
           <span class="badge">${quantityText(item.quantity_available, escapeHtml(item.unit_label))}</span>
           ${item.pickup_location ? `<span class="badge">Pickup: ${escapeHtml(item.pickup_location)}</span>` : ""}
+          ${linkedBadge}
         </div>
         <p class="market-description"><strong>Product rating:</strong> ${escapeHtml(ratingLabel(item.product_rating_avg, item.product_rating_count))}</p>
         <p class="market-description">${escapeHtml(item.description || "No description added yet.")}</p>
@@ -230,7 +271,15 @@ function farmerItemCard(item) {
         ${isEditing ? `<form class="booking-form market-inline-edit-form" data-edit-item-form="${item.id}">
           <h4>Edit Listing</h4>
           <label>Product Name<input name="item_name" maxlength="120" value="${escapeHtml(item.item_name)}" required /></label>
-          <label>Unit Label<input name="unit_label" maxlength="50" value="${escapeHtml(item.unit_label)}" required /></label>
+          <label>Unit Label<input name="unit_label" maxlength="50" value="${escapeHtml(item.unit_label)}" ${item.linked_inventory_item_id ? "readonly" : ""} required /></label>
+          <label>Link To Inventory Item
+            <select name="linked_inventory_item_id" data-edit-linked-item="${item.id}">
+              <option value="">None (standalone listing)</option>
+              ${farmerInventoryItems
+                .map((inv) => `<option value="${escapeHtml(inv.id)}" ${String(inv.id) === String(item.linked_inventory_item_id || "") ? "selected" : ""}>${escapeHtml(`${inv.item_name} (${money(inv.quantity_on_hand)} ${inv.unit_label})`)}</option>`)
+                .join("")}
+            </select>
+          </label>
           <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" value="${money(item.price_per_unit)}" required /></label>
           <label class="inline-check">Track Quantity<input data-edit-track-qty="${item.id}" name="track_quantity" type="checkbox" ${tracksStock ? "checked" : ""} /></label>
           <label>Quantity Available<input data-edit-qty-input="${item.id}" name="quantity_available" type="number" step="0.01" min="0" ${tracksStock ? `value="${money(item.quantity_available)}"` : ""} ${tracksStock ? "required" : "disabled"} /></label>
@@ -411,14 +460,16 @@ function syncCartWithActiveItems() {
   }
 }
 function statusBadgeClass(status) {
-  if (status === "validated") return "available";
-  if (status === "rejected") return "busy";
+  if (status === "validated" || status === "picked_up") return "available";
+  if (status === "rejected" || status === "canceled") return "busy";
   return "day";
 }
 
 function orderStatusLabel(status) {
   if (status === "validated") return "Validated";
+  if (status === "picked_up") return "Picked Up";
   if (status === "rejected") return "Rejected";
+  if (status === "canceled") return "Canceled";
   return "Pending";
 }
 
@@ -439,9 +490,15 @@ function orderCard(order) {
   const badgeClass = statusBadgeClass(order.status);
   const wa = whatsappTarget(order);
   const canFarmerValidate = isFarmer && order.status === "pending";
-  const canCustomerReview = isCustomer && order.status === "validated";
+  const canFarmerCancel = isFarmer && order.status === "validated";
+  const canFarmerConfirmPickup = isFarmer && order.status === "validated";
+  const canCustomerReview = isCustomer && (order.status === "validated" || order.status === "picked_up");
   const contactPhoneLabel = isFarmer ? "Customer Phone" : "Farmer Phone";
   const contactPhoneValue = isFarmer ? order.customer_phone : order.farmer_phone;
+  const inventoryWarning = order.inventory_shortage_alert ? `<p class="message error">Inventory alert: ${escapeHtml(order.inventory_shortage_note || "Stock was lower than requested. You can still fulfill manually.")}</p>` : "";
+  const pickupCodeForCustomer = isCustomer && order.status === "validated" && order.pickup_code
+    ? `<p class="message success"><strong>Your pickup code:</strong> ${escapeHtml(order.pickup_code)}</p>`
+    : "";
 
   return `
     <article class="worker-card" data-order-id="${order.id}">
@@ -454,10 +511,14 @@ function orderCard(order) {
         <div><strong>Farmer:</strong> ${escapeHtml(order.farmer_name)}</div>
         <div><strong>Customer:</strong> ${escapeHtml(order.customer_name)}</div>
         <div><strong>Pickup Time:</strong> ${formatDateTime(order.pickup_at)}</div>
+        <div><strong>Picked Up At:</strong> ${formatDateTime(order.picked_up_at)}</div>
         <div><strong>${contactPhoneLabel}:</strong> ${escapeHtml(contactPhoneValue || "-")}</div>
+        <div><strong>Reserved From Inventory:</strong> ${money(order.inventory_reserved_quantity)} ${escapeHtml(order.unit_label_snapshot)}</div>
         <div class="full"><strong>Order Note:</strong> ${escapeHtml(order.note || "-")}</div>
         <div class="full"><strong>Farmer Response:</strong> ${escapeHtml(order.farmer_response_note || "-")}</div>
       </div>
+      ${pickupCodeForCustomer}
+      ${inventoryWarning}
       <div class="actions-row">${wa ? `<a class="btn ghost" href="${wa.href}" target="_blank" rel="noreferrer">${wa.label}</a>` : ""}</div>
       ${
         canCustomerReview
@@ -494,6 +555,8 @@ function orderCard(order) {
           : ""
       }
       ${canFarmerValidate ? `<form class="booking-form" data-validate-order-id="${order.id}"><h4>Validate Order</h4><label>Pickup Time<input name="pickup_at" type="datetime-local" required /></label><label>Response Note<textarea name="note" rows="2" placeholder="Optional"></textarea></label><div class="actions-row"><button class="btn" type="submit">Validate & Set Pickup</button><button class="btn ghost" type="button" data-reject-order="${order.id}">Reject Order</button></div><p class="message booking-submit-message"></p></form>` : ""}
+      ${canFarmerCancel ? `<div class="actions-row"><button class="btn ghost" type="button" data-cancel-order="${order.id}">Cancel Validated Order</button></div>` : ""}
+      ${canFarmerConfirmPickup ? `<form class="booking-form" data-pickup-order-id="${order.id}"><h4>Confirm Pickup</h4><label>Customer Pickup Code<input name="pickup_code" minlength="4" maxlength="12" required placeholder="Enter code from customer" /></label><button class="btn" type="submit">Mark As Picked Up</button><p class="message booking-submit-message"></p></form>` : ""}
       <section class="chat-panel"><h4>Order Chat</h4><div class="chat-messages" data-chat-list="${order.id}">Loading chat...</div><form class="chat-form" data-chat-form="${order.id}"><label>Message<textarea name="content" rows="2" maxlength="1200" required placeholder="Write a message..."></textarea></label><button class="btn ghost" type="submit">Send Message</button><p class="message booking-submit-message"></p></form></section>
     </article>
   `;
@@ -523,6 +586,7 @@ async function loadMarketItems() {
       currentStoreProfile = storeProfileFromItem(farmerItems[0]);
       fillStoreProfileForm(currentStoreProfile);
     }
+    await loadFarmerInventoryOptions();
     renderFarmerItems();
     return;
   }
@@ -574,7 +638,9 @@ function setCreateQuantityMode() {
 }
 
 marketItemForm?.elements.track_quantity?.addEventListener("change", setCreateQuantityMode);
+linkedInventorySelect?.addEventListener("change", applyCreateLinkedInventorySelection);
 setCreateQuantityMode();
+applyCreateLinkedInventorySelection();
 
 storeProfileForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -610,6 +676,7 @@ marketItemForm?.addEventListener("submit", async (event) => {
     return;
   }
 
+  const linkedInventoryItemIdRaw = String(fd.get("linked_inventory_item_id") || "").trim();
   const payload = {
     item_name: String(fd.get("item_name") || "").trim(),
     description: String(fd.get("description") || "").trim() || null,
@@ -617,6 +684,7 @@ marketItemForm?.addEventListener("submit", async (event) => {
     photo_url: String(fd.get("photo_url") || "").trim() || null,
     pickup_location: String(fd.get("pickup_location") || "").trim() || null,
     unit_label: String(fd.get("unit_label") || "").trim(),
+    linked_inventory_item_id: linkedInventoryItemIdRaw || null,
     price_per_unit: Number(fd.get("price_per_unit") || 0),
     quantity_available: trackQuantity ? Number(qtyRaw) : null,
     is_active: fd.get("is_active") !== null,
@@ -628,6 +696,8 @@ marketItemForm?.addEventListener("submit", async (event) => {
     marketItemForm.reset();
     marketItemForm.elements.is_active.checked = true;
     marketItemForm.elements.track_quantity.checked = true;
+    if (linkedInventorySelect) linkedInventorySelect.value = "";
+    applyCreateLinkedInventorySelection();
     setCreateQuantityMode();
     setFormMessage("Listing saved.", true);
     await Promise.all([loadMarketItems(), loadOrders()]);
@@ -637,13 +707,29 @@ marketItemForm?.addEventListener("submit", async (event) => {
 });
 marketItemsList.addEventListener("change", (event) => {
   const trackToggle = event.target.closest("input[data-edit-track-qty]");
-  if (!trackToggle) return;
-  const itemId = trackToggle.dataset.editTrackQty;
-  const qtyInput = marketItemsList.querySelector(`input[data-edit-qty-input="${itemId}"]`);
-  if (!qtyInput) return;
-  qtyInput.disabled = !trackToggle.checked;
-  qtyInput.required = trackToggle.checked;
-  if (!trackToggle.checked) qtyInput.value = "";
+  if (trackToggle) {
+    const itemId = trackToggle.dataset.editTrackQty;
+    const qtyInput = marketItemsList.querySelector(`input[data-edit-qty-input="${itemId}"]`);
+    if (!qtyInput) return;
+    qtyInput.disabled = !trackToggle.checked;
+    qtyInput.required = trackToggle.checked;
+    if (!trackToggle.checked) qtyInput.value = "";
+    return;
+  }
+
+  const linkedSelect = event.target.closest("select[data-edit-linked-item]");
+  if (!linkedSelect) return;
+  const editForm = linkedSelect.closest("form[data-edit-item-form]");
+  if (!editForm) return;
+
+  const unitInput = editForm.elements.unit_label;
+  const selected = findInventoryItemById(linkedSelect.value);
+  if (selected) {
+    unitInput.value = selected.unit_label;
+    unitInput.readOnly = true;
+  } else {
+    unitInput.readOnly = false;
+  }
 });
 
 marketItemsList.addEventListener("click", async (event) => {
@@ -716,6 +802,7 @@ marketItemsList.addEventListener("submit", async (event) => {
     item_name: String(editForm.elements.item_name.value || "").trim(),
     description: String(editForm.elements.description.value || "").trim() || null,
     unit_label: String(editForm.elements.unit_label.value || "").trim(),
+    linked_inventory_item_id: String(editForm.elements.linked_inventory_item_id.value || "").trim() || null,
     price_per_unit: Number(editForm.elements.price_per_unit.value || 0),
     quantity_available: trackQuantity ? Number(qtyRaw) : null,
     pickup_location: String(editForm.elements.pickup_location.value || "").trim() || null,
@@ -887,6 +974,31 @@ marketOrdersList.addEventListener("submit", async (event) => {
     return;
   }
 
+  const pickupForm = event.target.closest("form[data-pickup-order-id]");
+  if (pickupForm) {
+    event.preventDefault();
+    const messageEl = pickupForm.querySelector(".booking-submit-message");
+    const pickupCode = String(pickupForm.elements.pickup_code.value || "").trim();
+
+    messageEl.textContent = "Validating pickup code...";
+    messageEl.className = "message success";
+
+    try {
+      await requestJson(`${API_BASE}/market/orders/${pickupForm.dataset.pickupOrderId}/pickup-confirmation`, {
+        method: "PATCH",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ pickup_code: pickupCode }),
+      });
+      messageEl.textContent = "Order marked as picked up.";
+      messageEl.className = "message success";
+      await loadOrders();
+    } catch (error) {
+      messageEl.textContent = error.message || "Could not confirm pickup";
+      messageEl.className = "message error";
+    }
+    return;
+  }
+
   const validateForm = event.target.closest("form[data-validate-order-id]");
   if (validateForm) {
     event.preventDefault();
@@ -898,13 +1010,18 @@ marketOrdersList.addEventListener("submit", async (event) => {
     messageEl.className = "message success";
 
     try {
-      await requestJson(`${API_BASE}/market/orders/${validateForm.dataset.validateOrderId}/farmer-validation`, {
+      const updated = await requestJson(`${API_BASE}/market/orders/${validateForm.dataset.validateOrderId}/farmer-validation`, {
         method: "PATCH",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
-      messageEl.textContent = "Order validated with pickup time.";
-      messageEl.className = "message success";
+      if (updated?.inventory_shortage_alert) {
+        messageEl.textContent = updated.inventory_shortage_note || "Validated with inventory shortage alert.";
+        messageEl.className = "message error";
+      } else {
+        messageEl.textContent = "Order validated with pickup time.";
+        messageEl.className = "message success";
+      }
       await loadOrders();
     } catch (error) {
       messageEl.textContent = error.message || "Could not validate order";
@@ -966,6 +1083,22 @@ marketOrdersList.addEventListener("click", async (event) => {
     return;
   }
 
+  const cancelBtn = event.target.closest("button[data-cancel-order]");
+  if (cancelBtn) {
+    const note = window.prompt("Reason for canceling this validated order (optional)", "") ?? "";
+    try {
+      await requestJson(`${API_BASE}/market/orders/${cancelBtn.dataset.cancelOrder}/farmer-validation`, {
+        method: "PATCH",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ action: "cancel", note: note.trim() || null }),
+      });
+      await loadOrders();
+    } catch (error) {
+      window.alert(error.message || "Could not cancel order");
+    }
+    return;
+  }
+
   const rejectBtn = event.target.closest("button[data-reject-order]");
   if (!rejectBtn) return;
 
@@ -993,6 +1126,10 @@ refreshOrdersBtn?.addEventListener("click", loadOrders);
 Promise.all([loadMarketItems(), loadOrders(), isFarmer ? loadStoreProfile() : Promise.resolve()]).catch((error) => {
   marketItemsList.innerHTML = `<p class="message error">${escapeHtml(error.message || "Could not load market")}</p>`;
 });
+
+
+
+
 
 
 

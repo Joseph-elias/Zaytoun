@@ -1258,3 +1258,53 @@ def test_cannot_update_usage_entry_above_remaining_tanks() -> None:
     )
     assert bad_update.status_code == 400
 
+
+
+def test_carry_over_includes_previous_year_remaining_tanks_as_named_item() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127015001")
+    _create_land_piece(farmer_headers, "Carry Piece")
+
+    season = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2025,
+            "land_pieces": 1,
+            "land_piece_name": "Carry Piece",
+            "kg_per_land_piece": 120,
+            "tanks_20l": 10,
+            "tanks_taken_home_20l": 4,
+            "pressing_cost_mode": "money",
+            "pressing_cost": 0,
+        },
+        headers=farmer_headers,
+    )
+    assert season.status_code == 201
+
+    sale = client.post(
+        "/olive-sales",
+        json={
+            "season_id": season.json()["id"],
+            "sale_type": "oil_tank",
+            "tanks_sold": 1,
+            "price_per_tank": 100,
+        },
+        headers=farmer_headers,
+    )
+    assert sale.status_code == 201
+
+    carry = client.post(
+        "/olive-inventory-items/carry-over",
+        json={"from_year": 2025, "to_year": 2026},
+        headers=farmer_headers,
+    )
+    assert carry.status_code == 200
+    assert carry.json()["copied_count"] == 1
+
+    list_2026 = client.get("/olive-inventory-items/mine?inventory_year=2026", headers=farmer_headers)
+    assert list_2026.status_code == 200
+    assert len(list_2026.json()) == 1
+    assert list_2026.json()[0]["item_name"] == "Tanks of last year"
+    assert list_2026.json()[0]["unit_label"] == "tank"
+    assert list_2026.json()[0]["quantity_on_hand"] == "3.00"

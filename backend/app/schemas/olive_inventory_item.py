@@ -10,6 +10,7 @@ class OliveInventoryItemBase(BaseModel):
     item_name: str = Field(min_length=1, max_length=120)
     unit_label: str = Field(min_length=1, max_length=60)
     quantity_on_hand: Decimal = Field(ge=0)
+    quantity_pending: Decimal = Field(default=0, ge=0)
     default_price_per_unit: Decimal | None = Field(default=None, ge=0)
     notes: str | None = Field(default=None, max_length=400)
 
@@ -23,6 +24,7 @@ class OliveInventoryItemUpdate(BaseModel):
     item_name: str | None = Field(default=None, min_length=1, max_length=120)
     unit_label: str | None = Field(default=None, min_length=1, max_length=60)
     quantity_on_hand: Decimal | None = Field(default=None, ge=0)
+    quantity_pending: Decimal | None = Field(default=None, ge=0)
     default_price_per_unit: Decimal | None = Field(default=None, ge=0)
     notes: str | None = Field(default=None, max_length=400)
 
@@ -43,10 +45,10 @@ class OliveInventoryItemOut(BaseModel):
     item_name: str
     unit_label: str
     quantity_on_hand: Decimal
+    quantity_pending: Decimal
     default_price_per_unit: Decimal | None
     notes: str | None
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-

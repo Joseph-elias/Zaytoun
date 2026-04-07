@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-OrderStatus = Literal["pending", "validated", "rejected"]
+OrderStatus = Literal["pending", "validated", "rejected", "canceled", "picked_up"]
 
 
 class MarketItemBase(BaseModel):
@@ -18,6 +18,7 @@ class MarketItemBase(BaseModel):
     unit_label: str = Field(min_length=1, max_length=50)
     price_per_unit: Decimal = Field(gt=0)
     quantity_available: Decimal | None = Field(default=None, ge=0)
+    linked_inventory_item_id: UUID | None = None
     is_active: bool = True
 
 
@@ -34,6 +35,7 @@ class MarketItemUpdate(BaseModel):
     unit_label: str | None = Field(default=None, min_length=1, max_length=50)
     price_per_unit: Decimal | None = Field(default=None, gt=0)
     quantity_available: Decimal | None = Field(default=None, ge=0)
+    linked_inventory_item_id: UUID | None = None
     is_active: bool | None = None
 
 
@@ -57,6 +59,7 @@ class MarketItemOut(BaseModel):
     unit_label: str
     price_per_unit: Decimal
     quantity_available: Decimal | None
+    linked_inventory_item_id: UUID | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -85,7 +88,7 @@ class MarketOrderCreate(BaseModel):
 
 
 class MarketOrderFarmerValidation(BaseModel):
-    action: Literal["validate", "reject"]
+    action: Literal["validate", "reject", "cancel"]
     pickup_at: datetime | None = None
     note: str | None = Field(default=None, max_length=400)
 
@@ -94,6 +97,10 @@ class MarketOrderFarmerValidation(BaseModel):
         if self.action == "validate" and self.pickup_at is None:
             raise ValueError("pickup_at is required when validating an order")
         return self
+
+
+class MarketOrderPickupConfirm(BaseModel):
+    pickup_code: str = Field(min_length=4, max_length=12)
 
 
 class MarketOrderCustomerReview(BaseModel):
@@ -133,6 +140,12 @@ class MarketOrderOut(BaseModel):
     market_rating: int | None
     market_review: str | None
     market_reviewed_at: datetime | None
+    linked_inventory_item_id: UUID | None
+    inventory_reserved_quantity: Decimal
+    inventory_shortage_alert: bool
+    inventory_shortage_note: str | None
+    pickup_code: str | None
+    picked_up_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

@@ -54,7 +54,12 @@
         <div id="listing-content">
           <form id="market-item-form" class="form-grid compact market-create-form">
             <label>Product Name<input name="item_name" required maxlength="120" placeholder="Extra Virgin Olive Oil" /></label>
-            <label>Unit (kg, liter, box...)<input name="unit_label" required maxlength="50" placeholder="liter" /></label>
+            <label>Unit (kg, liter, box...)<input name="unit_label" id="market-unit-label-input" required maxlength="50" placeholder="liter" /></label>
+            <label>Link To Inventory Item
+              <select name="linked_inventory_item_id" id="linked-inventory-select">
+                <option value="">None (standalone listing)</option>
+              </select>
+            </label>
             <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" required /></label>
             <label class="inline-check">Track Quantity
               <input name="track_quantity" type="checkbox" checked />

@@ -25,6 +25,11 @@ class FarmerMarketItem(Base):
     unit_label: Mapped[str] = mapped_column(String(50), nullable=False)
     price_per_unit: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     quantity_available: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True, default=None)
+    linked_inventory_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("farmer_olive_inventory_items.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

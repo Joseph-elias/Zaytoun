@@ -1,7 +1,7 @@
 ﻿from datetime import datetime
 import uuid
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, Numeric, String, Uuid
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -30,6 +30,18 @@ class MarketOrder(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     pickup_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     farmer_response_note: Mapped[str | None] = mapped_column(String(400), nullable=True)
+
+    linked_inventory_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("farmer_olive_inventory_items.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    inventory_reserved_quantity: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    inventory_shortage_alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    inventory_shortage_note: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    pickup_code: Mapped[str | None] = mapped_column(String(12), nullable=True)
+    picked_up_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
     customer_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     customer_review: Mapped[str | None] = mapped_column(String(800), nullable=True)
     customer_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

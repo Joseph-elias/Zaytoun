@@ -19,6 +19,7 @@ const inventoryYearMessage = document.getElementById("inventory-year-message");
 const form = document.getElementById("inventory-item-form");
 const formMessage = document.getElementById("inventory-item-message");
 const itemsList = document.getElementById("inventory-items-list");
+const pendingList = document.getElementById("inventory-pending-list");
 
 let seasons = [];
 let inventoryItems = [];
@@ -102,12 +103,19 @@ function renderSummary() {
   const usedTanks = seasonRows.reduce((acc, row) => acc + toNum(row.used_tanks), 0);
   const remainingTanks = seasonRows.reduce((acc, row) => acc + toNum(row.remaining_tanks), 0);
 
+  const tanksOfLastYear = inventoryItems.reduce((acc, item) => {
+    const name = String(item.item_name || "").trim().toLowerCase();
+    if (name !== "tanks of last year") return acc;
+    return acc + toNum(item.quantity_on_hand);
+  }, 0);
+
   const cards = [
     { title: "Tanks Taken Home", value: money(takenHomeTanks), caption: `Tanks entered into inventory (${year})` },
     { title: "Produced KG", value: money(producedKg), caption: `KG per piece or actual chonbol (${year})` },
     { title: "Sold Tanks", value: money(soldTanks), caption: `From sales converted to tanks (${year})` },
     { title: "Used Tanks", value: money(usedTanks), caption: `From usage tab (${year})` },
     { title: "Remaining Tanks", value: money(remainingTanks), caption: `Produced - sold - used (${year})` },
+    { title: "Tanks Of Last Year", value: money(tanksOfLastYear), caption: `Carried into inventory (${year})` },
   ];
 
   inventoryKpis.innerHTML = cards
@@ -134,6 +142,7 @@ function itemCard(item) {
         <div><strong>Year:</strong> ${item.inventory_year}</div>
         <div><strong>Default Price:</strong> ${item.default_price_per_unit === null ? "-" : money(item.default_price_per_unit)}</div>
         <div><strong>Unit:</strong> ${item.unit_label}</div>
+        <div><strong>Pending:</strong> ${money(item.quantity_pending)} ${item.unit_label}</div>
         <div class="full"><strong>Notes:</strong> ${item.notes || "-"}</div>
       </div>
       <div class="actions-row">
@@ -146,6 +155,16 @@ function itemCard(item) {
 
 function renderItems() {
   itemsList.innerHTML = inventoryItems.length ? inventoryItems.map(itemCard).join("") : "No custom inventory items yet for this year.";
+
+  if (!pendingList) return;
+  const pendingRows = inventoryItems.filter((item) => Number(item.quantity_pending || 0) > 0);
+  pendingList.innerHTML = pendingRows.length
+    ? pendingRows
+        .map(
+          (item) => `<article class="worker-card"><div class="list-head"><h3>${item.item_name}</h3><span class="badge day">${money(item.quantity_pending)} ${item.unit_label} pending</span></div><p class="sub">These quantities are reserved for validated market orders and will leave pending once picked up.</p></article>`,
+        )
+        .join("")
+    : '<p class="sub">No pending reservations right now.</p>';
 }
 
 async function loadData() {
@@ -247,8 +266,17 @@ carryOverBtn?.addEventListener("click", async () => {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ from_year: fromYear, to_year: toYear }),
     });
-    setYearMessage(`Carry over complete. ${out?.copied_count ?? 0} items copied.`, true);
     await loadData();
+
+    const copiedCount = Number(out?.copied_count || 0);
+    if (copiedCount > 0) {
+      const names = inventoryItems.slice(0, 5).map((item) => item.item_name).join(", ");
+      const suffix = inventoryItems.length > 5 ? "..." : "";
+      setYearMessage(`Carry over complete. ${copiedCount} items copied. Year ${toYear} now has: ${names}${suffix}`, true);
+      itemsList?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      setYearMessage(`Carry over complete. ${copiedCount} items copied.`, true);
+    }
   } catch (error) {
     setYearMessage(error.message || "Could not carry over inventory", false);
   }

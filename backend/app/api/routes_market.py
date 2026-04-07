@@ -16,6 +16,7 @@ from app.schemas.market import (
     MarketOrderMessageCreate,
     MarketOrderMessageOut,
     MarketOrderOut,
+    MarketOrderPickupConfirm,
     MarketStoreProfileOut,
     MarketStoreProfileUpdate,
 )
@@ -25,6 +26,7 @@ from app.services.market import (
     create_market_order_message,
     customer_review_market_order,
     delete_market_item,
+    farmer_confirm_market_order_pickup,
     farmer_validate_market_order,
     get_farmer_store_profile,
     list_active_market_items,
@@ -64,7 +66,10 @@ def create_market_item_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles("farmer")),
 ) -> MarketItemOut:
-    row = create_market_item(db, current_user.id, payload)
+    try:
+        row = create_market_item(db, current_user.id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return MarketItemOut.model_validate(row)
 
 
@@ -75,7 +80,10 @@ def update_market_item_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles("farmer")),
 ) -> MarketItemOut:
-    row = update_market_item(db, item_id, current_user.id, payload)
+    try:
+        row = update_market_item(db, item_id, current_user.id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Market item not found")
     return MarketItemOut.model_validate(row)
@@ -168,6 +176,28 @@ def farmer_validate_market_order_endpoint(
             action=payload.action,
             pickup_at=payload.pickup_at,
             note=payload.note,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Market order not found")
+    return MarketOrderOut.model_validate(row)
+
+
+@router.patch("/orders/{order_id}/pickup-confirmation", response_model=MarketOrderOut)
+def farmer_confirm_market_order_pickup_endpoint(
+    order_id: UUID,
+    payload: MarketOrderPickupConfirm,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("farmer")),
+) -> MarketOrderOut:
+    try:
+        row = farmer_confirm_market_order_pickup(
+            db,
+            order_id=order_id,
+            farmer_user_id=current_user.id,
+            pickup_code=payload.pickup_code,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
