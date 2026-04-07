@@ -23,6 +23,9 @@ const sortByInput = form.querySelector('select[name="sort_by"]');
 const mapHint = document.getElementById("map-hint");
 const mapEl = document.getElementById("workers-map");
 const mapSelectedWorkerEl = document.getElementById("map-selected-worker");
+const liveWeatherEl = document.getElementById("live-weather");
+const liveWeatherIconEl = document.getElementById("live-weather-icon");
+const liveWeatherTextEl = document.getElementById("live-weather-text");
 
 const isWorker = session?.user?.role === "worker";
 const isFarmer = session?.user?.role === "farmer";
@@ -33,6 +36,9 @@ let farmerSeasons = [];
 let map = null;
 let markersLayer = null;
 const markersByWorkerId = new Map();
+let weatherRefreshTimerId = null;
+let weatherLastCoords = null;
+const WEATHER_REFRESH_MS = 15 * 60 * 1000;
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
@@ -219,6 +225,105 @@ function extractApiErrorMessage(err, fallbackMessage) {
   }
 
   return fallbackMessage;
+}
+
+function weatherCodeLabel(code) {
+  const map = {
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Rime fog",
+    51: "Light drizzle",
+    53: "Drizzle",
+    55: "Dense drizzle",
+    61: "Slight rain",
+    63: "Rain",
+    65: "Heavy rain",
+    71: "Slight snow",
+    73: "Snow",
+    75: "Heavy snow",
+    80: "Rain showers",
+    81: "Strong showers",
+    82: "Violent showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with hail",
+    99: "Heavy thunderstorm hail",
+  };
+  return map[Number(code)] || "Weather update";
+}
+
+function weatherCodeIcon(code) {
+  const value = Number(code);
+  if (value === 0) return "☀";
+  if (value === 1 || value === 2) return "⛅";
+  if (value === 3) return "☁";
+  if (value === 45 || value === 48) return "🌫";
+  if ((value >= 51 && value <= 67) || (value >= 80 && value <= 82)) return "🌧";
+  if (value >= 71 && value <= 77) return "❄";
+  if (value >= 95) return "⛈";
+  return "○";
+}
+
+function setLiveWeatherMessage(text, isError = false, icon = "○") {
+  if (!liveWeatherEl) return;
+  if (liveWeatherTextEl) liveWeatherTextEl.textContent = text;
+  else liveWeatherEl.textContent = text;
+  if (liveWeatherIconEl) liveWeatherIconEl.textContent = icon;
+  liveWeatherEl.classList.toggle("error", Boolean(isError));
+}
+
+async function fetchLiveWeather(latitude, longitude) {
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.searchParams.set("latitude", String(latitude));
+  url.searchParams.set("longitude", String(longitude));
+  url.searchParams.set("current", "temperature_2m,apparent_temperature,weather_code,wind_speed_10m");
+  url.searchParams.set("timezone", "auto");
+
+  const response = await fetch(url.toString());
+  if (!response.ok) throw new Error("Weather service unavailable.");
+  const data = await response.json();
+  const current = data?.current || {};
+  const units = data?.current_units || {};
+
+  const temp = current.temperature_2m;
+  const feels = current.apparent_temperature;
+  const wind = current.wind_speed_10m;
+  const code = current.weather_code;
+
+  if (temp === undefined || code === undefined) throw new Error("No weather data returned.");
+
+  const tempUnit = units.temperature_2m || "C";
+  const windUnit = units.wind_speed_10m || "km/h";
+  return {
+    summary: `Live weather: ${Number(temp).toFixed(1)}${tempUnit}, feels ${Number(feels ?? temp).toFixed(1)}${tempUnit}, ${weatherCodeLabel(code)}, wind ${Number(wind ?? 0).toFixed(1)} ${windUnit}.`,
+    icon: weatherCodeIcon(code),
+  };
+}
+
+function scheduleLiveWeatherRefresh() {
+  if (weatherRefreshTimerId) {
+    window.clearInterval(weatherRefreshTimerId);
+    weatherRefreshTimerId = null;
+  }
+  if (!weatherLastCoords) return;
+  weatherRefreshTimerId = window.setInterval(() => {
+    refreshLiveWeatherFromCoords(weatherLastCoords.latitude, weatherLastCoords.longitude);
+  }, WEATHER_REFRESH_MS);
+}
+
+async function refreshLiveWeatherFromCoords(latitude, longitude) {
+  if (latitude === null || latitude === undefined || longitude === null || longitude === undefined) return;
+  weatherLastCoords = { latitude: Number(latitude), longitude: Number(longitude) };
+  scheduleLiveWeatherRefresh();
+  setLiveWeatherMessage("Live weather: loading...", false, "○");
+  try {
+    const data = await fetchLiveWeather(latitude, longitude);
+    setLiveWeatherMessage(data.summary, false, data.icon);
+  } catch (error) {
+    setLiveWeatherMessage(error.message || "Could not load live weather.", true, "!");
+  }
 }
 
 function ensureMap() {
@@ -460,18 +565,22 @@ async function updateRowCapacity(rowEl, workerId) {
 useMyLocationBtn?.addEventListener("click", () => {
   if (!navigator.geolocation) {
     mapHint.textContent = "Geolocation not supported on this device.";
+    setLiveWeatherMessage("Live weather: geolocation not supported on this device.", true, "!");
     return;
   }
 
+  setLiveWeatherMessage("Live weather: reading your location...", false, "⌖");
   navigator.geolocation.getCurrentPosition(
     (position) => {
       nearLatInput.value = String(position.coords.latitude);
       nearLngInput.value = String(position.coords.longitude);
       if (sortByInput) sortByInput.value = "distance";
+      refreshLiveWeatherFromCoords(position.coords.latitude, position.coords.longitude);
       fetchFarmerSeasons().then(fetchWorkers);
     },
     () => {
       mapHint.textContent = "Could not get your location.";
+      setLiveWeatherMessage('Live weather: location denied. Tap "Use My Location" and allow access.', true, "!");
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
@@ -480,6 +589,9 @@ useMyLocationBtn?.addEventListener("click", () => {
 if (session?.user?.latitude !== null && session?.user?.longitude !== null) {
   nearLatInput.value = String(session.user.latitude);
   nearLngInput.value = String(session.user.longitude);
+  refreshLiveWeatherFromCoords(session.user.latitude, session.user.longitude);
+} else {
+  setLiveWeatherMessage('Live weather: tap "Use My Location".', false, "○");
 }
 
 listEl.addEventListener("click", async (event) => {
@@ -669,6 +781,10 @@ form.addEventListener("submit", (event) => {
 
 refreshBtn.addEventListener("click", fetchWorkers);
 fetchFarmerSeasons().then(fetchWorkers);
+
+window.addEventListener("beforeunload", () => {
+  if (weatherRefreshTimerId) window.clearInterval(weatherRefreshTimerId);
+});
 
 
 

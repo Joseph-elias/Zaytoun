@@ -1487,6 +1487,34 @@ body.image-fit-open {
   overflow: hidden;
 }
 
+.live-weather {
+  border: 1px solid #bfd2a1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(242, 249, 229, .82));
+  border-radius: 999px;
+  padding: .38rem .7rem;
+  margin: 0;
+  font-weight: 700;
+  color: #2f5f2d;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.live-weather.error {
+  border-color: #d4b8b0;
+  color: #7c3a2f;
+  background: linear-gradient(180deg, rgba(255, 250, 249, .96), rgba(248, 236, 233, .9));
+}
+
+.live-weather-icon {
+  width: 1.1rem;
+  min-width: 1.1rem;
+  display: inline-grid;
+  place-items: center;
+  font-size: .95rem;
+  line-height: 1;
+}
+
 .market-star-picker {
   display: flex;
   gap: .25rem;
