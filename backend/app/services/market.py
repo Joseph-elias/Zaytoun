@@ -1,27 +1,70 @@
+﻿from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.market_item import FarmerMarketItem
 from app.models.market_order import MarketOrder
 from app.models.market_order_message import MarketOrderMessage
 from app.models.user import User
-from app.schemas.market import MarketItemCreate, MarketItemUpdate, MarketOrderCreate
+from app.schemas.market import MarketItemCreate, MarketItemUpdate, MarketOrderCreate, MarketStoreProfileUpdate
 
 
 def _round2(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def _item_to_out(item: FarmerMarketItem, farmer_name: str) -> dict:
+def _clean_optional(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
+def _field_provided(payload: MarketItemUpdate, name: str) -> bool:
+    return name in payload.model_fields_set
+
+
+def _farmer_rating_map(db: Session) -> dict[UUID, tuple[float | None, int]]:
+    rows = db.execute(
+        select(
+            MarketOrder.farmer_user_id,
+            func.avg(MarketOrder.customer_rating),
+            func.count(MarketOrder.customer_rating),
+        )
+        .where(MarketOrder.customer_rating.is_not(None))
+        .group_by(MarketOrder.farmer_user_id)
+    ).all()
+
+    out: dict[UUID, tuple[float | None, int]] = {}
+    for farmer_user_id, avg_rating, count_rating in rows:
+        out[farmer_user_id] = (float(avg_rating) if avg_rating is not None else None, int(count_rating or 0))
+    return out
+
+
+def _item_to_out(
+    item: FarmerMarketItem,
+    farmer: User | None,
+    farmer_rating_avg: float | None = None,
+    farmer_rating_count: int = 0,
+) -> dict:
     return {
         "id": item.id,
         "farmer_user_id": item.farmer_user_id,
-        "farmer_name": farmer_name,
+        "farmer_name": farmer.full_name if farmer else "Farmer",
+        "farmer_store_name": farmer.store_name if farmer else None,
+        "farmer_store_banner_url": farmer.store_banner_url if farmer else None,
+        "farmer_store_about": farmer.store_about if farmer else None,
+        "farmer_store_opening_hours": farmer.store_opening_hours if farmer else None,
+        "farmer_rating_avg": farmer_rating_avg,
+        "farmer_rating_count": farmer_rating_count,
         "item_name": item.item_name,
         "description": item.description,
+        "brand_logo_url": item.brand_logo_url,
+        "photo_url": item.photo_url,
+        "pickup_location": item.pickup_location,
         "unit_label": item.unit_label,
         "price_per_unit": item.price_per_unit,
         "quantity_available": item.quantity_available,
@@ -50,6 +93,9 @@ def _order_to_out(order: MarketOrder, farmer: User | None, customer: User | None
         "status": order.status,
         "pickup_at": order.pickup_at,
         "farmer_response_note": order.farmer_response_note,
+        "customer_rating": order.customer_rating,
+        "customer_review": order.customer_review,
+        "customer_reviewed_at": order.customer_reviewed_at,
         "created_at": order.created_at,
         "updated_at": order.updated_at,
     }
@@ -74,11 +120,49 @@ def _is_order_actor(order: MarketOrder, user: User) -> bool:
     return order.farmer_user_id == user.id or order.customer_user_id == user.id
 
 
+def _store_profile_out(user: User) -> dict:
+    return {
+        "store_name": user.store_name,
+        "store_banner_url": user.store_banner_url,
+        "store_about": user.store_about,
+        "store_opening_hours": user.store_opening_hours,
+    }
+
+
+def get_farmer_store_profile(db: Session, farmer_user_id: UUID) -> dict | None:
+    farmer = db.get(User, farmer_user_id)
+    if not farmer or farmer.role != "farmer":
+        return None
+    return _store_profile_out(farmer)
+
+
+def update_farmer_store_profile(db: Session, farmer_user_id: UUID, payload: MarketStoreProfileUpdate) -> dict | None:
+    farmer = db.get(User, farmer_user_id)
+    if not farmer or farmer.role != "farmer":
+        return None
+
+    if "store_name" in payload.model_fields_set:
+        farmer.store_name = _clean_optional(payload.store_name)
+    if "store_banner_url" in payload.model_fields_set:
+        farmer.store_banner_url = _clean_optional(payload.store_banner_url)
+    if "store_about" in payload.model_fields_set:
+        farmer.store_about = _clean_optional(payload.store_about)
+    if "store_opening_hours" in payload.model_fields_set:
+        farmer.store_opening_hours = _clean_optional(payload.store_opening_hours)
+
+    db.commit()
+    db.refresh(farmer)
+    return _store_profile_out(farmer)
+
+
 def list_active_market_items(db: Session, query: str | None = None) -> list[dict]:
     stmt = (
-        select(FarmerMarketItem, User.full_name)
+        select(FarmerMarketItem, User)
         .join(User, User.id == FarmerMarketItem.farmer_user_id)
-        .where(FarmerMarketItem.is_active.is_(True), FarmerMarketItem.quantity_available > 0)
+        .where(
+            FarmerMarketItem.is_active.is_(True),
+            or_(FarmerMarketItem.quantity_available.is_(None), FarmerMarketItem.quantity_available > 0),
+        )
         .order_by(FarmerMarketItem.updated_at.desc())
     )
 
@@ -88,12 +172,20 @@ def list_active_market_items(db: Session, query: str | None = None) -> list[dict
             or_(
                 FarmerMarketItem.item_name.ilike(like_query),
                 FarmerMarketItem.description.ilike(like_query),
+                FarmerMarketItem.pickup_location.ilike(like_query),
                 User.full_name.ilike(like_query),
+                User.store_name.ilike(like_query),
+                User.store_about.ilike(like_query),
             )
         )
 
+    ratings = _farmer_rating_map(db)
     rows = db.execute(stmt).all()
-    return [_item_to_out(item, farmer_name) for item, farmer_name in rows]
+    out: list[dict] = []
+    for item, farmer in rows:
+        avg, count = ratings.get(item.farmer_user_id, (None, 0))
+        out.append(_item_to_out(item, farmer, avg, count))
+    return out
 
 
 def list_farmer_market_items(db: Session, farmer_user_id: UUID) -> list[dict]:
@@ -103,16 +195,20 @@ def list_farmer_market_items(db: Session, farmer_user_id: UUID) -> list[dict]:
         .order_by(FarmerMarketItem.updated_at.desc())
     ).all()
 
+    ratings = _farmer_rating_map(db)
     farmer = db.get(User, farmer_user_id)
-    farmer_name = farmer.full_name if farmer else "Farmer"
-    return [_item_to_out(item, farmer_name) for item in rows]
+    avg, count = ratings.get(farmer_user_id, (None, 0))
+    return [_item_to_out(item, farmer, avg, count) for item in rows]
 
 
 def create_market_item(db: Session, farmer_user_id: UUID, payload: MarketItemCreate) -> dict:
     row = FarmerMarketItem(
         farmer_user_id=farmer_user_id,
         item_name=payload.item_name.strip(),
-        description=payload.description.strip() if payload.description else None,
+        description=_clean_optional(payload.description),
+        brand_logo_url=_clean_optional(payload.brand_logo_url),
+        photo_url=_clean_optional(payload.photo_url),
+        pickup_location=_clean_optional(payload.pickup_location),
         unit_label=payload.unit_label.strip(),
         price_per_unit=payload.price_per_unit,
         quantity_available=payload.quantity_available,
@@ -122,9 +218,10 @@ def create_market_item(db: Session, farmer_user_id: UUID, payload: MarketItemCre
     db.commit()
     db.refresh(row)
 
+    ratings = _farmer_rating_map(db)
     farmer = db.get(User, farmer_user_id)
-    farmer_name = farmer.full_name if farmer else "Farmer"
-    return _item_to_out(row, farmer_name)
+    avg, count = ratings.get(farmer_user_id, (None, 0))
+    return _item_to_out(row, farmer, avg, count)
 
 
 def update_market_item(db: Session, item_id: UUID, farmer_user_id: UUID, payload: MarketItemUpdate) -> dict | None:
@@ -132,25 +229,32 @@ def update_market_item(db: Session, item_id: UUID, farmer_user_id: UUID, payload
     if not row or row.farmer_user_id != farmer_user_id:
         return None
 
-    if payload.item_name is not None:
+    if _field_provided(payload, "item_name") and payload.item_name is not None:
         row.item_name = payload.item_name.strip()
-    if payload.description is not None:
-        row.description = payload.description.strip() if payload.description else None
-    if payload.unit_label is not None:
+    if _field_provided(payload, "description"):
+        row.description = _clean_optional(payload.description)
+    if _field_provided(payload, "brand_logo_url"):
+        row.brand_logo_url = _clean_optional(payload.brand_logo_url)
+    if _field_provided(payload, "photo_url"):
+        row.photo_url = _clean_optional(payload.photo_url)
+    if _field_provided(payload, "pickup_location"):
+        row.pickup_location = _clean_optional(payload.pickup_location)
+    if _field_provided(payload, "unit_label") and payload.unit_label is not None:
         row.unit_label = payload.unit_label.strip()
-    if payload.price_per_unit is not None:
+    if _field_provided(payload, "price_per_unit") and payload.price_per_unit is not None:
         row.price_per_unit = payload.price_per_unit
-    if payload.quantity_available is not None:
+    if _field_provided(payload, "quantity_available"):
         row.quantity_available = payload.quantity_available
-    if payload.is_active is not None:
+    if _field_provided(payload, "is_active") and payload.is_active is not None:
         row.is_active = payload.is_active
 
     db.commit()
     db.refresh(row)
 
+    ratings = _farmer_rating_map(db)
     farmer = db.get(User, farmer_user_id)
-    farmer_name = farmer.full_name if farmer else "Farmer"
-    return _item_to_out(row, farmer_name)
+    avg, count = ratings.get(farmer_user_id, (None, 0))
+    return _item_to_out(row, farmer, avg, count)
 
 
 def delete_market_item(db: Session, item_id: UUID, farmer_user_id: UUID) -> bool:
@@ -168,19 +272,21 @@ def create_market_order(db: Session, customer_user_id: UUID, payload: MarketOrde
     if not item or not item.is_active:
         raise ValueError("Market item is not available")
 
-    available = Decimal(str(item.quantity_available))
     requested = Decimal(str(payload.quantity_ordered))
     if requested <= 0:
         raise ValueError("Ordered quantity must be positive")
-    if requested > available:
+
+    available = Decimal(str(item.quantity_available)) if item.quantity_available is not None else None
+    if available is not None and requested > available:
         raise ValueError("Requested quantity exceeds available stock")
 
     unit_price = Decimal(str(item.price_per_unit))
     total_price = _round2(unit_price * requested)
 
-    item.quantity_available = _round2(available - requested)
-    if Decimal(str(item.quantity_available)) == Decimal("0.00"):
-        item.is_active = False
+    if available is not None:
+        item.quantity_available = _round2(available - requested)
+        if Decimal(str(item.quantity_available)) == Decimal("0.00"):
+            item.is_active = False
 
     order = MarketOrder(
         market_item_id=item.id,
@@ -195,6 +301,32 @@ def create_market_order(db: Session, customer_user_id: UUID, payload: MarketOrde
         status="pending",
     )
     db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    farmer = db.get(User, order.farmer_user_id)
+    customer = db.get(User, order.customer_user_id)
+    return _order_to_out(order, farmer, customer)
+
+
+def customer_review_market_order(
+    db: Session,
+    order_id: UUID,
+    customer_user_id: UUID,
+    rating: int,
+    review: str | None,
+) -> dict | None:
+    order = db.get(MarketOrder, order_id)
+    if not order or order.customer_user_id != customer_user_id:
+        return None
+
+    if order.status != "validated":
+        raise ValueError("Only validated orders can be reviewed")
+
+    order.customer_rating = rating
+    order.customer_review = review.strip() if review else None
+    order.customer_reviewed_at = datetime.utcnow()
+
     db.commit()
     db.refresh(order)
 

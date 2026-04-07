@@ -1,7 +1,7 @@
-from datetime import datetime
+﻿from datetime import datetime
 import uuid
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Uuid
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, Numeric, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -30,5 +30,8 @@ class MarketOrder(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     pickup_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     farmer_response_note: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    customer_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    customer_review: Mapped[str | None] = mapped_column(String(800), nullable=True)
+    customer_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

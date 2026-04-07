@@ -1,4 +1,4 @@
-from uuid import UUID
+﻿from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -11,22 +11,28 @@ from app.schemas.market import (
     MarketItemOut,
     MarketItemUpdate,
     MarketOrderCreate,
+    MarketOrderCustomerReview,
     MarketOrderFarmerValidation,
     MarketOrderMessageCreate,
     MarketOrderMessageOut,
     MarketOrderOut,
+    MarketStoreProfileOut,
+    MarketStoreProfileUpdate,
 )
 from app.services.market import (
     create_market_item,
     create_market_order,
     create_market_order_message,
+    customer_review_market_order,
     delete_market_item,
     farmer_validate_market_order,
+    get_farmer_store_profile,
     list_active_market_items,
     list_customer_orders,
     list_farmer_market_items,
     list_farmer_orders,
     list_market_order_messages,
+    update_farmer_store_profile,
     update_market_item,
 )
 
@@ -86,6 +92,29 @@ def delete_market_item_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Market item not found")
 
 
+@router.get("/store-profile/mine", response_model=MarketStoreProfileOut)
+def get_my_store_profile_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("farmer")),
+) -> MarketStoreProfileOut:
+    row = get_farmer_store_profile(db, current_user.id)
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farmer profile not found")
+    return MarketStoreProfileOut.model_validate(row)
+
+
+@router.patch("/store-profile/mine", response_model=MarketStoreProfileOut)
+def update_my_store_profile_endpoint(
+    payload: MarketStoreProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("farmer")),
+) -> MarketStoreProfileOut:
+    row = update_farmer_store_profile(db, current_user.id, payload)
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farmer profile not found")
+    return MarketStoreProfileOut.model_validate(row)
+
+
 @router.post("/orders", response_model=MarketOrderOut, status_code=status.HTTP_201_CREATED)
 def create_market_order_endpoint(
     payload: MarketOrderCreate,
@@ -96,6 +125,29 @@ def create_market_order_endpoint(
         row = create_market_order(db, current_user.id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return MarketOrderOut.model_validate(row)
+
+
+@router.patch("/orders/{order_id}/customer-review", response_model=MarketOrderOut)
+def customer_review_market_order_endpoint(
+    order_id: UUID,
+    payload: MarketOrderCustomerReview,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("customer")),
+) -> MarketOrderOut:
+    try:
+        row = customer_review_market_order(
+            db,
+            order_id=order_id,
+            customer_user_id=current_user.id,
+            rating=payload.rating,
+            review=payload.review,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Market order not found")
     return MarketOrderOut.model_validate(row)
 
 

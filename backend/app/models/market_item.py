@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 import uuid
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Numeric, String, Uuid
@@ -19,9 +19,12 @@ class FarmerMarketItem(Base):
     farmer_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     item_name: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    brand_logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    pickup_location: Mapped[str | None] = mapped_column(String(180), nullable=True)
     unit_label: Mapped[str] = mapped_column(String(50), nullable=False)
     price_per_unit: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
-    quantity_available: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    quantity_available: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True, default=None)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

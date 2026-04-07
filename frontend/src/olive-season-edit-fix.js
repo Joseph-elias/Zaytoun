@@ -253,6 +253,57 @@ const deleteOilTankPriceBtn = document.getElementById("delete-oil-tank-price-btn
 const clearAllOilTankPricesBtn = document.getElementById("clear-all-oil-tank-prices-btn");
 const budgetOilTankPriceMessage = document.getElementById("budget-oil-tank-price-message");
 
+function setActionButtonBusy(button, label) {
+  if (!button) return;
+  if (!button.dataset.defaultLabel) {
+    button.dataset.defaultLabel = button.textContent || "";
+  }
+  button.dataset.busyAt = String(Date.now());
+  button.disabled = true;
+  button.classList.remove("is-done", "is-error");
+  button.classList.add("is-loading");
+  button.textContent = label;
+}
+
+function setActionButtonDone(button, label = "Done ✓") {
+  if (!button) return;
+  button.classList.remove("is-loading", "is-error");
+  button.classList.add("is-done");
+  button.textContent = label;
+}
+
+function setActionButtonError(button, label = "Failed") {
+  if (!button) return;
+  button.classList.remove("is-loading", "is-done");
+  button.classList.add("is-error");
+  button.textContent = label;
+}
+
+function resetActionButton(button) {
+  if (!button) return;
+  const defaultLabel = button.dataset.defaultLabel || "";
+  button.disabled = false;
+  button.classList.remove("is-loading", "is-done", "is-error");
+  button.textContent = defaultLabel;
+}
+
+function finishActionButton(button, ok) {
+  if (!button) return;
+  const busyAt = Number(button.dataset.busyAt || 0);
+  const elapsed = Date.now() - busyAt;
+  const minLoadingMs = 260;
+  const waitMs = Math.max(0, minLoadingMs - elapsed);
+
+  window.setTimeout(() => {
+    if (ok) {
+      setActionButtonDone(button);
+    } else {
+      setActionButtonError(button);
+    }
+    window.setTimeout(() => resetActionButton(button), 1200);
+  }, waitMs);
+}
+
 function seasonPayloadFromRow(row, overrides = {}) {
   return {
     season_year: Number(row.season_year),
@@ -314,6 +365,7 @@ saveOilTankPriceBtn?.addEventListener("click", async () => {
     return;
   }
 
+  setActionButtonBusy(saveOilTankPriceBtn, "Saving...");
   budgetOilTankPriceMessage.textContent = "Saving tank price...";
   budgetOilTankPriceMessage.className = "message success";
 
@@ -326,11 +378,13 @@ saveOilTankPriceBtn?.addEventListener("click", async () => {
 
     budgetOilTankPriceMessage.textContent = "Tank price saved.";
     budgetOilTankPriceMessage.className = "message success";
+    finishActionButton(saveOilTankPriceBtn, true);
     document.getElementById("refresh-finance-btn")?.click();
     document.getElementById("refresh-seasons-btn")?.click();
   } catch (error) {
     budgetOilTankPriceMessage.textContent = error.message || "Could not save tank price";
     budgetOilTankPriceMessage.className = "message error";
+    finishActionButton(saveOilTankPriceBtn, false);
   }
 });
 
@@ -347,6 +401,7 @@ deleteOilTankPriceBtn?.addEventListener("click", async () => {
 
   if (!window.confirm("Delete tank price for this piece/season?")) return;
 
+  setActionButtonBusy(deleteOilTankPriceBtn, "Deleting...");
   budgetOilTankPriceMessage.textContent = "Deleting tank price...";
   budgetOilTankPriceMessage.className = "message success";
 
@@ -359,11 +414,13 @@ deleteOilTankPriceBtn?.addEventListener("click", async () => {
     budgetOilTankPriceInput.value = "";
     budgetOilTankPriceMessage.textContent = "Tank price deleted.";
     budgetOilTankPriceMessage.className = "message success";
+    finishActionButton(deleteOilTankPriceBtn, true);
     document.getElementById("refresh-finance-btn")?.click();
     document.getElementById("refresh-seasons-btn")?.click();
   } catch (error) {
     budgetOilTankPriceMessage.textContent = error.message || "Could not delete tank price";
     budgetOilTankPriceMessage.className = "message error";
+    finishActionButton(deleteOilTankPriceBtn, false);
   }
 });
 
@@ -372,6 +429,7 @@ clearAllOilTankPricesBtn?.addEventListener("click", async () => {
 
   if (!window.confirm("Clear oil tank prices for all seasons?")) return;
 
+  setActionButtonBusy(clearAllOilTankPricesBtn, "Clearing...");
   budgetOilTankPriceMessage.textContent = "Clearing all tank prices...";
   budgetOilTankPriceMessage.className = "message success";
 
@@ -385,12 +443,14 @@ clearAllOilTankPricesBtn?.addEventListener("click", async () => {
     const count = Number(result?.cleared_count || 0);
     budgetOilTankPriceMessage.textContent = `Cleared ${count} tank price value(s).`;
     budgetOilTankPriceMessage.className = "message success";
+    finishActionButton(clearAllOilTankPricesBtn, true);
     document.getElementById("refresh-finance-btn")?.click();
     document.getElementById("refresh-seasons-btn")?.click();
     await syncBudgetTankPriceInput();
   } catch (error) {
     budgetOilTankPriceMessage.textContent = error.message || "Could not clear tank prices";
     budgetOilTankPriceMessage.className = "message error";
+    finishActionButton(clearAllOilTankPricesBtn, false);
   }
 });
 window.setTimeout(syncBudgetTankPriceInput, 300);

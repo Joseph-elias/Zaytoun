@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -19,34 +19,91 @@
           <button class="btn ghost" id="logout-btn" type="button">Logout</button>
         </div>
         <h1>Market</h1>
-        <p class="sub" id="role-hint">Farmers can list products. Customers can browse and order.</p>
+        <p class="sub" id="role-hint">Farmers can build their market. Customers can browse stores and order.</p>
         <nav id="app-tabs" class="tabs"></nav>
       </header>
 
-      <section class="card" id="farmer-create-card">
-        <h2>Create Product Listing</h2>
-        <form id="market-item-form" class="form-grid compact">
-          <label>Product Name<input name="item_name" required maxlength="120" /></label>
-          <label>Unit (kg, liter, box...)<input name="unit_label" required maxlength="50" /></label>
-          <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" required /></label>
-          <label>Quantity Available<input name="quantity_available" type="number" step="0.01" min="0" required /></label>
-          <label class="full">Description<textarea name="description" rows="2" maxlength="400" placeholder="Optional details"></textarea></label>
-          <label class="inline-check full"><input name="is_active" type="checkbox" checked /> Active listing</label>
-          <button class="btn" type="submit">Save Listing</button>
-        </form>
-        <p id="market-item-message" class="message"></p>
+      <section class="card market-create-card" id="store-profile-card">
+        <div class="list-head">
+          <h2>Store Profile</h2>
+          <div class="actions-row">
+            <span class="badge day">UberEats style</span>
+            <button class="btn ghost market-fold-toggle" id="store-profile-toggle-btn" type="button" aria-expanded="true">Hide</button>
+          </div>
+        </div>
+        <div id="store-profile-content">
+          <form id="store-profile-form" class="form-grid compact market-create-form">
+            <label>Store Name<input name="store_name" maxlength="120" placeholder="Zaytoun House" /></label>
+            <label>Store Banner URL<input name="store_banner_url" type="url" maxlength="500" placeholder="https://..." /></label>
+            <label class="full">About Store<textarea name="store_about" rows="2" maxlength="600" placeholder="What makes your store special"></textarea></label>
+            <label class="full">Opening Hours<input name="store_opening_hours" maxlength="180" placeholder="Mon-Sat 8:00 - 18:00" /></label>
+            <button class="btn" type="submit">Save Store Profile</button>
+          </form>
+          <p id="store-profile-message" class="message"></p>
+        </div>
       </section>
 
-      <section class="card">
+      <section class="card market-create-card" id="farmer-create-card">
         <div class="list-head">
-          <h2 id="market-list-title">Market Products</h2>
+          <h2>Build Your Listing</h2>
+          <div class="actions-row">
+            <span class="badge day">Store Builder</span>
+            <button class="btn ghost market-fold-toggle" id="listing-toggle-btn" type="button" aria-expanded="true">Hide</button>
+          </div>
+        </div>
+        <div id="listing-content">
+          <form id="market-item-form" class="form-grid compact market-create-form">
+            <label>Product Name<input name="item_name" required maxlength="120" placeholder="Extra Virgin Olive Oil" /></label>
+            <label>Unit (kg, liter, box...)<input name="unit_label" required maxlength="50" placeholder="liter" /></label>
+            <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" required /></label>
+            <label class="inline-check">Track Quantity
+              <input name="track_quantity" type="checkbox" checked />
+            </label>
+            <label id="quantity-label">Quantity Available<input name="quantity_available" type="number" step="0.01" min="0" /></label>
+            <label>Brand Logo URL<input name="brand_logo_url" type="url" maxlength="500" placeholder="https://..." /></label>
+            <label>Product Photo URL<input name="photo_url" type="url" maxlength="500" placeholder="https://..." /></label>
+            <label class="full">Pickup Location<input name="pickup_location" maxlength="180" placeholder="Village, district, pickup spot" /></label>
+            <label class="full">Description<textarea name="description" rows="2" maxlength="400" placeholder="Optional details"></textarea></label>
+            <label class="inline-check full"><input name="is_active" type="checkbox" checked /> Active listing</label>
+            <button class="btn" type="submit">Save Listing</button>
+          </form>
+          <p id="market-item-message" class="message"></p>
+        </div>
+      </section>
+
+      <section class="card" id="market-main-card">
+        <div class="list-head">
+          <h2 id="market-list-title">Market</h2>
           <button class="btn ghost" id="refresh-market-btn" type="button">Refresh</button>
         </div>
-        <form id="market-filter-form" class="form-grid compact">
-          <label class="full">Search<input name="q" placeholder="Product or farmer name" maxlength="120" /></label>
+        <form id="market-filter-form" class="form-grid compact market-filter-form">
+          <label class="full">Search<input name="q" placeholder="Store, product, or location" maxlength="120" /></label>
           <button class="btn" type="submit">Search</button>
         </form>
-        <div id="market-items-list" class="workers-list"></div>
+
+        <section id="customer-stores-view" class="market-customer-view">
+          <div id="market-items-list" class="workers-list market-items-grid"></div>
+        </section>
+
+        <section id="customer-store-detail" class="market-store-detail is-hidden">
+          <div class="actions-row market-store-nav">
+            <button id="store-back-btn" class="btn ghost" type="button">← Back to Stores</button>
+          </div>
+          <div id="store-header" class="market-store-header"></div>
+          <div class="market-store-layout">
+            <div id="store-items-list" class="market-store-items"></div>
+            <aside class="card market-cart-panel" id="market-cart-panel">
+              <h3>Cart</h3>
+              <div id="cart-lines" class="market-cart-lines"></div>
+              <p id="cart-total" class="market-cart-total">Total: 0.00</p>
+              <form id="cart-checkout-form" class="form-grid compact">
+                <label class="full">Order Note<textarea name="note" rows="2" maxlength="400" placeholder="Optional note for farmer"></textarea></label>
+                <button class="btn" type="submit">Checkout Cart</button>
+                <p id="cart-message" class="message"></p>
+              </form>
+            </aside>
+          </div>
+        </section>
       </section>
 
       <section class="card" id="orders-card">
