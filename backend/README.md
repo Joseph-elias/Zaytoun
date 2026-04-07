@@ -1,90 +1,57 @@
-# Worker Radar Backend (FastAPI)
+﻿# Worker Radar Backend
 
-Backend API for authentication, worker profiles, bookings, and olive season analytics.
+FastAPI backend for Worker Radar, covering auth, workers, bookings, olive operations, and market flows.
 
 ## Stack
-
 - FastAPI
 - SQLAlchemy ORM
-- Alembic migrations
-- SQLite default local DB (PostgreSQL-ready through env)
-- Pytest test suite
+- Alembic
+- SQLite local default (`worker_radar.db`)
+- PostgreSQL/Supabase-ready through `DATABASE_URL`
+- Pytest
 
-## API Modules
+## Core API Areas
 
 ### Auth
 - `POST /auth/register`
 - `POST /auth/login`
 
 ### Workers
-- `POST /workers` (worker role, own phone only)
-- `PATCH /workers/{worker_id}` (worker role, own profile)
-- `GET /workers` (worker/farmer with filters)
-- `PATCH /workers/{worker_id}/availability` (worker role, own profile)
-- `DELETE /workers/{worker_id}` (worker role, own profile)
+- `POST /workers`
+- `PATCH /workers/{worker_id}`
+- `GET /workers`
+- `PATCH /workers/{worker_id}/availability`
+- `DELETE /workers/{worker_id}`
 
 ### Bookings
-- `POST /workers/{worker_id}/bookings` (farmer)
-- `GET /bookings/mine` (farmer)
-- `GET /bookings/received` (worker)
-- `PATCH /bookings/{booking_id}/worker-response` (worker)
-- `PATCH /bookings/{booking_id}/farmer-validation` (farmer)
-- `PATCH /bookings/{booking_id}/proposal` (worker/farmer owners, non-confirmed only)
-- `DELETE /bookings/{booking_id}` (worker/farmer owners, non-confirmed only)
+- `POST /workers/{worker_id}/bookings`
+- `GET /bookings/mine`
+- `GET /bookings/received`
+- `PATCH /bookings/{booking_id}/worker-response`
+- `PATCH /bookings/{booking_id}/farmer-validation`
+- `PATCH /bookings/{booking_id}/proposal`
+- `DELETE /bookings/{booking_id}`
 - `GET /bookings/{booking_id}/messages`
 - `POST /bookings/{booking_id}/messages`
 - `GET /bookings/{booking_id}/events`
 
-### Olive seasons (farmer)
-- `GET /olive-seasons/mine`
-- `POST /olive-seasons`
-- `PATCH /olive-seasons/{season_id}`
-- `DELETE /olive-seasons/{season_id}`
+### Olive domain
+- `olive-seasons` CRUD + oil tank price endpoints
+- `olive-land-pieces` registry
+- `olive-labor-days`
+- `olive-sales`
+- `olive-usages`
+- `olive-inventory-items`
+- `olive-piece-metrics`
 
-### Market
-- `GET /market/items` (farmer/customer)
-- `GET /market/items/mine` (farmer)
-- `POST /market/items` (farmer)
-- `PATCH /market/items/{item_id}` (farmer)
-- `DELETE /market/items/{item_id}` (farmer)
-- `POST /market/orders` (customer)
-- `GET /market/orders/mine` (customer)
-- `GET /market/orders/incoming` (farmer)
+### Market domain
+- `market/items` CRUD (farmer)
+- `market/orders` create/list/validate
+- order chat endpoints
+- customer review endpoint with **separable product/store ratings**
+- store profile endpoints
 
-### Olive piece metrics (farmer)
-- `GET /olive-piece-metrics/mine`
-- `POST /olive-piece-metrics`
-- `PATCH /olive-piece-metrics/{metric_id}`
-- `DELETE /olive-piece-metrics/{metric_id}`
-
-## Data Features
-
-### Worker profile fields
-- team name, phone, village/address
-- coordinates
-- men/women counts and rates
-- overtime settings
-- available dates and available status
-
-### Olive season fields
-- season year
-- land piece name
-- estimated/actual chonbol
-- kg per land piece
-- tanks 20L
-- notes
-- computed `kg_needed_per_tank`
-
-### Olive piece metric fields
-- season year
-- piece label
-- harvested kg
-- tanks 20L
-- notes
-- computed `kg_needed_per_tank`
-
-## Run Locally
-
+## Local Run
 ```powershell
 cd backend
 python -m venv .venv
@@ -93,23 +60,27 @@ python -m venv .venv
 .\.venv\Scripts\python -m uvicorn app.main:app --reload
 ```
 
-Docs:
+Open docs:
 - `http://127.0.0.1:8000/docs`
 
 ## Migrations
 
-Apply migrations:
-
+Upgrade:
 ```powershell
 cd backend
 .\.venv\Scripts\alembic -c alembic.ini upgrade head
 ```
 
-Create new migration:
-
+Current revision:
 ```powershell
 cd backend
-.\.venv\Scripts\alembic -c alembic.ini revision --autogenerate -m "describe change"
+.\.venv\Scripts\alembic -c alembic.ini current
+```
+
+Create migration:
+```powershell
+cd backend
+.\.venv\Scripts\alembic -c alembic.ini revision --autogenerate -m "describe_change"
 .\.venv\Scripts\alembic -c alembic.ini upgrade head
 ```
 
@@ -117,17 +88,24 @@ cd backend
 
 ```powershell
 cd backend
-.\.venv\Scripts\python -m pytest -q
+$env:PYTHONPATH='.'
+.\.venv\Scripts\pytest -q
 ```
+
+Test modules:
+- `tests/test_auth_workers_bookings.py`
+- `tests/test_olive_api.py`
+- `tests/test_market_api.py`
+- shared helpers in `tests/helpers.py`
 
 ## Configuration
 
-- Default DB: SQLite (`worker_radar.db`)
-- Override with `DATABASE_URL`
-- Auth env:
+Loaded from `app/core/config.py`.
+
+Important env vars:
+- `DATABASE_URL`
+- `DB_FALLBACK_URL`
 - `AUTH_SECRET_KEY`
 - `AUTH_ALGORITHM`
 
-CORS currently allows local Vite and local static-server origins.
-
-
+Default local DB resolves to an absolute file path under `backend/worker_radar.db`.

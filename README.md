@@ -1,74 +1,67 @@
 ﻿# Worker Radar
 
-Worker Radar is a worker-farmer coordination platform for agricultural labor.
+Worker Radar is a monolith-first platform for agricultural operations, connecting workers, farmers, and customers through one application.
 
-## What The App Does Today
+Current product scope includes:
+- Worker discovery and booking workflows
+- Olive season, labor, sales, usage, and inventory management
+- Farmer market storefronts with customer ordering, chat, and separable ratings
 
-### Authentication and roles
-- Account registration and login with JWT auth.
-- Two roles:
-- `worker`: can create/manage only their own worker profiles.
-- `farmer`: can discover workers, create bookings, and manage olive season analytics.
+## Product Areas
 
-### Worker management
-- Workers can create multiple profiles (teams).
-- Worker profiles include:
-- identity and contact info
-- village and optional full address
-- map coordinates (lat/lon)
-- men/women counts and separate rates
-- overtime settings
-- availability dates and availability status
-- Workers can modify or delete their own profiles.
-- Farmers can browse/filter/search worker directory but cannot modify worker profiles.
+### 1) Auth and roles
+- JWT-based auth with register/login
+- Roles:
+- `worker`
+- `farmer`
+- `customer`
 
-### Worker discovery and map
-- Directory filtering by availability, village, date, rates, and location distance.
-- Worker map with location pins and lightweight hover info.
-- Expanded worker details shown outside map selection panel.
+### 2) Worker operations
+- Workers can create and manage their own team profiles
+- Farmer can search/filter workers by village, availability, date, and rate constraints
+- Worker map/location support in the frontend
 
-### Booking lifecycle (worker-farmer)
-- Farmers create booking proposals for worker teams.
-- Worker can accept/reject.
-- Farmer can confirm/cancel after worker response.
-- Non-confirmed proposals can be modified/deleted by corresponding owners.
-- Confirmed bookings are protected from modification/deletion.
-- Booking timeline events are tracked.
-- Booking chat/messages are available between worker and farmer.
+### 3) Booking lifecycle
+- Farmer sends booking proposals
+- Worker accepts/rejects
+- Farmer confirms/cancels
+- Proposal updates/deletes allowed before final confirmation
+- Booking messages and booking event history included
 
-### Olive season tracking (farmer)
-- Farmers can create/update/delete season records.
-- Season record includes:
-- season year
-- land piece name
-- estimated and actual chonbol
-- kg per land piece
-- tanks produced (20L)
-- notes
-- Calculated `kg needed per tank` shown from:
-- `kg_per_land_piece / tanks_20l` (fallback to `actual_chonbol / tanks_20l` when needed)
-- Incomplete records are marked with a Draft badge and missing fields list.
-- History header includes live progress counter: `Drafts: X / Y`.
+### 4) Olive management
+- Land pieces registry
+- Olive season records with piece-level tracking
+- Financial logic for pressing cost in money or oil tanks
+- Labor-day inputs, sales, usage, inventory, and carry-over by year
+- Insights views embedded in olive workflows
 
-### Insights and analytics
-- Dedicated insights page exists (`insight.html`) and is embedded inside Olive Season view.
-- Insights panel in Olive Season is hidden by default and toggled by button.
-- Analytics include:
-- KPI summary cards
-- year-over-year trend chart and table
-- piece comparison chart and table
-- diagnostics (trend slope, volatility, data quality)
-- interactive filters (year range, selected pieces, metric type)
+### 5) Market module (UberEats-like flow)
+- Farmer creates listings (photo/logo/description/location/quantity optional)
+- Customer browses store cards and enters a store detail page
+- Cart checkout creates one order per cart line
+- Farmer validates/rejects orders and sets pickup time
+- Order chat between farmer and customer
+- Store profile editor (name, banner, about, opening hours)
 
-## Monorepo Structure
+### 6) Separable ratings
+- Store rating and product rating are independent
+- Product ratings aggregate per item
+- Store ratings aggregate per farmer/store
+- Customer can save product rating or store rating separately
 
-- `backend/`: FastAPI API + SQLAlchemy + Alembic + tests
-- `frontend/`: Vite multi-page frontend (HTML + vanilla JS)
+## Architecture (Current)
+- **Backend:** FastAPI + SQLAlchemy + Alembic
+- **Frontend:** Vite multi-page app with vanilla JS modules
+- **DB (default local):** SQLite (`backend/worker_radar.db`)
+- **DB target later:** PostgreSQL/Supabase via `DATABASE_URL`
 
-## Quick Start
+Repository:
+- `backend/` API, models, migrations, tests
+- `frontend/` UI pages, JS modules, QA scripts
 
-### 1) Backend
+## Run Locally
 
+### Backend
 ```powershell
 cd backend
 python -m venv .venv
@@ -80,30 +73,104 @@ python -m venv .venv
 Backend docs:
 - `http://127.0.0.1:8000/docs`
 
-### 2) Frontend
-
+### Frontend
 ```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-Open:
+Frontend app:
 - `http://127.0.0.1:5173/`
-
-## Testing
-
-```powershell
-cd backend
-.\.venv\Scripts\python -m pytest -q
-```
 
 ## Environment
 
-Backend supports SQLite by default (`worker_radar.db`) and can be pointed to PostgreSQL via `DATABASE_URL`.
+### Backend
+- Config is loaded from `backend/app/core/config.py`
+- `.env` is optional for local dev
+- Important vars:
+- `DATABASE_URL` (for Postgres/Supabase)
+- `DB_FALLBACK_URL`
+- `AUTH_SECRET_KEY`
+- `AUTH_ALGORITHM`
 
-## Current Product Notes
+Default local DB resolves to absolute path under `backend/worker_radar.db`.
 
-- Mobile-first UI with role-based tab navigation.
-- Farmer insights are intentionally available from Olive Season page (toggle), not always visible in top tabs.
-- Project remains monolith-first to keep shipping speed high.
+### Frontend
+- Use `frontend/.env.example`
+- API base:
+- `VITE_API_BASE_URL=http://127.0.0.1:8000`
+
+## Database and migrations
+
+Apply latest migrations:
+```powershell
+cd backend
+.\.venv\Scripts\alembic -c alembic.ini upgrade head
+```
+
+Check current revision:
+```powershell
+cd backend
+.\.venv\Scripts\alembic -c alembic.ini current
+```
+
+Create migration:
+```powershell
+cd backend
+.\.venv\Scripts\alembic -c alembic.ini revision --autogenerate -m "describe_change"
+.\.venv\Scripts\alembic -c alembic.ini upgrade head
+```
+
+## Testing and QA
+
+### Backend tests
+```powershell
+cd backend
+$env:PYTHONPATH='.'
+.\.venv\Scripts\pytest -q
+```
+
+Test suite is now split for maintainability:
+- `backend/tests/test_auth_workers_bookings.py`
+- `backend/tests/test_olive_api.py`
+- `backend/tests/test_market_api.py`
+- Shared helpers in `backend/tests/helpers.py`
+
+### Frontend build
+```powershell
+cd frontend
+npm run build
+```
+
+### Frontend automated QA scripts
+Located in `frontend/scripts/`:
+- `qa-full.mjs`
+- `ui-feedback-smoke.mjs`
+- `qa-button-bug.mjs`
+- `qa-usage-history-check.mjs`
+
+Run scripts with frontend dev server running on `127.0.0.1:5173`.
+
+## Key pages
+- `workers.html` Worker directory + filters/map
+- `register.html` Worker profile creation
+- `my-profiles.html` Worker-owned profiles
+- `bookings.html` Booking workflows
+- `olive-season.html` Olive season and budgeting workflows
+- `inventory.html` Inventory management
+- `insight.html` Analytics
+- `market.html` Market storefronts, orders, cart, ratings
+
+## Current maturity
+- Strong MVP with full end-to-end business flows
+- Good automated test coverage for backend APIs
+- Browser QA smoke coverage for critical frontend flows
+- Not yet optimized for high-scale production traffic (10k concurrent users) until infra hardening phase
+
+## Recommended next phase (when feature scope stabilizes)
+- CI/CD pipeline with full test matrix
+- Postgres/Supabase production migration
+- Redis/cache + observability stack
+- Rate limiting/security hardening
+- Load/performance testing and SLO tuning

@@ -11,9 +11,12 @@ __pycache__/
 .venv/
 venv/
 
-# Backend runtime
+# Backend runtime / local data
 backend/worker_radar.db
+backend/tests/test_worker_radar.db
 backend/.env
+backend/ui_backend.log
+backend/ui_backend.err.log
 backend/backend/
 
 # Node/Vite
@@ -21,10 +24,17 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 
+# Frontend local logs / playwright artifacts
+frontend/ui_frontend.log
+frontend/ui_frontend.err.log
+frontend/playwright-report/
+frontend/test-results/
+
 # Env files
 .env
 *.env.local
 frontend/.env
+backend/.env
 
 # IDE
 .vscode/

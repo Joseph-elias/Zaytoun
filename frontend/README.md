@@ -1,73 +1,43 @@
-# Worker Radar Frontend (Vite Multi-Page)
+﻿# Worker Radar Frontend
 
-Frontend for worker and farmer workflows using vanilla JS modules and role-based navigation.
+Vite multi-page frontend for Worker Radar.
 
-## Pages
+## Tech
+- Vite
+- Vanilla JS modules
+- Multi-page HTML app
+- Playwright-based QA scripts
 
-- `index.html`: landing/entry
-- `login.html`: login
-- `signup.html`: account registration
-- `workers.html`: worker directory + map + filters
-- `market.html`: farmer listings and customer ordering
+## Main Pages
+- `workers.html`: worker discovery and filtering
 - `register.html`: worker profile creation
-- `my-profiles.html`: worker-owned profile management
-- `bookings.html`: booking management + chat + timeline
-- `olive-season.html`: season entry/history + embedded insights
-- `insight.html`: full analytics page (also embeddable)
-- `settings.html`: account settings
+- `my-profiles.html`: worker profile management
+- `bookings.html`: booking workflows + chat/events
+- `olive-season.html`: season entry, budgeting, usage, embedded insights
+- `inventory.html`: inventory management
+- `insight.html`: analytics page (supports `?embedded=1`)
+- `market.html`: market storefronts, store profile, listings, cart/orders/ratings
 
-## Current UX Behavior
+## Market UX Highlights
+- Store cards and store detail experience
+- Farmer listing builder with image/logo/description/quantity handling
+- Customer cart and checkout flow
+- Farmer order validation/rejection and pickup scheduling
+- Order chat
+- Separable ratings:
+- Product rating per listing/product
+- Store rating per market/store
 
-### Role routing
+## Role Routing
 - Worker home: `register.html`
 - Farmer home: `workers.html`
 - Customer home: `market.html`
-- Unauthenticated access redirects to `login.html`
 
-### Worker side
-- Manage own profiles only
-- Update availability and profile details
-- Receive/respond to booking proposals
+Unauthenticated users are redirected to `login.html`.
 
-### Farmer side
-- Browse workers and use geographic/rate/date filters
-- Create and negotiate bookings
-- Track olive season records
-- Open Insights inside Olive Season page via toggle
+## Local Run
 
-### Olive Season page specifics
-- Records are editable and deletable.
-- Shows computed `kg needed per tank`.
-- Shows Draft badge when record is incomplete.
-- Shows live progress counter: `Drafts: X / Y`.
-- Insights section is hidden by default and loaded on demand.
-
-### Insights page specifics
-- Filter bar (year range, selected pieces, metric type)
-- KPI cards, trend charts, comparison tables
-- Piece diagnostics (trend slope, volatility, quality)
-- Supports embedded mode via `?embedded=1`
-
-## API Target
-
-Set frontend API base via env var:
-
-```bash
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
-
-Use `.env.example` as template.
-
-## Run Locally
-
-Start backend first:
-
-```powershell
-cd backend
-.\.venv\Scripts\python -m uvicorn app.main:app --reload
-```
-
-Start frontend:
+Start backend first (`http://127.0.0.1:8000`), then:
 
 ```powershell
 cd frontend
@@ -86,6 +56,22 @@ npm run build
 npm run preview
 ```
 
-Note: in restricted sandboxes, Vite build may fail with `esbuild spawn EPERM` even when code is valid.
+## Environment
 
+Set API base URL:
 
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+Use `frontend/.env.example` as template.
+
+## QA Scripts
+
+Under `frontend/scripts/`:
+- `qa-full.mjs`
+- `ui-feedback-smoke.mjs`
+- `qa-button-bug.mjs`
+- `qa-usage-history-check.mjs`
+
+Run them against a live dev server on `127.0.0.1:5173`.
