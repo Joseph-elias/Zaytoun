@@ -1,6 +1,7 @@
 ﻿import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireAuth, roleHome } from "./session.js";
+import { uploadImageFile } from "./upload.js";
 
 const session = requireAuth();
 if (!session) {}
@@ -49,6 +50,14 @@ const ordersTitle = document.getElementById("orders-title");
 const ordersCard = document.getElementById("orders-card");
 const marketOrdersList = document.getElementById("market-orders-list");
 const refreshOrdersBtn = document.getElementById("refresh-orders-btn");
+const imageFitModal = document.getElementById("image-fit-modal");
+const imageFitTitle = document.getElementById("image-fit-title");
+const imageFitSubtitle = document.getElementById("image-fit-subtitle");
+const imageFitStage = document.getElementById("image-fit-stage");
+const imageFitPreview = document.getElementById("image-fit-preview");
+const imageFitZoom = document.getElementById("image-fit-zoom");
+const imageFitSaveBtn = document.getElementById("image-fit-save-btn");
+const imageFitCancelBtn = document.getElementById("image-fit-cancel-btn");
 
 let farmerItems = [];
 let activeItems = [];
@@ -58,6 +67,7 @@ let selectedStoreId = null;
 let currentStoreProfile = null;
 let farmerInventoryItems = [];
 const cart = new Map();
+let imageFitSession = null;
 
 if (session && roleHint) roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
 if (session && appTabs) renderAppTabs(appTabs, session.user.role, "market.html");
@@ -225,6 +235,206 @@ async function requestJson(url, options = {}) {
   return response.json();
 }
 
+
+
+function normalizeImageMimeType(value) {
+  const type = String(value || "").toLowerCase();
+  if (type === "image/png" || type === "image/webp" || type === "image/jpeg" || type === "image/jpg") return type === "image/jpg" ? "image/jpeg" : type;
+  return "image/jpeg";
+}
+
+function croppedFileName(originalName, mimeType) {
+  const clean = String(originalName || "image").trim();
+  const dot = clean.lastIndexOf(".");
+  const base = dot > 0 ? clean.slice(0, dot) : clean;
+  const ext = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+  return `${base}-framed.${ext}`;
+}
+
+function clampImageOffset(state) {
+  const minX = Math.min(0, state.frameWidth - state.imageWidth * state.scale);
+  const minY = Math.min(0, state.frameHeight - state.imageHeight * state.scale);
+  state.offsetX = Math.min(0, Math.max(minX, state.offsetX));
+  state.offsetY = Math.min(0, Math.max(minY, state.offsetY));
+}
+
+function applyImageFitTransform() {
+  if (!imageFitPreview || !imageFitSession) return;
+  imageFitPreview.style.transform = `translate(${imageFitSession.offsetX}px, ${imageFitSession.offsetY}px) scale(${imageFitSession.scale})`;
+}
+
+function setImageFitScale(nextScale, anchorX, anchorY) {
+  if (!imageFitSession) return;
+  const state = imageFitSession;
+  const targetScale = Math.max(state.minScale, Math.min(state.maxScale, Number(nextScale) || state.scale));
+  const fromScale = state.scale;
+  const focusX = Number.isFinite(anchorX) ? anchorX : state.frameWidth / 2;
+  const focusY = Number.isFinite(anchorY) ? anchorY : state.frameHeight / 2;
+  const sourceX = (focusX - state.offsetX) / fromScale;
+  const sourceY = (focusY - state.offsetY) / fromScale;
+  state.scale = targetScale;
+  state.offsetX = focusX - sourceX * targetScale;
+  state.offsetY = focusY - sourceY * targetScale;
+  clampImageOffset(state);
+  applyImageFitTransform();
+}
+
+function clearImageFitSession() {
+  imageFitSession = null;
+  if (imageFitPreview) {
+    imageFitPreview.removeAttribute("src");
+    imageFitPreview.style.transform = "";
+    imageFitPreview.style.width = "";
+    imageFitPreview.style.height = "";
+  }
+  if (imageFitZoom) {
+    imageFitZoom.min = "1";
+    imageFitZoom.max = "3";
+    imageFitZoom.step = "0.01";
+    imageFitZoom.value = "1";
+  }
+}
+
+function closeImageFitModal() {
+  imageFitModal?.classList.add("is-hidden");
+  imageFitStage?.classList.remove("is-dragging");
+  document.body.classList.remove("image-fit-open");
+  clearImageFitSession();
+}
+
+function loadImageMetaFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight, src: objectUrl });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not load selected image."));
+    };
+    img.src = objectUrl;
+  });
+}
+
+async function openImageFitDialog(file, { title, subtitle, aspectRatio = 16 / 9, outputWidth = 1600 } = {}) {
+  if (!imageFitModal || !imageFitStage || !imageFitPreview || !imageFitZoom || !imageFitSaveBtn || !imageFitCancelBtn) return file;
+
+  const metadata = await loadImageMetaFromFile(file);
+  imageFitTitle.textContent = title || "Fit Image";
+  imageFitSubtitle.textContent = subtitle || "Drag image to frame. Use zoom to fit perfectly.";
+  imageFitStage.style.aspectRatio = String(aspectRatio);
+
+  imageFitPreview.src = metadata.src;
+  imageFitPreview.style.width = `${metadata.width}px`;
+  imageFitPreview.style.height = `${metadata.height}px`;
+
+  imageFitModal.classList.remove("is-hidden");
+  document.body.classList.add("image-fit-open");
+
+  const stageRect = imageFitStage.getBoundingClientRect();
+  const frameWidth = Math.max(120, stageRect.width);
+  const frameHeight = Math.max(80, stageRect.height);
+  const minScale = Math.max(frameWidth / metadata.width, frameHeight / metadata.height);
+  const maxScale = minScale * 3;
+
+  imageFitSession = {
+    file,
+    mimeType: normalizeImageMimeType(file.type),
+    imageWidth: metadata.width,
+    imageHeight: metadata.height,
+    frameWidth,
+    frameHeight,
+    minScale,
+    maxScale,
+    scale: minScale,
+    offsetX: (frameWidth - metadata.width * minScale) / 2,
+    offsetY: (frameHeight - metadata.height * minScale) / 2,
+    dragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragOriginX: 0,
+    dragOriginY: 0,
+    resolve: null,
+    aspectRatio,
+    outputWidth,
+  };
+
+  imageFitZoom.min = String(minScale);
+  imageFitZoom.max = String(maxScale);
+  imageFitZoom.step = String((maxScale - minScale) / 200 || 0.01);
+  imageFitZoom.value = String(minScale);
+  clampImageOffset(imageFitSession);
+  applyImageFitTransform();
+
+  return new Promise((resolve) => {
+    imageFitSession.resolve = resolve;
+    imageFitSaveBtn.textContent = "Apply & Upload";
+    imageFitCancelBtn.focus();
+  });
+}
+
+async function finalizeImageFitSession() {
+  if (!imageFitSession?.resolve) return;
+  const state = imageFitSession;
+  const outputWidth = Math.max(600, Number(state.outputWidth) || 1600);
+  const outputHeight = Math.max(300, Math.round(outputWidth / state.aspectRatio));
+  const sx = Math.max(0, Math.min(state.imageWidth - state.frameWidth / state.scale, -state.offsetX / state.scale));
+  const sy = Math.max(0, Math.min(state.imageHeight - state.frameHeight / state.scale, -state.offsetY / state.scale));
+  const sw = Math.min(state.imageWidth, state.frameWidth / state.scale);
+  const sh = Math.min(state.imageHeight, state.frameHeight / state.scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    state.resolve(null);
+    if (imageFitPreview?.src.startsWith("blob:")) URL.revokeObjectURL(imageFitPreview.src);
+    closeImageFitModal();
+    return;
+  }
+
+  ctx.drawImage(imageFitPreview, sx, sy, sw, sh, 0, 0, outputWidth, outputHeight);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, state.mimeType, 0.92));
+  if (!blob) {
+    state.resolve(null);
+    if (imageFitPreview?.src.startsWith("blob:")) URL.revokeObjectURL(imageFitPreview.src);
+    closeImageFitModal();
+    return;
+  }
+
+  const fileName = croppedFileName(state.file?.name, state.mimeType);
+  const outputFile = new File([blob], fileName, { type: state.mimeType, lastModified: Date.now() });
+  state.resolve(outputFile);
+  if (imageFitPreview?.src.startsWith("blob:")) URL.revokeObjectURL(imageFitPreview.src);
+  closeImageFitModal();
+}
+
+function cancelImageFitSession() {
+  if (!imageFitSession?.resolve) return;
+  imageFitSession.resolve(null);
+  if (imageFitPreview?.src.startsWith("blob:")) URL.revokeObjectURL(imageFitPreview.src);
+  closeImageFitModal();
+}
+
+async function fitAndUploadImage(file, slot, { messageSetter } = {}) {
+  if (!file) return null;
+  const slots = {
+    store_banner: { title: "Fit Store Banner", subtitle: "Drag to choose what appears on your store cover.", aspectRatio: 16 / 6, outputWidth: 1800 },
+    product_photo: { title: "Fit Product Photo", subtitle: "Drag to center your product in the listing card.", aspectRatio: 16 / 10, outputWidth: 1600 },
+    brand_logo: { title: "Fit Brand Logo", subtitle: "Drag to frame your logo nicely in the badge.", aspectRatio: 1, outputWidth: 1000 },
+  };
+  const config = slots[slot] || slots.product_photo;
+
+  messageSetter?.("Open image editor...", true);
+  const fittedFile = await openImageFitDialog(file, config);
+  if (!fittedFile) throw new Error("Image selection canceled.");
+  messageSetter?.("Uploading image...", true);
+  return uploadImageFile(fittedFile, { filename: fittedFile.name });
+}
+
 function marketMediaBlock(item, ownerName) {
   const photoUrl = safeUrl(item.photo_url);
   const logoUrl = safeUrl(item.brand_logo_url);
@@ -284,8 +494,10 @@ function farmerItemCard(item) {
           <label class="inline-check">Track Quantity<input data-edit-track-qty="${item.id}" name="track_quantity" type="checkbox" ${tracksStock ? "checked" : ""} /></label>
           <label>Quantity Available<input data-edit-qty-input="${item.id}" name="quantity_available" type="number" step="0.01" min="0" ${tracksStock ? `value="${money(item.quantity_available)}"` : ""} ${tracksStock ? "required" : "disabled"} /></label>
           <label>Pickup Location<input name="pickup_location" maxlength="180" value="${escapeHtml(item.pickup_location || "")}" /></label>
-          <label>Product Photo URL<input name="photo_url" type="url" maxlength="500" value="${escapeHtml(item.photo_url || "")}" /></label>
-          <label>Brand Logo URL<input name="brand_logo_url" type="url" maxlength="500" value="${escapeHtml(item.brand_logo_url || "")}" /></label>
+          <label>Product Photo (PNG/JPG)<input name="photo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+          <input name="photo_url" type="hidden" value="${escapeHtml(item.photo_url || "")}" />
+          <label>Brand Logo (PNG/JPG)<input name="brand_logo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+          <input name="brand_logo_url" type="hidden" value="${escapeHtml(item.brand_logo_url || "")}" />
           <label class="full">Description<textarea name="description" rows="2" maxlength="400">${escapeHtml(item.description || "")}</textarea></label>
           <div class="actions-row"><button class="btn" type="submit">Save Changes</button><button class="btn ghost" type="button" data-cancel-edit-item="${item.id}">Cancel</button></div>
           <p class="message booking-submit-message"></p>
@@ -642,6 +854,59 @@ linkedInventorySelect?.addEventListener("change", applyCreateLinkedInventorySele
 setCreateQuantityMode();
 applyCreateLinkedInventorySelection();
 
+imageFitZoom?.addEventListener("input", () => {
+  if (!imageFitSession) return;
+  setImageFitScale(Number(imageFitZoom.value));
+});
+
+imageFitStage?.addEventListener("pointerdown", (event) => {
+  if (!imageFitSession) return;
+  imageFitSession.dragging = true;
+  imageFitSession.dragStartX = event.clientX;
+  imageFitSession.dragStartY = event.clientY;
+  imageFitSession.dragOriginX = imageFitSession.offsetX;
+  imageFitSession.dragOriginY = imageFitSession.offsetY;
+  imageFitStage.classList.add("is-dragging");
+  imageFitStage.setPointerCapture(event.pointerId);
+});
+
+imageFitStage?.addEventListener("pointermove", (event) => {
+  if (!imageFitSession?.dragging) return;
+  const dx = event.clientX - imageFitSession.dragStartX;
+  const dy = event.clientY - imageFitSession.dragStartY;
+  imageFitSession.offsetX = imageFitSession.dragOriginX + dx;
+  imageFitSession.offsetY = imageFitSession.dragOriginY + dy;
+  clampImageOffset(imageFitSession);
+  applyImageFitTransform();
+});
+
+imageFitStage?.addEventListener("pointerup", (event) => {
+  if (!imageFitSession) return;
+  imageFitSession.dragging = false;
+  imageFitStage.classList.remove("is-dragging");
+  if (imageFitStage.hasPointerCapture(event.pointerId)) imageFitStage.releasePointerCapture(event.pointerId);
+});
+
+imageFitStage?.addEventListener("pointercancel", (event) => {
+  if (!imageFitSession) return;
+  imageFitSession.dragging = false;
+  imageFitStage.classList.remove("is-dragging");
+  if (imageFitStage.hasPointerCapture(event.pointerId)) imageFitStage.releasePointerCapture(event.pointerId);
+});
+
+imageFitCancelBtn?.addEventListener("click", cancelImageFitSession);
+imageFitSaveBtn?.addEventListener("click", () => {
+  void finalizeImageFitSession();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (!imageFitSession) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    cancelImageFitSession();
+  }
+});
+
 storeProfileForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = {
@@ -653,6 +918,12 @@ storeProfileForm?.addEventListener("submit", async (event) => {
 
   setStoreProfileMessage("Saving store profile...", true);
   try {
+    const bannerFile = storeProfileForm.elements.store_banner_file?.files?.[0] || null;
+    if (bannerFile) {
+      payload.store_banner_url = await fitAndUploadImage(bannerFile, "store_banner", { messageSetter: setStoreProfileMessage });
+      storeProfileForm.elements.store_banner_url.value = payload.store_banner_url || "";
+    }
+
     currentStoreProfile = await requestJson(`${API_BASE}/market/store-profile/mine`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -692,10 +963,17 @@ marketItemForm?.addEventListener("submit", async (event) => {
 
   setFormMessage("Saving listing...", true);
   try {
+    const brandFile = marketItemForm.elements.brand_logo_file?.files?.[0] || null;
+    const photoFile = marketItemForm.elements.photo_file?.files?.[0] || null;
+    if (brandFile) payload.brand_logo_url = await fitAndUploadImage(brandFile, "brand_logo", { messageSetter: setFormMessage });
+    if (photoFile) payload.photo_url = await fitAndUploadImage(photoFile, "product_photo", { messageSetter: setFormMessage });
+
     await requestJson(`${API_BASE}/market/items`, { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
     marketItemForm.reset();
     marketItemForm.elements.is_active.checked = true;
     marketItemForm.elements.track_quantity.checked = true;
+    marketItemForm.elements.photo_url.value = "";
+    marketItemForm.elements.brand_logo_url.value = "";
     if (linkedInventorySelect) linkedInventorySelect.value = "";
     applyCreateLinkedInventorySelection();
     setCreateQuantityMode();
@@ -814,6 +1092,17 @@ marketItemsList.addEventListener("submit", async (event) => {
   messageEl.className = "message success";
 
   try {
+    const editBrandFile = editForm.elements.brand_logo_file?.files?.[0] || null;
+    const editPhotoFile = editForm.elements.photo_file?.files?.[0] || null;
+    if (editBrandFile) payload.brand_logo_url = await fitAndUploadImage(editBrandFile, "brand_logo", { messageSetter: (text, ok) => {
+      messageEl.textContent = text;
+      messageEl.className = `message ${ok ? "success" : "error"}`;
+    } });
+    if (editPhotoFile) payload.photo_url = await fitAndUploadImage(editPhotoFile, "product_photo", { messageSetter: (text, ok) => {
+      messageEl.textContent = text;
+      messageEl.className = `message ${ok ? "success" : "error"}`;
+    } });
+
     await requestJson(`${API_BASE}/market/items/${editForm.dataset.editItemForm}`, { method: "PATCH", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
     editingItemId = null;
     setFormMessage("Listing updated.", true);

@@ -34,7 +34,8 @@
         <div id="store-profile-content">
           <form id="store-profile-form" class="form-grid compact market-create-form">
             <label>Store Name<input name="store_name" maxlength="120" placeholder="Zaytoun House" /></label>
-            <label>Store Banner URL<input name="store_banner_url" type="url" maxlength="500" placeholder="https://..." /></label>
+            <label>Store Banner (PNG/JPG)<input name="store_banner_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+            <input name="store_banner_url" type="hidden" />
             <label class="full">About Store<textarea name="store_about" rows="2" maxlength="600" placeholder="What makes your store special"></textarea></label>
             <label class="full">Opening Hours<input name="store_opening_hours" maxlength="180" placeholder="Mon-Sat 8:00 - 18:00" /></label>
             <button class="btn" type="submit">Save Store Profile</button>
@@ -65,8 +66,10 @@
               <input name="track_quantity" type="checkbox" checked />
             </label>
             <label id="quantity-label">Quantity Available<input name="quantity_available" type="number" step="0.01" min="0" /></label>
-            <label>Brand Logo URL<input name="brand_logo_url" type="url" maxlength="500" placeholder="https://..." /></label>
-            <label>Product Photo URL<input name="photo_url" type="url" maxlength="500" placeholder="https://..." /></label>
+            <label>Brand Logo (PNG/JPG)<input name="brand_logo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+            <input name="brand_logo_url" type="hidden" />
+            <label>Product Photo (PNG/JPG)<input name="photo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+            <input name="photo_url" type="hidden" />
             <label class="full">Pickup Location<input name="pickup_location" maxlength="180" placeholder="Village, district, pickup spot" /></label>
             <label class="full">Description<textarea name="description" rows="2" maxlength="400" placeholder="Optional details"></textarea></label>
             <label class="inline-check full"><input name="is_active" type="checkbox" checked /> Active listing</label>
@@ -119,6 +122,25 @@
         <div id="market-orders-list" class="workers-list"></div>
       </section>
     </main>
+
+    <div id="image-fit-modal" class="image-fit-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="image-fit-title">
+      <div class="image-fit-panel">
+        <div class="list-head">
+          <h3 id="image-fit-title">Fit Image</h3>
+          <button class="btn ghost" id="image-fit-cancel-btn" type="button">Cancel</button>
+        </div>
+        <p class="sub image-fit-sub" id="image-fit-subtitle">Drag image to frame. Use zoom to fit perfectly.</p>
+        <div class="image-fit-stage-wrap">
+          <div id="image-fit-stage" class="image-fit-stage">
+            <img id="image-fit-preview" alt="Image fit preview" draggable="false" />
+          </div>
+        </div>
+        <label class="full">Zoom<input id="image-fit-zoom" type="range" min="1" max="3" step="0.01" value="1" /></label>
+        <div class="actions-row">
+          <button class="btn" id="image-fit-save-btn" type="button">Apply & Upload</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="./src/market.js"></script>
   </body>

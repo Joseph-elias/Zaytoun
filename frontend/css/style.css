@@ -1423,6 +1423,70 @@ textarea {
   margin-bottom: .5rem;
 }
 
+.image-fit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(14, 22, 10, .62);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.image-fit-panel {
+  width: min(760px, 96vw);
+  border: 1px solid #c2d4a4;
+  border-radius: 16px;
+  padding: 1rem;
+  background:
+    radial-gradient(340px 170px at 100% -20%, rgba(111, 143, 74, .24), transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(244, 251, 232, .94));
+  box-shadow: 0 28px 44px rgba(31, 47, 19, .35);
+}
+
+.image-fit-sub {
+  margin-top: .2rem;
+}
+
+.image-fit-stage-wrap {
+  margin: .65rem 0;
+  border-radius: 14px;
+  border: 1px solid #cadbad;
+  background: linear-gradient(135deg, #e8f0d8, #dbeac3);
+  padding: .7rem;
+}
+
+.image-fit-stage {
+  width: min(620px, 88vw);
+  height: min(360px, 56vw);
+  max-height: 62vh;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px dashed #97b572;
+  background: #e1ecd0;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+}
+
+.image-fit-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.image-fit-stage img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+  user-select: none;
+  pointer-events: none;
+}
+
+body.image-fit-open {
+  overflow: hidden;
+}
+
 .market-star-picker {
   display: flex;
   gap: .25rem;

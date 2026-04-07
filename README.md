@@ -42,6 +42,7 @@ Current product scope includes:
 - Farmer validates/rejects orders and sets pickup time
 - Order chat between farmer and customer
 - Store profile editor (name, banner, about, opening hours)
+- Image upload from device (PNG/JPG/WEBP) for banner/logo/product photos
 
 ### 6) Separable ratings
 - Store rating and product rating are independent
@@ -174,3 +175,11 @@ Run scripts with frontend dev server running on `127.0.0.1:5173`.
 - Redis/cache + observability stack
 - Rate limiting/security hardening
 - Load/performance testing and SLO tuning
+
+
+## Shared frontend upload pattern
+- Frontend image uploads use: `frontend/src/upload.js`
+- Helper function: `uploadImageFile(file)`
+- Backend upload endpoint: `POST /uploads/image`
+- Uploaded files are served from: `/uploads/<filename>`
+- Reuse this helper in any future module needing image upload to keep UX/API behavior consistent

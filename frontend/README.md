@@ -28,6 +28,12 @@ Vite multi-page frontend for Worker Radar.
 - Product rating per listing/product
 - Store rating per market/store
 
+## Shared Upload Pattern
+- Use `frontend/src/upload.js` and `uploadImageFile(file)` for all image uploads.
+- Current backend upload endpoint: `POST /uploads/image`.
+- Accepted formats: PNG, JPG/JPEG, WEBP.
+- New modules should use file inputs (`type="file"`) and upload first, then persist returned URL.
+
 ## Role Routing
 - Worker home: `register.html`
 - Farmer home: `workers.html`
