@@ -1,10 +1,13 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
-import { authHeaders, clearSession, renderAppTabs, requireAuth } from "./session.js";
+import { authHeaders, clearSession, renderAppTabs, requireAuth, roleHome } from "./session.js";
 
 const session = requireAuth();
 if (!session) {
   // redirected
+}
+if (session && !["worker", "farmer"].includes(session.user.role)) {
+  window.location.href = roleHome(session.user.role);
 }
 
 const listEl = document.getElementById("workers-list");
@@ -666,6 +669,8 @@ form.addEventListener("submit", (event) => {
 
 refreshBtn.addEventListener("click", fetchWorkers);
 fetchFarmerSeasons().then(fetchWorkers);
+
+
 
 
 

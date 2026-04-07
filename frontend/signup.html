@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -17,7 +17,7 @@
       <section class="card auth-card">
         <p class="eyebrow">Worker Radar</p>
         <h1>Create Account</h1>
-        <p class="sub">Choose your role: worker or farmer.</p>
+        <p class="sub">Choose your role: worker, farmer, or customer.</p>
         <form id="register-user-form" class="form-grid">
           <label>Full Name<input name="full_name" required minlength="2" /></label>
           <label>Phone<input name="phone" required minlength="4" /></label>
@@ -25,6 +25,7 @@
             <select name="role" required>
               <option value="worker">Worker</option>
               <option value="farmer">Farmer</option>
+              <option value="customer">Customer</option>
             </select>
           </label>
           <label>Password<input name="password" type="password" required minlength="6" /></label>
@@ -54,4 +55,6 @@
     <script type="module" src="./src/signup.js"></script>
   </body>
 </html>
+
+
 

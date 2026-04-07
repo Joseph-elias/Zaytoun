@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker Radar | Market</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/design-system.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="page page-market">
+      <header class="hero">
+        <div class="list-head">
+          <p class="eyebrow">Worker Radar</p>
+          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+        </div>
+        <h1>Market</h1>
+        <p class="sub" id="role-hint">Farmers can list products. Customers can browse and order.</p>
+        <nav id="app-tabs" class="tabs"></nav>
+      </header>
+
+      <section class="card" id="farmer-create-card">
+        <h2>Create Product Listing</h2>
+        <form id="market-item-form" class="form-grid compact">
+          <label>Product Name<input name="item_name" required maxlength="120" /></label>
+          <label>Unit (kg, liter, box...)<input name="unit_label" required maxlength="50" /></label>
+          <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" required /></label>
+          <label>Quantity Available<input name="quantity_available" type="number" step="0.01" min="0" required /></label>
+          <label class="full">Description<textarea name="description" rows="2" maxlength="400" placeholder="Optional details"></textarea></label>
+          <label class="inline-check full"><input name="is_active" type="checkbox" checked /> Active listing</label>
+          <button class="btn" type="submit">Save Listing</button>
+        </form>
+        <p id="market-item-message" class="message"></p>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2 id="market-list-title">Market Products</h2>
+          <button class="btn ghost" id="refresh-market-btn" type="button">Refresh</button>
+        </div>
+        <form id="market-filter-form" class="form-grid compact">
+          <label class="full">Search<input name="q" placeholder="Product or farmer name" maxlength="120" /></label>
+          <button class="btn" type="submit">Search</button>
+        </form>
+        <div id="market-items-list" class="workers-list"></div>
+      </section>
+
+      <section class="card" id="orders-card">
+        <div class="list-head">
+          <h2 id="orders-title">Orders</h2>
+          <button class="btn ghost" id="refresh-orders-btn" type="button">Refresh</button>
+        </div>
+        <div id="market-orders-list" class="workers-list"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/market.js"></script>
+  </body>
+</html>

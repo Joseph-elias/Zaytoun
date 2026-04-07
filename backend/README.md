@@ -1,4 +1,4 @@
-﻿# Worker Radar Backend (FastAPI)
+# Worker Radar Backend (FastAPI)
 
 Backend API for authentication, worker profiles, bookings, and olive season analytics.
 
@@ -40,6 +40,16 @@ Backend API for authentication, worker profiles, bookings, and olive season anal
 - `POST /olive-seasons`
 - `PATCH /olive-seasons/{season_id}`
 - `DELETE /olive-seasons/{season_id}`
+
+### Market
+- `GET /market/items` (farmer/customer)
+- `GET /market/items/mine` (farmer)
+- `POST /market/items` (farmer)
+- `PATCH /market/items/{item_id}` (farmer)
+- `DELETE /market/items/{item_id}` (farmer)
+- `POST /market/orders` (customer)
+- `GET /market/orders/mine` (customer)
+- `GET /market/orders/incoming` (farmer)
 
 ### Olive piece metrics (farmer)
 - `GET /olive-piece-metrics/mine`
@@ -119,3 +129,5 @@ cd backend
 - `AUTH_ALGORITHM`
 
 CORS currently allows local Vite and local static-server origins.
+
+

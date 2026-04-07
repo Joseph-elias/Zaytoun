@@ -1,4 +1,4 @@
-﻿from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient
 
 from app.db.session import SessionLocal
 from app.main import app
@@ -11,12 +11,18 @@ from app.models.olive_sale import FarmerOliveSale
 from app.models.olive_usage import FarmerOliveUsage
 from app.models.olive_inventory_item import FarmerOliveInventoryItem
 from app.models.olive_land_piece import FarmerOliveLandPiece
+from app.models.market_item import FarmerMarketItem
+from app.models.market_order import MarketOrder
+from app.models.market_order_message import MarketOrderMessage
 
 client = TestClient(app)
 
 
 def _clear_tables() -> None:
     with SessionLocal() as session:
+        session.query(MarketOrderMessage).delete()
+        session.query(MarketOrder).delete()
+        session.query(FarmerMarketItem).delete()
         session.query(FarmerOliveSale).delete()
         session.query(FarmerOliveInventoryItem).delete()
         session.query(FarmerOliveLandPiece).delete()
@@ -1682,3 +1688,166 @@ def test_cannot_update_usage_entry_above_remaining_tanks() -> None:
         headers=farmer_headers,
     )
     assert bad_update.status_code == 400
+
+
+def test_customer_role_can_register_and_login() -> None:
+    _clear_tables()
+
+    payload = {
+        "full_name": "Customer One",
+        "phone": "+2127887000",
+        "role": "customer",
+        "password": "secret123",
+    }
+    response = client.post("/auth/register", json=payload)
+    assert response.status_code == 201
+
+    login = client.post("/auth/login", json={"phone": payload["phone"], "password": payload["password"]})
+    assert login.status_code == 200
+    assert login.json()["user"]["role"] == "customer"
+
+
+def test_market_listing_and_order_flow() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127887100")
+    customer_headers = _register_and_login("customer", "+2127887200")
+    worker_headers = _register_and_login("worker", "+2127887300")
+
+    created_item = client.post(
+        "/market/items",
+        json={
+            "item_name": "Olive Oil Premium",
+            "description": "First cold press",
+            "unit_label": "liter",
+            "price_per_unit": 12.5,
+            "quantity_available": 15,
+            "is_active": True,
+        },
+        headers=farmer_headers,
+    )
+    assert created_item.status_code == 201
+    item_id = created_item.json()["id"]
+
+    customer_market = client.get("/market/items", headers=customer_headers)
+    assert customer_market.status_code == 200
+    assert len(customer_market.json()) == 1
+
+    worker_market_denied = client.get("/market/items", headers=worker_headers)
+    assert worker_market_denied.status_code == 403
+
+    placed_order = client.post(
+        "/market/orders",
+        json={
+            "market_item_id": item_id,
+            "quantity_ordered": 3,
+            "note": "Please deliver this week",
+        },
+        headers=customer_headers,
+    )
+    assert placed_order.status_code == 201
+    assert placed_order.json()["total_price"] == "37.50"
+
+    customer_orders = client.get("/market/orders/mine", headers=customer_headers)
+    assert customer_orders.status_code == 200
+    assert len(customer_orders.json()) == 1
+
+    farmer_incoming = client.get("/market/orders/incoming", headers=farmer_headers)
+    assert farmer_incoming.status_code == 200
+    assert len(farmer_incoming.json()) == 1
+
+    farmer_items = client.get("/market/items/mine", headers=farmer_headers)
+    assert farmer_items.status_code == 200
+    assert len(farmer_items.json()) == 1
+    assert farmer_items.json()[0]["quantity_available"] == "12.00"
+
+    too_much = client.post(
+        "/market/orders",
+        json={
+            "market_item_id": item_id,
+            "quantity_ordered": 20,
+        },
+        headers=customer_headers,
+    )
+    assert too_much.status_code == 400
+
+
+
+def test_market_order_farmer_validation_chat_and_pickup_time() -> None:
+    _clear_tables()
+
+    farmer_headers = _register_and_login("farmer", "+2127887400")
+    customer_headers = _register_and_login("customer", "+2127887500")
+    other_customer_headers = _register_and_login("customer", "+2127887600")
+
+    created_item = client.post(
+        "/market/items",
+        json={
+            "item_name": "Validation Oil",
+            "description": "chat test",
+            "unit_label": "liter",
+            "price_per_unit": 10,
+            "quantity_available": 6,
+            "is_active": True,
+        },
+        headers=farmer_headers,
+    )
+    assert created_item.status_code == 201
+    item_id = created_item.json()["id"]
+
+    placed_order = client.post(
+        "/market/orders",
+        json={"market_item_id": item_id, "quantity_ordered": 2},
+        headers=customer_headers,
+    )
+    assert placed_order.status_code == 201
+    order_id = placed_order.json()["id"]
+    assert placed_order.json()["status"] == "pending"
+
+    missing_pickup = client.patch(
+        f"/market/orders/{order_id}/farmer-validation",
+        json={"action": "validate"},
+        headers=farmer_headers,
+    )
+    assert missing_pickup.status_code == 422
+
+    validated = client.patch(
+        f"/market/orders/{order_id}/farmer-validation",
+        json={
+            "action": "validate",
+            "pickup_at": "2030-02-12T10:30:00",
+            "note": "Ready after pressing",
+        },
+        headers=farmer_headers,
+    )
+    assert validated.status_code == 200
+    assert validated.json()["status"] == "validated"
+    assert validated.json()["pickup_at"].startswith("2030-02-12T10:30:00")
+
+    customer_order_list = client.get("/market/orders/mine", headers=customer_headers)
+    assert customer_order_list.status_code == 200
+    assert customer_order_list.json()[0]["status"] == "validated"
+
+    customer_message = client.post(
+        f"/market/orders/{order_id}/messages",
+        json={"content": "Thanks, I will come on time."},
+        headers=customer_headers,
+    )
+    assert customer_message.status_code == 201
+    assert customer_message.json()["sender_role"] == "customer"
+
+    farmer_message = client.post(
+        f"/market/orders/{order_id}/messages",
+        json={"content": "Great, see you then."},
+        headers=farmer_headers,
+    )
+    assert farmer_message.status_code == 201
+    assert farmer_message.json()["sender_role"] == "farmer"
+
+    list_messages = client.get(f"/market/orders/{order_id}/messages", headers=customer_headers)
+    assert list_messages.status_code == 200
+    assert len(list_messages.json()) == 2
+
+    unauthorized_reader = client.get(f"/market/orders/{order_id}/messages", headers=other_customer_headers)
+    assert unauthorized_reader.status_code == 404
+

@@ -1,4 +1,4 @@
-﻿import os
+import os
 from pathlib import Path
 
 TEST_DB_PATH = Path(__file__).resolve().parent / "test_worker_radar.db"
@@ -21,6 +21,9 @@ from app.models.olive_sale import FarmerOliveSale  # noqa: F401,E402
 from app.models.olive_usage import FarmerOliveUsage  # noqa: F401,E402
 from app.models.olive_inventory_item import FarmerOliveInventoryItem  # noqa: F401,E402
 from app.models.olive_land_piece import FarmerOliveLandPiece  # noqa: F401,E402
+from app.models.market_item import FarmerMarketItem  # noqa: F401,E402
+from app.models.market_order import MarketOrder  # noqa: F401,E402
+from app.models.market_order_message import MarketOrderMessage  # noqa: F401,E402
 
 
 def pytest_sessionstart(session):
@@ -33,6 +36,10 @@ def pytest_sessionfinish(session, exitstatus):
     engine.dispose()
     if TEST_DB_PATH.exists():
         TEST_DB_PATH.unlink()
+
+
+
+
 
 
 

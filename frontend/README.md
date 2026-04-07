@@ -1,4 +1,4 @@
-﻿# Worker Radar Frontend (Vite Multi-Page)
+# Worker Radar Frontend (Vite Multi-Page)
 
 Frontend for worker and farmer workflows using vanilla JS modules and role-based navigation.
 
@@ -8,6 +8,7 @@ Frontend for worker and farmer workflows using vanilla JS modules and role-based
 - `login.html`: login
 - `signup.html`: account registration
 - `workers.html`: worker directory + map + filters
+- `market.html`: farmer listings and customer ordering
 - `register.html`: worker profile creation
 - `my-profiles.html`: worker-owned profile management
 - `bookings.html`: booking management + chat + timeline
@@ -20,6 +21,7 @@ Frontend for worker and farmer workflows using vanilla JS modules and role-based
 ### Role routing
 - Worker home: `register.html`
 - Farmer home: `workers.html`
+- Customer home: `market.html`
 - Unauthenticated access redirects to `login.html`
 
 ### Worker side
@@ -85,3 +87,5 @@ npm run preview
 ```
 
 Note: in restricted sandboxes, Vite build may fail with `esbuild spawn EPERM` even when code is valid.
+
+

@@ -1,4 +1,4 @@
-﻿import { API_BASE } from "./config.js";
+import { API_BASE } from "./config.js";
 
 const SESSION_KEY = "worker_radar_session";
 const ROLE_TABS = {
@@ -10,8 +10,13 @@ const ROLE_TABS = {
   ],
   farmer: [
     { href: "./workers.html", label: "Workers Directory", page: "workers.html" },
+    { href: "./market.html", label: "Market", page: "market.html" },
     { href: "./bookings.html", label: "My Bookings", page: "bookings.html" },
     { href: "./olive-season.html", label: "Olive Season", page: "olive-season.html" },
+    { href: "./settings.html", label: "Settings", page: "settings.html" },
+  ],
+  customer: [
+    { href: "./market.html", label: "Market", page: "market.html" },
     { href: "./settings.html", label: "Settings", page: "settings.html" },
   ],
 };
@@ -67,7 +72,9 @@ export function requireRole(role, redirect = "./workers.html") {
 }
 
 export function roleHome(role) {
-  return role === "worker" ? "./register.html" : "./workers.html";
+  if (role === "worker") return "./register.html";
+  if (role === "customer") return "./market.html";
+  return "./workers.html";
 }
 
 export function redirectToRoleHome(session) {
@@ -98,12 +105,13 @@ export function renderAppTabs(container, role, currentPage) {
 
   const tabs = ROLE_TABS[role] || [];
   const fullName = session?.user?.full_name || "User";
-  const initials = fullName
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "U";
+  const initials =
+    fullName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "U";
   const roleLabel = session?.user?.role ? String(session.user.role).toUpperCase() : "USER";
 
   container.innerHTML = `
@@ -158,5 +166,3 @@ export async function registerAccount(payload) {
 
   return response.json();
 }
-
-

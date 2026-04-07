@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes_auth import router as auth_router
@@ -10,6 +10,7 @@ from app.api.routes_olive_sales import router as olive_sales_router
 from app.api.routes_olive_usages import router as olive_usages_router
 from app.api.routes_olive_inventory_items import router as olive_inventory_items_router
 from app.api.routes_olive_land_pieces import router as olive_land_pieces_router
+from app.api.routes_market import router as market_router
 
 
 def create_app() -> FastAPI:
@@ -40,7 +41,10 @@ def create_app() -> FastAPI:
     app.include_router(olive_usages_router)
     app.include_router(olive_inventory_items_router)
     app.include_router(olive_land_pieces_router)
+    app.include_router(market_router)
     return app
 
 
 app = create_app()
+
+

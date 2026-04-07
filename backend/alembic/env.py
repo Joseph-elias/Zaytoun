@@ -1,4 +1,4 @@
-﻿from logging.config import fileConfig
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -17,6 +17,9 @@ from app.models.olive_sale import FarmerOliveSale
 from app.models.olive_usage import FarmerOliveUsage
 from app.models.olive_inventory_item import FarmerOliveInventoryItem
 from app.models.olive_land_piece import FarmerOliveLandPiece
+from app.models.market_item import FarmerMarketItem
+from app.models.market_order import MarketOrder
+from app.models.market_order_message import MarketOrderMessage
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.resolved_database_url)
@@ -59,6 +62,10 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 import uuid
 
 from sqlalchemy import DateTime, Float, String, Uuid
@@ -13,7 +13,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
     phone: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False)  # worker | farmer
+    role: Mapped[str] = mapped_column(String(20), nullable=False)  # worker | farmer | customer
     address: Mapped[str | None] = mapped_column(String(255), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)

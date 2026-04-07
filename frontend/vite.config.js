@@ -1,4 +1,4 @@
-﻿import { resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { defineConfig } from "vite";
 
@@ -16,6 +16,7 @@ export default defineConfig({
         register: resolve(__dirname, "register.html"),
         myProfiles: resolve(__dirname, "my-profiles.html"),
         workers: resolve(__dirname, "workers.html"),
+        market: resolve(__dirname, "market.html"),
         bookings: resolve(__dirname, "bookings.html"),
         oliveSeason: resolve(__dirname, "olive-season.html"),
         inventory: resolve(__dirname, "inventory.html"),
@@ -24,3 +25,5 @@ export default defineConfig({
     },
   },
 });
+
+

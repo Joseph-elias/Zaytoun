@@ -1,11 +1,11 @@
-﻿from datetime import datetime
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-RoleType = Literal["worker", "farmer"]
+RoleType = Literal["worker", "farmer", "customer"]
 
 
 class UserRegister(BaseModel):
