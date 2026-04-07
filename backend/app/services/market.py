@@ -31,10 +31,10 @@ def _farmer_rating_map(db: Session) -> dict[UUID, tuple[float | None, int]]:
     rows = db.execute(
         select(
             MarketOrder.farmer_user_id,
-            func.avg(MarketOrder.customer_rating),
-            func.count(MarketOrder.customer_rating),
+            func.avg(MarketOrder.market_rating),
+            func.count(MarketOrder.market_rating),
         )
-        .where(MarketOrder.customer_rating.is_not(None))
+        .where(MarketOrder.market_rating.is_not(None))
         .group_by(MarketOrder.farmer_user_id)
     ).all()
 
@@ -44,11 +44,30 @@ def _farmer_rating_map(db: Session) -> dict[UUID, tuple[float | None, int]]:
     return out
 
 
+def _item_rating_map(db: Session) -> dict[UUID, tuple[float | None, int]]:
+    rows = db.execute(
+        select(
+            MarketOrder.market_item_id,
+            func.avg(MarketOrder.customer_rating),
+            func.count(MarketOrder.customer_rating),
+        )
+        .where(MarketOrder.customer_rating.is_not(None))
+        .group_by(MarketOrder.market_item_id)
+    ).all()
+
+    out: dict[UUID, tuple[float | None, int]] = {}
+    for market_item_id, avg_rating, count_rating in rows:
+        out[market_item_id] = (float(avg_rating) if avg_rating is not None else None, int(count_rating or 0))
+    return out
+
+
 def _item_to_out(
     item: FarmerMarketItem,
     farmer: User | None,
     farmer_rating_avg: float | None = None,
     farmer_rating_count: int = 0,
+    product_rating_avg: float | None = None,
+    product_rating_count: int = 0,
 ) -> dict:
     return {
         "id": item.id,
@@ -60,6 +79,8 @@ def _item_to_out(
         "farmer_store_opening_hours": farmer.store_opening_hours if farmer else None,
         "farmer_rating_avg": farmer_rating_avg,
         "farmer_rating_count": farmer_rating_count,
+        "product_rating_avg": product_rating_avg,
+        "product_rating_count": product_rating_count,
         "item_name": item.item_name,
         "description": item.description,
         "brand_logo_url": item.brand_logo_url,
@@ -93,9 +114,12 @@ def _order_to_out(order: MarketOrder, farmer: User | None, customer: User | None
         "status": order.status,
         "pickup_at": order.pickup_at,
         "farmer_response_note": order.farmer_response_note,
-        "customer_rating": order.customer_rating,
-        "customer_review": order.customer_review,
-        "customer_reviewed_at": order.customer_reviewed_at,
+        "product_rating": order.customer_rating,
+        "product_review": order.customer_review,
+        "product_reviewed_at": order.customer_reviewed_at,
+        "market_rating": order.market_rating,
+        "market_review": order.market_review,
+        "market_reviewed_at": order.market_reviewed_at,
         "created_at": order.created_at,
         "updated_at": order.updated_at,
     }
@@ -179,12 +203,14 @@ def list_active_market_items(db: Session, query: str | None = None) -> list[dict
             )
         )
 
-    ratings = _farmer_rating_map(db)
+    farmer_ratings = _farmer_rating_map(db)
+    item_ratings = _item_rating_map(db)
     rows = db.execute(stmt).all()
     out: list[dict] = []
     for item, farmer in rows:
-        avg, count = ratings.get(item.farmer_user_id, (None, 0))
-        out.append(_item_to_out(item, farmer, avg, count))
+        farmer_avg, farmer_count = farmer_ratings.get(item.farmer_user_id, (None, 0))
+        item_avg, item_count = item_ratings.get(item.id, (None, 0))
+        out.append(_item_to_out(item, farmer, farmer_avg, farmer_count, item_avg, item_count))
     return out
 
 
@@ -195,10 +221,21 @@ def list_farmer_market_items(db: Session, farmer_user_id: UUID) -> list[dict]:
         .order_by(FarmerMarketItem.updated_at.desc())
     ).all()
 
-    ratings = _farmer_rating_map(db)
+    farmer_ratings = _farmer_rating_map(db)
+    item_ratings = _item_rating_map(db)
     farmer = db.get(User, farmer_user_id)
-    avg, count = ratings.get(farmer_user_id, (None, 0))
-    return [_item_to_out(item, farmer, avg, count) for item in rows]
+    farmer_avg, farmer_count = farmer_ratings.get(farmer_user_id, (None, 0))
+    return [
+        _item_to_out(
+            item,
+            farmer,
+            farmer_avg,
+            farmer_count,
+            item_ratings.get(item.id, (None, 0))[0],
+            item_ratings.get(item.id, (None, 0))[1],
+        )
+        for item in rows
+    ]
 
 
 def create_market_item(db: Session, farmer_user_id: UUID, payload: MarketItemCreate) -> dict:
@@ -218,10 +255,10 @@ def create_market_item(db: Session, farmer_user_id: UUID, payload: MarketItemCre
     db.commit()
     db.refresh(row)
 
-    ratings = _farmer_rating_map(db)
+    farmer_ratings = _farmer_rating_map(db)
     farmer = db.get(User, farmer_user_id)
-    avg, count = ratings.get(farmer_user_id, (None, 0))
-    return _item_to_out(row, farmer, avg, count)
+    farmer_avg, farmer_count = farmer_ratings.get(farmer_user_id, (None, 0))
+    return _item_to_out(row, farmer, farmer_avg, farmer_count, None, 0)
 
 
 def update_market_item(db: Session, item_id: UUID, farmer_user_id: UUID, payload: MarketItemUpdate) -> dict | None:
@@ -251,10 +288,12 @@ def update_market_item(db: Session, item_id: UUID, farmer_user_id: UUID, payload
     db.commit()
     db.refresh(row)
 
-    ratings = _farmer_rating_map(db)
+    farmer_ratings = _farmer_rating_map(db)
+    item_ratings = _item_rating_map(db)
     farmer = db.get(User, farmer_user_id)
-    avg, count = ratings.get(farmer_user_id, (None, 0))
-    return _item_to_out(row, farmer, avg, count)
+    farmer_avg, farmer_count = farmer_ratings.get(farmer_user_id, (None, 0))
+    item_avg, item_count = item_ratings.get(row.id, (None, 0))
+    return _item_to_out(row, farmer, farmer_avg, farmer_count, item_avg, item_count)
 
 
 def delete_market_item(db: Session, item_id: UUID, farmer_user_id: UUID) -> bool:
@@ -313,8 +352,10 @@ def customer_review_market_order(
     db: Session,
     order_id: UUID,
     customer_user_id: UUID,
-    rating: int,
-    review: str | None,
+    product_rating: int | None,
+    product_review: str | None,
+    market_rating: int | None,
+    market_review: str | None,
 ) -> dict | None:
     order = db.get(MarketOrder, order_id)
     if not order or order.customer_user_id != customer_user_id:
@@ -323,9 +364,20 @@ def customer_review_market_order(
     if order.status != "validated":
         raise ValueError("Only validated orders can be reviewed")
 
-    order.customer_rating = rating
-    order.customer_review = review.strip() if review else None
-    order.customer_reviewed_at = datetime.utcnow()
+    if product_rating is None and market_rating is None:
+        raise ValueError("At least one rating is required")
+
+    now = datetime.utcnow()
+
+    if product_rating is not None:
+        order.customer_rating = product_rating
+        order.customer_review = product_review.strip() if product_review else None
+        order.customer_reviewed_at = now
+
+    if market_rating is not None:
+        order.market_rating = market_rating
+        order.market_review = market_review.strip() if market_review else None
+        order.market_reviewed_at = now
 
     db.commit()
     db.refresh(order)

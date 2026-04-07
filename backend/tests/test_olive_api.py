@@ -1,400 +1,5 @@
-from fastapi.testclient import TestClient
+from tests.helpers import client, _clear_tables, _register_and_login, _create_land_piece, _worker_payload
 
-from app.db.session import SessionLocal
-from app.main import app
-from app.models.user import User
-from app.models.worker import Worker
-from app.models.olive_season import FarmerOliveSeason
-from app.models.olive_piece_metric import FarmerOlivePieceMetric
-from app.models.olive_labor_day import FarmerOliveLaborDay
-from app.models.olive_sale import FarmerOliveSale
-from app.models.olive_usage import FarmerOliveUsage
-from app.models.olive_inventory_item import FarmerOliveInventoryItem
-from app.models.olive_land_piece import FarmerOliveLandPiece
-from app.models.market_item import FarmerMarketItem
-from app.models.market_order import MarketOrder
-from app.models.market_order_message import MarketOrderMessage
-
-client = TestClient(app)
-
-
-def _clear_tables() -> None:
-    with SessionLocal() as session:
-        session.query(MarketOrderMessage).delete()
-        session.query(MarketOrder).delete()
-        session.query(FarmerMarketItem).delete()
-        session.query(FarmerOliveSale).delete()
-        session.query(FarmerOliveInventoryItem).delete()
-        session.query(FarmerOliveLandPiece).delete()
-        session.query(FarmerOliveUsage).delete()
-        session.query(FarmerOliveLaborDay).delete()
-        session.query(FarmerOlivePieceMetric).delete()
-        session.query(FarmerOliveSeason).delete()
-        session.query(Worker).delete()
-        session.query(User).delete()
-        session.commit()
-
-
-def _register_and_login(role: str, phone: str) -> dict[str, str]:
-    register_payload = {
-        "full_name": f"{role.title()} User",
-        "phone": phone,
-        "role": role,
-        "password": "secret123",
-    }
-    reg = client.post("/auth/register", json=register_payload)
-    assert reg.status_code == 201
-
-    login = client.post("/auth/login", json={"phone": phone, "password": "secret123"})
-    assert login.status_code == 200
-    token = login.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
-
-
-def _create_land_piece(headers: dict[str, str], piece_name: str, season_year: int | None = None) -> None:
-    payload = {"piece_name": piece_name}
-    if season_year is not None:
-        payload["season_year"] = season_year
-    response = client.post("/olive-land-pieces", json=payload, headers=headers)
-    assert response.status_code == 201
-
-def _worker_payload(phone: str, name: str = "Ali Ahmed") -> dict:
-    return {
-        "name": name,
-        "phone": phone,
-        "village": "Tiznit",
-        "men_count": 2,
-        "women_count": 1,
-        "rate_type": "day",
-        "men_rate_value": 150,
-        "women_rate_value": 100,
-        "overtime_open": True,
-        "overtime_price": 20,
-        "overtime_note": "Can work up to 2 extra hours.",
-        "available_dates": ["2030-01-02", "2030-01-03"],
-        "available": True,
-    }
-
-
-def test_auth_register_and_login() -> None:
-    _clear_tables()
-
-    payload = {
-        "full_name": "Farmer One",
-        "phone": "+2127000000",
-        "role": "farmer",
-        "password": "secret123",
-    }
-    response = client.post("/auth/register", json=payload)
-    assert response.status_code == 201
-
-    login = client.post("/auth/login", json={"phone": payload["phone"], "password": payload["password"]})
-    assert login.status_code == 200
-    assert "access_token" in login.json()
-    assert login.json()["user"]["role"] == "farmer"
-
-
-def test_worker_role_restrictions_and_ownership() -> None:
-    _clear_tables()
-
-    worker_a_phone = "+2127111111"
-    worker_b_phone = "+2127222222"
-
-    worker_a_headers = _register_and_login("worker", worker_a_phone)
-    worker_b_headers = _register_and_login("worker", worker_b_phone)
-    farmer_headers = _register_and_login("farmer", "+2127333333")
-
-    # Worker A can create only with own phone
-    own_payload = _worker_payload(worker_a_phone, name="Worker A Team")
-    create_a = client.post("/workers", json=own_payload, headers=worker_a_headers)
-    assert create_a.status_code == 201
-
-    # Worker A cannot create under another worker phone
-    wrong_phone_payload = _worker_payload(worker_b_phone, name="Illegal Team")
-    create_wrong = client.post("/workers", json=wrong_phone_payload, headers=worker_a_headers)
-    assert create_wrong.status_code == 403
-
-    # Worker B creates own profile
-    create_b = client.post("/workers", json=_worker_payload(worker_b_phone, name="Worker B Team"), headers=worker_b_headers)
-    assert create_b.status_code == 201
-
-    worker_a_id = create_a.json()["id"]
-    worker_b_id = create_b.json()["id"]
-
-    # Worker A sees only own profile
-    list_a = client.get("/workers", headers=worker_a_headers)
-    assert list_a.status_code == 200
-    assert len(list_a.json()) == 1
-    assert list_a.json()[0]["phone"] == worker_a_phone
-
-    # Worker B sees only own profile
-    list_b = client.get("/workers", headers=worker_b_headers)
-    assert list_b.status_code == 200
-    assert len(list_b.json()) == 1
-    assert list_b.json()[0]["phone"] == worker_b_phone
-
-    # Farmer sees all profiles
-    list_farmer = client.get("/workers", headers=farmer_headers)
-    assert list_farmer.status_code == 200
-    assert len(list_farmer.json()) == 2
-
-    # Worker A cannot modify Worker B profile
-    patch_other_worker = client.patch(
-        f"/workers/{worker_b_id}/availability",
-        json={"available": False},
-        headers=worker_a_headers,
-    )
-    assert patch_other_worker.status_code == 404
-
-    # Farmer cannot modify any worker profile
-    patch_farmer = client.patch(
-        f"/workers/{worker_a_id}/availability",
-        json={"available": False},
-        headers=farmer_headers,
-    )
-    assert patch_farmer.status_code == 403
-
-    # Worker A can modify own profile
-    patch_own = client.patch(
-        f"/workers/{worker_a_id}/availability",
-        json={"available": False},
-        headers=worker_a_headers,
-    )
-    assert patch_own.status_code == 200
-    assert patch_own.json()["available"] is False
-
-
-def test_rate_filters_with_auth() -> None:
-    _clear_tables()
-
-    worker_phone = "+2127444444"
-    worker_headers = _register_and_login("worker", worker_phone)
-    farmer_headers = _register_and_login("farmer", "+2127555555")
-
-    workers = [
-        {
-            "name": "Team A",
-            "phone": worker_phone,
-            "village": "Lille",
-            "men_count": 1,
-            "women_count": 1,
-            "rate_type": "day",
-            "men_rate_value": 150,
-            "women_rate_value": 100,
-            "overtime_open": False,
-            "overtime_price": None,
-            "overtime_note": None,
-            "available_dates": ["2030-02-10", "2030-02-11"],
-            "available": True,
-        },
-        {
-            "name": "Team B",
-            "phone": worker_phone,
-            "village": "Lille",
-            "men_count": 2,
-            "women_count": 0,
-            "rate_type": "hour",
-            "men_rate_value": 18,
-            "women_rate_value": None,
-            "overtime_open": False,
-            "overtime_price": None,
-            "overtime_note": None,
-            "available_dates": ["2030-02-10"],
-            "available": True,
-        },
-        {
-            "name": "Team C",
-            "phone": worker_phone,
-            "village": "Tiznit",
-            "men_count": 0,
-            "women_count": 2,
-            "rate_type": "day",
-            "men_rate_value": None,
-            "women_rate_value": 90,
-            "overtime_open": False,
-            "overtime_price": None,
-            "overtime_note": None,
-            "available_dates": ["2030-02-12"],
-            "available": True,
-        },
-    ]
-
-    for payload in workers:
-        response = client.post("/workers", json=payload, headers=worker_headers)
-        assert response.status_code == 201
-
-    by_rate_type = client.get("/workers?rate_type=day", headers=farmer_headers)
-    assert by_rate_type.status_code == 200
-    assert len(by_rate_type.json()) == 2
-
-    by_men_range = client.get("/workers?min_men_rate=140&max_men_rate=160", headers=farmer_headers)
-    assert by_men_range.status_code == 200
-    assert len(by_men_range.json()) == 1
-    assert by_men_range.json()[0]["name"] == "Team A"
-
-    by_women_min = client.get("/workers?min_women_rate=95", headers=farmer_headers)
-    assert by_women_min.status_code == 200
-    assert len(by_women_min.json()) == 1
-    assert by_women_min.json()[0]["name"] == "Team A"
-
-def test_worker_can_delete_own_profile() -> None:
-    _clear_tables()
-
-    worker_phone = "+2127666666"
-    worker_headers = _register_and_login("worker", worker_phone)
-    other_worker_headers = _register_and_login("worker", "+2127777777")
-
-    create = client.post("/workers", json=_worker_payload(worker_phone, name="Delete Me"), headers=worker_headers)
-    assert create.status_code == 201
-    worker_id = create.json()["id"]
-
-    delete_unauthorized = client.delete(f"/workers/{worker_id}", headers=other_worker_headers)
-    assert delete_unauthorized.status_code == 404
-
-    delete_own = client.delete(f"/workers/{worker_id}", headers=worker_headers)
-    assert delete_own.status_code == 204
-
-    list_own = client.get("/workers", headers=worker_headers)
-    assert list_own.status_code == 200
-    assert len(list_own.json()) == 0
-
-def test_non_confirmed_booking_can_be_updated_and_deleted_by_owners() -> None:
-    _clear_tables()
-
-    worker_phone = "+2127888888"
-    worker_headers = _register_and_login("worker", worker_phone)
-    farmer_headers = _register_and_login("farmer", "+2127999999")
-    other_farmer_headers = _register_and_login("farmer", "+2127900000")
-
-    create_worker = client.post("/workers", json=_worker_payload(worker_phone, name="Team Flex"), headers=worker_headers)
-    assert create_worker.status_code == 201
-    worker_id = create_worker.json()["id"]
-
-    create_booking = client.post(
-        f"/workers/{worker_id}/bookings",
-        json={
-            "requests": [{"work_date": "2030-01-02", "requested_men": 1, "requested_women": 1}],
-            "note": "initial",
-        },
-        headers=farmer_headers,
-    )
-    assert create_booking.status_code == 201
-    booking_id = create_booking.json()[0]["id"]
-
-    farmer_update = client.patch(
-        f"/bookings/{booking_id}/proposal",
-        json={"requested_men": 2, "requested_women": 1, "note": "farmer update"},
-        headers=farmer_headers,
-    )
-    assert farmer_update.status_code == 200
-    assert farmer_update.json()["status"] == "pending_worker"
-    assert farmer_update.json()["requested_men"] == 2
-
-    worker_update = client.patch(
-        f"/bookings/{booking_id}/proposal",
-        json={"requested_men": 2, "requested_women": 1, "note": "worker update"},
-        headers=worker_headers,
-    )
-    assert worker_update.status_code == 200
-    assert worker_update.json()["status"] == "pending_farmer"
-    assert worker_update.json()["requested_women"] == 1
-
-    unauthorized_update = client.patch(
-        f"/bookings/{booking_id}/proposal",
-        json={"requested_men": 1, "requested_women": 1},
-        headers=other_farmer_headers,
-    )
-    assert unauthorized_update.status_code == 404
-
-    delete_booking = client.delete(f"/bookings/{booking_id}", headers=worker_headers)
-    assert delete_booking.status_code == 204
-
-    farmer_list = client.get("/bookings/mine", headers=farmer_headers)
-    assert farmer_list.status_code == 200
-    assert len(farmer_list.json()) == 0
-
-
-def test_confirmed_booking_cannot_be_updated_or_deleted() -> None:
-    _clear_tables()
-
-    worker_phone = "+2127000011"
-    worker_headers = _register_and_login("worker", worker_phone)
-    farmer_headers = _register_and_login("farmer", "+2127000012")
-
-    create_worker = client.post("/workers", json=_worker_payload(worker_phone, name="Team Locked"), headers=worker_headers)
-    assert create_worker.status_code == 201
-    worker_id = create_worker.json()["id"]
-
-    create_booking = client.post(
-        f"/workers/{worker_id}/bookings",
-        json={
-            "requests": [{"work_date": "2030-01-03", "requested_men": 1, "requested_women": 0}],
-            "note": "initial",
-        },
-        headers=farmer_headers,
-    )
-    assert create_booking.status_code == 201
-    booking_id = create_booking.json()[0]["id"]
-
-    worker_accept = client.patch(
-        f"/bookings/{booking_id}/worker-response",
-        json={"action": "accept"},
-        headers=worker_headers,
-    )
-    assert worker_accept.status_code == 200
-
-    farmer_confirm = client.patch(
-        f"/bookings/{booking_id}/farmer-validation",
-        json={"action": "confirm"},
-        headers=farmer_headers,
-    )
-    assert farmer_confirm.status_code == 200
-    assert farmer_confirm.json()["status"] == "confirmed"
-
-    update_confirmed = client.patch(
-        f"/bookings/{booking_id}/proposal",
-        json={"requested_men": 1, "requested_women": 1},
-        headers=farmer_headers,
-    )
-    assert update_confirmed.status_code == 400
-
-    delete_confirmed = client.delete(f"/bookings/{booking_id}", headers=worker_headers)
-    assert delete_confirmed.status_code == 400
-
-
-def test_worker_can_modify_own_profile() -> None:
-    _clear_tables()
-
-    worker_phone = "+2127001234"
-    worker_headers = _register_and_login("worker", worker_phone)
-
-    created = client.post("/workers", json=_worker_payload(worker_phone, name="Before Edit"), headers=worker_headers)
-    assert created.status_code == 201
-    worker_id = created.json()["id"]
-
-    update_payload = {
-        "name": "After Edit",
-        "village": "Kfaraaka",
-        "address": "Updated address",
-        "latitude": None,
-        "longitude": None,
-        "men_count": 3,
-        "women_count": 1,
-        "rate_type": "day",
-        "men_rate_value": 180,
-        "women_rate_value": 110,
-        "overtime_open": True,
-        "overtime_price": 25,
-        "overtime_note": "Updated note",
-        "available_dates": ["2030-01-04", "2030-01-05"],
-    }
-
-    updated = client.patch(f"/workers/{worker_id}", json=update_payload, headers=worker_headers)
-    assert updated.status_code == 200
-    body = updated.json()
-    assert body["name"] == "After Edit"
-    assert body["men_count"] == 3
-    assert body["women_count"] == 1
 
 def test_farmer_olive_season_crud() -> None:
     _clear_tables()
@@ -481,9 +86,6 @@ def test_farmer_olive_season_crud() -> None:
     assert list_after_delete.status_code == 200
     assert len(list_after_delete.json()) == 1
 
-
-
-
 def test_farmer_olive_piece_metric_crud() -> None:
     _clear_tables()
 
@@ -532,9 +134,6 @@ def test_farmer_olive_piece_metric_crud() -> None:
     listed_empty = client.get("/olive-piece-metrics/mine", headers=farmer_headers)
     assert listed_empty.status_code == 200
     assert len(listed_empty.json()) == 0
-
-
-
 
 def test_farmer_olive_financial_layer() -> None:
     _clear_tables()
@@ -695,12 +294,6 @@ def test_farmer_olive_financial_layer() -> None:
     assert sales_list.status_code == 200
     assert len(sales_list.json()) == 4
 
-
-
-
-
-
-
 def test_farmer_inventory_page_flow_and_custom_sale_stock_deduction() -> None:
     _clear_tables()
 
@@ -759,8 +352,6 @@ def test_farmer_inventory_page_flow_and_custom_sale_stock_deduction() -> None:
     assert inventory_rows.status_code == 200
     assert len(inventory_rows.json()) == 1
     assert inventory_rows.json()[0]["quantity_on_hand"] == "85.00"
-
-
 
 def test_farmer_olive_land_pieces_registry() -> None:
     _clear_tables()
@@ -850,7 +441,6 @@ def test_farmer_olive_season_supports_pressing_cost_in_oil_tanks() -> None:
     updated = season_rows.json()[0]
     assert updated["remaining_tanks"] == "3.00"
 
-
 def test_farmer_olive_season_rejects_taken_home_above_produced() -> None:
     _clear_tables()
 
@@ -875,7 +465,6 @@ def test_farmer_olive_season_rejects_taken_home_above_produced() -> None:
     )
     assert create_season.status_code == 400
 
-
 def test_farmer_olive_season_oil_mode_requires_produced_and_taken_home() -> None:
     _clear_tables()
 
@@ -894,9 +483,6 @@ def test_farmer_olive_season_oil_mode_requires_produced_and_taken_home() -> None
         headers=farmer_headers,
     )
     assert create_season.status_code == 400
-
-
-
 
 def test_farmer_olive_season_rejects_unregistered_land_piece() -> None:
     _clear_tables()
@@ -917,7 +503,6 @@ def test_farmer_olive_season_rejects_unregistered_land_piece() -> None:
     )
     assert create_season.status_code == 400
 
-
 def test_farmer_olive_season_rejects_land_piece_year_mismatch() -> None:
     _clear_tables()
 
@@ -937,10 +522,6 @@ def test_farmer_olive_season_rejects_land_piece_year_mismatch() -> None:
         headers=farmer_headers,
     )
     assert create_season.status_code == 400
-
-
-
-
 
 def test_olive_season_uses_confirmed_bookings_for_harvest_days_and_labor_cost() -> None:
     _clear_tables()
@@ -1040,7 +621,6 @@ def test_olive_season_uses_confirmed_bookings_for_harvest_days_and_labor_cost() 
     assert by_piece["Booked Piece B"]["harvest_days"] == 0
     assert by_piece["Booked Piece B"]["labor_cost_total"] == "0.00"
 
-
 def test_olive_season_keeps_booking_labor_when_old_season_link_becomes_orphan() -> None:
     _clear_tables()
 
@@ -1138,7 +718,6 @@ def test_olive_season_keeps_booking_labor_when_old_season_link_becomes_orphan() 
     assert row["harvest_days"] == 1
     assert row["labor_cost_total"] == "180.00"
 
-
 def test_confirmed_booking_can_be_force_deleted_for_testing() -> None:
     _clear_tables()
 
@@ -1181,7 +760,6 @@ def test_confirmed_booking_can_be_force_deleted_for_testing() -> None:
     farmer_list = client.get("/bookings/mine", headers=farmer_headers)
     assert farmer_list.status_code == 200
     assert len(farmer_list.json()) == 0
-
 
 def test_olive_season_single_season_includes_unlinked_confirmed_bookings() -> None:
     _clear_tables()
@@ -1260,8 +838,6 @@ def test_olive_season_single_season_includes_unlinked_confirmed_bookings() -> No
     assert row["harvest_days"] == 1
     assert row["labor_cost_total"] == "180.00"
 
-
-
 def test_oil_tanks_pressing_cost_converts_to_money_when_tank_price_is_set() -> None:
     _clear_tables()
 
@@ -1307,7 +883,6 @@ def test_oil_tanks_pressing_cost_converts_to_money_when_tank_price_is_set() -> N
     assert row2["pressing_cost_money_equivalent"] == "50.00"
     assert row2["total_cost"] == "50.00"
 
-
 def test_setting_oil_tank_price_does_not_overwrite_tank_pressing_values() -> None:
     _clear_tables()
 
@@ -1341,7 +916,6 @@ def test_setting_oil_tank_price_does_not_overwrite_tank_pressing_values() -> Non
     assert row["pressing_cost_oil_tank_unit_price"] == "130.00"
     assert row["pressing_cost_money_equivalent"] == "390.00"
     assert row["total_cost"] == "390.00"
-
 
 def test_inventory_can_be_managed_per_year_and_carried_over() -> None:
     _clear_tables()
@@ -1382,7 +956,6 @@ def test_inventory_can_be_managed_per_year_and_carried_over() -> None:
     assert len(list_2026_after.json()) == 1
     assert list_2026_after.json()[0]["inventory_year"] == 2026
     assert list_2026_after.json()[0]["quantity_on_hand"] == "7.00"
-
 
 def test_cannot_sell_more_tanks_than_remaining() -> None:
     _clear_tables()
@@ -1431,7 +1004,6 @@ def test_cannot_sell_more_tanks_than_remaining() -> None:
     )
     assert bad_sale.status_code == 400
 
-
 def test_cannot_use_more_tanks_than_remaining() -> None:
     _clear_tables()
 
@@ -1477,7 +1049,6 @@ def test_cannot_use_more_tanks_than_remaining() -> None:
     )
     assert bad_usage.status_code == 400
 
-
 def test_can_delete_single_oil_tank_price_value() -> None:
     _clear_tables()
 
@@ -1514,7 +1085,6 @@ def test_can_delete_single_oil_tank_price_value() -> None:
     )
     assert deleted_price.status_code == 200
     assert deleted_price.json()["pressing_cost_oil_tank_unit_price"] is None
-
 
 def test_can_clear_all_oil_tank_price_values() -> None:
     _clear_tables()
@@ -1629,7 +1199,6 @@ def test_can_update_usage_entry_and_recalculate_limits() -> None:
     assert updated.json()["tanks_used"] == "1.00"
     assert updated.json()["notes"] == "corrected"
 
-
 def test_cannot_update_usage_entry_above_remaining_tanks() -> None:
     _clear_tables()
 
@@ -1688,166 +1257,4 @@ def test_cannot_update_usage_entry_above_remaining_tanks() -> None:
         headers=farmer_headers,
     )
     assert bad_update.status_code == 400
-
-
-def test_customer_role_can_register_and_login() -> None:
-    _clear_tables()
-
-    payload = {
-        "full_name": "Customer One",
-        "phone": "+2127887000",
-        "role": "customer",
-        "password": "secret123",
-    }
-    response = client.post("/auth/register", json=payload)
-    assert response.status_code == 201
-
-    login = client.post("/auth/login", json={"phone": payload["phone"], "password": payload["password"]})
-    assert login.status_code == 200
-    assert login.json()["user"]["role"] == "customer"
-
-
-def test_market_listing_and_order_flow() -> None:
-    _clear_tables()
-
-    farmer_headers = _register_and_login("farmer", "+2127887100")
-    customer_headers = _register_and_login("customer", "+2127887200")
-    worker_headers = _register_and_login("worker", "+2127887300")
-
-    created_item = client.post(
-        "/market/items",
-        json={
-            "item_name": "Olive Oil Premium",
-            "description": "First cold press",
-            "unit_label": "liter",
-            "price_per_unit": 12.5,
-            "quantity_available": 15,
-            "is_active": True,
-        },
-        headers=farmer_headers,
-    )
-    assert created_item.status_code == 201
-    item_id = created_item.json()["id"]
-
-    customer_market = client.get("/market/items", headers=customer_headers)
-    assert customer_market.status_code == 200
-    assert len(customer_market.json()) == 1
-
-    worker_market_denied = client.get("/market/items", headers=worker_headers)
-    assert worker_market_denied.status_code == 403
-
-    placed_order = client.post(
-        "/market/orders",
-        json={
-            "market_item_id": item_id,
-            "quantity_ordered": 3,
-            "note": "Please deliver this week",
-        },
-        headers=customer_headers,
-    )
-    assert placed_order.status_code == 201
-    assert placed_order.json()["total_price"] == "37.50"
-
-    customer_orders = client.get("/market/orders/mine", headers=customer_headers)
-    assert customer_orders.status_code == 200
-    assert len(customer_orders.json()) == 1
-
-    farmer_incoming = client.get("/market/orders/incoming", headers=farmer_headers)
-    assert farmer_incoming.status_code == 200
-    assert len(farmer_incoming.json()) == 1
-
-    farmer_items = client.get("/market/items/mine", headers=farmer_headers)
-    assert farmer_items.status_code == 200
-    assert len(farmer_items.json()) == 1
-    assert farmer_items.json()[0]["quantity_available"] == "12.00"
-
-    too_much = client.post(
-        "/market/orders",
-        json={
-            "market_item_id": item_id,
-            "quantity_ordered": 20,
-        },
-        headers=customer_headers,
-    )
-    assert too_much.status_code == 400
-
-
-
-def test_market_order_farmer_validation_chat_and_pickup_time() -> None:
-    _clear_tables()
-
-    farmer_headers = _register_and_login("farmer", "+2127887400")
-    customer_headers = _register_and_login("customer", "+2127887500")
-    other_customer_headers = _register_and_login("customer", "+2127887600")
-
-    created_item = client.post(
-        "/market/items",
-        json={
-            "item_name": "Validation Oil",
-            "description": "chat test",
-            "unit_label": "liter",
-            "price_per_unit": 10,
-            "quantity_available": 6,
-            "is_active": True,
-        },
-        headers=farmer_headers,
-    )
-    assert created_item.status_code == 201
-    item_id = created_item.json()["id"]
-
-    placed_order = client.post(
-        "/market/orders",
-        json={"market_item_id": item_id, "quantity_ordered": 2},
-        headers=customer_headers,
-    )
-    assert placed_order.status_code == 201
-    order_id = placed_order.json()["id"]
-    assert placed_order.json()["status"] == "pending"
-
-    missing_pickup = client.patch(
-        f"/market/orders/{order_id}/farmer-validation",
-        json={"action": "validate"},
-        headers=farmer_headers,
-    )
-    assert missing_pickup.status_code == 422
-
-    validated = client.patch(
-        f"/market/orders/{order_id}/farmer-validation",
-        json={
-            "action": "validate",
-            "pickup_at": "2030-02-12T10:30:00",
-            "note": "Ready after pressing",
-        },
-        headers=farmer_headers,
-    )
-    assert validated.status_code == 200
-    assert validated.json()["status"] == "validated"
-    assert validated.json()["pickup_at"].startswith("2030-02-12T10:30:00")
-
-    customer_order_list = client.get("/market/orders/mine", headers=customer_headers)
-    assert customer_order_list.status_code == 200
-    assert customer_order_list.json()[0]["status"] == "validated"
-
-    customer_message = client.post(
-        f"/market/orders/{order_id}/messages",
-        json={"content": "Thanks, I will come on time."},
-        headers=customer_headers,
-    )
-    assert customer_message.status_code == 201
-    assert customer_message.json()["sender_role"] == "customer"
-
-    farmer_message = client.post(
-        f"/market/orders/{order_id}/messages",
-        json={"content": "Great, see you then."},
-        headers=farmer_headers,
-    )
-    assert farmer_message.status_code == 201
-    assert farmer_message.json()["sender_role"] == "farmer"
-
-    list_messages = client.get(f"/market/orders/{order_id}/messages", headers=customer_headers)
-    assert list_messages.status_code == 200
-    assert len(list_messages.json()) == 2
-
-    unauthorized_reader = client.get(f"/market/orders/{order_id}/messages", headers=other_customer_headers)
-    assert unauthorized_reader.status_code == 404
 

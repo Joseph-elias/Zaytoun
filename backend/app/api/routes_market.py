@@ -140,8 +140,10 @@ def customer_review_market_order_endpoint(
             db,
             order_id=order_id,
             customer_user_id=current_user.id,
-            rating=payload.rating,
-            review=payload.review,
+            product_rating=payload.product_rating,
+            product_review=payload.product_review,
+            market_rating=payload.market_rating,
+            market_review=payload.market_review,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

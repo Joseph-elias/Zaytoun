@@ -1415,6 +1415,14 @@ textarea {
   margin-top: .35rem;
 }
 
+.market-review-block {
+  padding: .5rem .55rem;
+  border: 1px solid #dbe5cc;
+  border-radius: 12px;
+  background: #f8fbf2;
+  margin-bottom: .5rem;
+}
+
 .market-star-picker {
   display: flex;
   gap: .25rem;
@@ -1453,3 +1461,7 @@ textarea {
     grid-template-columns: minmax(0, 1.25fr) minmax(290px, .75fr);
   }
 }
+
+
+
+

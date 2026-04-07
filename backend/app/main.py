@@ -1,5 +1,8 @@
+﻿from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 
 from app.api.routes_auth import router as auth_router
 from app.api.routes_workers import router as workers_router
@@ -11,6 +14,42 @@ from app.api.routes_olive_usages import router as olive_usages_router
 from app.api.routes_olive_inventory_items import router as olive_inventory_items_router
 from app.api.routes_olive_land_pieces import router as olive_land_pieces_router
 from app.api.routes_market import router as market_router
+from app.db.session import engine
+
+
+def _ensure_market_order_review_columns_for_sqlite() -> None:
+    # Safety net for local SQLite dev environments where migrations may have
+    # been applied against a different relative DB file.
+    if engine.dialect.name != "sqlite":
+        return
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "market_orders" not in table_names:
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("market_orders")}
+    add_columns_sql: list[str] = []
+
+    if "market_rating" not in columns:
+        add_columns_sql.append("ALTER TABLE market_orders ADD COLUMN market_rating INTEGER")
+    if "market_review" not in columns:
+        add_columns_sql.append("ALTER TABLE market_orders ADD COLUMN market_review VARCHAR(800)")
+    if "market_reviewed_at" not in columns:
+        add_columns_sql.append("ALTER TABLE market_orders ADD COLUMN market_reviewed_at DATETIME")
+
+    if not add_columns_sql:
+        return
+
+    with engine.begin() as conn:
+        for sql in add_columns_sql:
+            conn.execute(text(sql))
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _ensure_market_order_review_columns_for_sqlite()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -18,7 +57,9 @@ def create_app() -> FastAPI:
         title="Worker Radar API",
         description="MVP API for worker registration, search, and availability updates.",
         version="0.1.0",
+        lifespan=lifespan,
     )
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -46,5 +87,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
-

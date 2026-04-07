@@ -47,6 +47,8 @@ class MarketItemOut(BaseModel):
     farmer_store_opening_hours: str | None
     farmer_rating_avg: float | None
     farmer_rating_count: int
+    product_rating_avg: float | None
+    product_rating_count: int
     item_name: str
     description: str | None
     brand_logo_url: str | None
@@ -95,8 +97,16 @@ class MarketOrderFarmerValidation(BaseModel):
 
 
 class MarketOrderCustomerReview(BaseModel):
-    rating: int = Field(ge=1, le=5)
-    review: str | None = Field(default=None, max_length=800)
+    product_rating: int | None = Field(default=None, ge=1, le=5)
+    product_review: str | None = Field(default=None, max_length=800)
+    market_rating: int | None = Field(default=None, ge=1, le=5)
+    market_review: str | None = Field(default=None, max_length=800)
+
+    @model_validator(mode="after")
+    def validate_at_least_one_rating(self) -> "MarketOrderCustomerReview":
+        if self.product_rating is None and self.market_rating is None:
+            raise ValueError("At least one rating is required")
+        return self
 
 
 class MarketOrderOut(BaseModel):
@@ -117,9 +127,12 @@ class MarketOrderOut(BaseModel):
     status: OrderStatus
     pickup_at: datetime | None
     farmer_response_note: str | None
-    customer_rating: int | None
-    customer_review: str | None
-    customer_reviewed_at: datetime | None
+    product_rating: int | None
+    product_review: str | None
+    product_reviewed_at: datetime | None
+    market_rating: int | None
+    market_review: str | None
+    market_reviewed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

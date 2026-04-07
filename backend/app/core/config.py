@@ -1,10 +1,16 @@
-﻿from pydantic_settings import BaseSettings, SettingsConfigDict
+﻿from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_SQLITE_URL = f"sqlite:///{(BASE_DIR / 'worker_radar.db').as_posix()}"
 
 
 class Settings(BaseSettings):
     app_name: str = "Worker Radar API"
-    database_url: str = "sqlite:///./worker_radar.db"
-    db_fallback_url: str = "sqlite:///./worker_radar.db"
+    database_url: str = DEFAULT_SQLITE_URL
+    db_fallback_url: str = DEFAULT_SQLITE_URL
 
     # Optional Supabase/PostgreSQL values for later deployment wiring.
     supabase_db_host: str | None = None

@@ -219,6 +219,7 @@ function farmerItemCard(item) {
           <span class="badge">${quantityText(item.quantity_available, escapeHtml(item.unit_label))}</span>
           ${item.pickup_location ? `<span class="badge">Pickup: ${escapeHtml(item.pickup_location)}</span>` : ""}
         </div>
+        <p class="market-description"><strong>Product rating:</strong> ${escapeHtml(ratingLabel(item.product_rating_avg, item.product_rating_count))}</p>
         <p class="market-description">${escapeHtml(item.description || "No description added yet.")}</p>
         <div class="worker-grid market-grid"><div><strong>Updated:</strong> ${formatDateTime(item.updated_at)}</div></div>
         <div class="actions-row">
@@ -333,6 +334,7 @@ function storeItemCard(item) {
       <div class="market-main">
         <div class="list-head market-title-row"><h3>${escapeHtml(item.item_name)}</h3><span class="badge day">${money(item.price_per_unit)} / ${escapeHtml(item.unit_label)}</span></div>
         <div class="market-meta-row"><span class="badge">${quantityText(item.quantity_available, escapeHtml(item.unit_label))}</span>${item.pickup_location ? `<span class="badge">${escapeHtml(item.pickup_location)}</span>` : ""}</div>
+        <p class="market-description"><strong>Product rating:</strong> ${escapeHtml(ratingLabel(item.product_rating_avg, item.product_rating_count))}</p>
         <p class="market-description">${escapeHtml(item.description || "No description provided.")}</p>
         <div class="actions-row market-add-row"><label>Qty<input data-store-qty="${item.id}" type="number" step="0.01" min="0.01"${maxAttr} value="1" /></label><button class="btn" type="button" data-add-cart="${item.id}">Add to Cart</button></div>
       </div>
@@ -460,17 +462,32 @@ function orderCard(order) {
       ${
         canCustomerReview
           ? `<form class="booking-form market-review-form" data-review-order-id="${order.id}">
-               <h4>Rate This Order</h4>
-               <div class="market-star-picker" data-star-picker="${order.id}">
-                 ${[1, 2, 3, 4, 5]
-                   .map((value) => `<button class="star-btn ${Number(order.customer_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" aria-label="${value} star">${Number(order.customer_rating || 0) >= value ? "★" : "☆"}</button>`)
-                   .join("")}
+               <h4>Rate Product & Store</h4>
+               <div class="market-review-block">
+                 <p class="sub"><strong>Product Rating</strong></p>
+                 <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="product">
+                   ${[1, 2, 3, 4, 5]
+                     .map((value) => `<button class="star-btn ${Number(order.product_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="product" aria-label="${value} product stars">${Number(order.product_rating || 0) >= value ? "★" : "☆"}</button>`)
+                     .join("")}
+                 </div>
+                 <input type="hidden" name="product_rating" value="${order.product_rating || ""}" />
+                 <p class="market-star-caption" data-star-caption="product">${escapeHtml(order.product_rating ? starsText(order.product_rating) : "Tap stars to rate product")}</p>
+                 <label>Product Review<textarea name="product_review" rows="2" maxlength="800" placeholder="Share product quality and taste">${escapeHtml(order.product_review || "")}</textarea></label>
                </div>
-               <input type="hidden" name="rating" value="${order.customer_rating || ""}" />
-               <p class="market-star-caption">${escapeHtml(order.customer_rating ? starsText(order.customer_rating) : "Tap stars to rate")}</p>
-               <label>Review<textarea name="review" rows="2" maxlength="800" placeholder="Share your experience">${escapeHtml(order.customer_review || "")}</textarea></label>
+               <div class="market-review-block">
+                 <p class="sub"><strong>Market/Store Rating</strong></p>
+                 <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="market">
+                   ${[1, 2, 3, 4, 5]
+                     .map((value) => `<button class="star-btn ${Number(order.market_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="market" aria-label="${value} market stars">${Number(order.market_rating || 0) >= value ? "★" : "☆"}</button>`)
+                     .join("")}
+                 </div>
+                 <input type="hidden" name="market_rating" value="${order.market_rating || ""}" />
+                 <p class="market-star-caption" data-star-caption="market">${escapeHtml(order.market_rating ? starsText(order.market_rating) : "Tap stars to rate market")}</p>
+                 <label>Market Review<textarea name="market_review" rows="2" maxlength="800" placeholder="Share delivery and store experience">${escapeHtml(order.market_review || "")}</textarea></label>
+               </div>
                <div class="actions-row">
-                 <button class="btn" type="submit">${order.customer_rating ? "Update Review" : "Submit Review"}</button>
+                 <button class="btn" type="submit" name="review_target" value="product">Save Product Rating</button>
+                 <button class="btn ghost" type="submit" name="review_target" value="market">Save Store Rating</button>
                </div>
                <p class="message booking-submit-message"></p>
              </form>`
@@ -821,27 +838,46 @@ marketOrdersList.addEventListener("submit", async (event) => {
   if (reviewForm) {
     event.preventDefault();
     const messageEl = reviewForm.querySelector(".booking-submit-message");
-    const rating = Number(reviewForm.elements.rating.value || 0);
-    const review = String(reviewForm.elements.review.value || "").trim();
+    const target = event.submitter?.value === "market" ? "market" : "product";
+    const productRating = Number(reviewForm.elements.product_rating.value || 0);
+    const marketRating = Number(reviewForm.elements.market_rating.value || 0);
+    const productReview = String(reviewForm.elements.product_review.value || "").trim();
+    const marketReview = String(reviewForm.elements.market_review.value || "").trim();
 
-    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      messageEl.textContent = "Please select a star rating.";
-      messageEl.className = "message error";
-      return;
+    const payload = {
+      product_rating: null,
+      product_review: null,
+      market_rating: null,
+      market_review: null,
+    };
+
+    if (target === "product") {
+      if (!Number.isFinite(productRating) || productRating < 1 || productRating > 5) {
+        messageEl.textContent = "Please select a product star rating.";
+        messageEl.className = "message error";
+        return;
+      }
+      payload.product_rating = productRating;
+      payload.product_review = productReview || null;
+    } else {
+      if (!Number.isFinite(marketRating) || marketRating < 1 || marketRating > 5) {
+        messageEl.textContent = "Please select a store star rating.";
+        messageEl.className = "message error";
+        return;
+      }
+      payload.market_rating = marketRating;
+      payload.market_review = marketReview || null;
     }
 
-    messageEl.textContent = "Submitting review...";
+    messageEl.textContent = target === "product" ? "Saving product rating..." : "Saving store rating...";
     messageEl.className = "message success";
     try {
       await requestJson(`${API_BASE}/market/orders/${reviewForm.dataset.reviewOrderId}/customer-review`, {
         method: "PATCH",
         headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          rating,
-          review: review || null,
-        }),
+        body: JSON.stringify(payload),
       });
-      messageEl.textContent = "Review saved.";
+      messageEl.textContent = target === "product" ? "Product rating saved." : "Store rating saved.";
       messageEl.className = "message success";
       await Promise.all([loadOrders(), loadMarketItems()]);
     } catch (error) {
@@ -909,12 +945,19 @@ marketOrdersList.addEventListener("click", async (event) => {
   if (starBtn) {
     const orderId = starBtn.dataset.starOrder;
     const rating = Number(starBtn.dataset.starValue || 0);
+    const starType = starBtn.dataset.starType || "product";
     const form = marketOrdersList.querySelector(`form[data-review-order-id="${orderId}"]`);
     if (!form) return;
-    form.elements.rating.value = String(rating);
-    const caption = form.querySelector(".market-star-caption");
+
+    const inputName = starType === "market" ? "market_rating" : "product_rating";
+    const input = form.elements[inputName];
+    if (!input) return;
+    input.value = String(rating);
+
+    const caption = form.querySelector(`[data-star-caption="${starType}"]`);
     if (caption) caption.textContent = starsText(rating);
-    const stars = form.querySelectorAll("button[data-star-order]");
+
+    const stars = form.querySelectorAll(`button[data-star-order="${orderId}"][data-star-type="${starType}"]`);
     stars.forEach((btn) => {
       const val = Number(btn.dataset.starValue || 0);
       btn.classList.toggle("is-on", val <= rating);
@@ -950,3 +993,14 @@ refreshOrdersBtn?.addEventListener("click", loadOrders);
 Promise.all([loadMarketItems(), loadOrders(), isFarmer ? loadStoreProfile() : Promise.resolve()]).catch((error) => {
   marketItemsList.innerHTML = `<p class="message error">${escapeHtml(error.message || "Could not load market")}</p>`;
 });
+
+
+
+
+
+
+
+
+
+
+

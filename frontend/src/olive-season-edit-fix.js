@@ -252,6 +252,11 @@ const saveOilTankPriceBtn = document.getElementById("save-oil-tank-price-btn");
 const deleteOilTankPriceBtn = document.getElementById("delete-oil-tank-price-btn");
 const clearAllOilTankPricesBtn = document.getElementById("clear-all-oil-tank-prices-btn");
 const budgetOilTankPriceMessage = document.getElementById("budget-oil-tank-price-message");
+const ACTION_RESET_DELAY_MS = 2600;
+
+[saveOilTankPriceBtn, deleteOilTankPriceBtn, clearAllOilTankPricesBtn].forEach((btn) => {
+  if (btn) btn.dataset.uiFeedback = "off";
+});
 
 function setActionButtonBusy(button, label) {
   if (!button) return;
@@ -300,7 +305,7 @@ function finishActionButton(button, ok) {
     } else {
       setActionButtonError(button);
     }
-    window.setTimeout(() => resetActionButton(button), 1200);
+    window.setTimeout(() => resetActionButton(button), ACTION_RESET_DELAY_MS);
   }, waitMs);
 }
 
@@ -641,4 +646,6 @@ usageHistoryList?.addEventListener("submit", async (event) => {
 });
 
 window.setTimeout(loadUsageHistory, 700);
+
+
 

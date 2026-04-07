@@ -33,5 +33,8 @@ class MarketOrder(Base):
     customer_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     customer_review: Mapped[str | None] = mapped_column(String(800), nullable=True)
     customer_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    market_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    market_review: Mapped[str | None] = mapped_column(String(800), nullable=True)
+    market_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
