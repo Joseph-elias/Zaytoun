@@ -90,6 +90,7 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}

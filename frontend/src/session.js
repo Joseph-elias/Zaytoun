@@ -1,4 +1,4 @@
-import { API_BASE } from "./config.js";
+﻿import { API_BASE } from "./config.js";
 
 const SESSION_KEY = "worker_radar_session";
 const ROLE_TABS = {

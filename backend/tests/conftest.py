@@ -1,4 +1,4 @@
-import os
+﻿import os
 from pathlib import Path
 
 TEST_DB_PATH = Path(__file__).resolve().parent / "test_worker_radar.db"
@@ -36,14 +36,3 @@ def pytest_sessionfinish(session, exitstatus):
     engine.dispose()
     if TEST_DB_PATH.exists():
         TEST_DB_PATH.unlink()
-
-
-
-
-
-
-
-
-
-
-

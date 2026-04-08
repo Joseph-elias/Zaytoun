@@ -7,6 +7,7 @@ Current product scope includes:
 - Olive season, labor, sales, usage, and inventory management
 - Farmer market storefronts with customer ordering, chat, and separable ratings
 
+
 ## Product Areas
 
 ### 1) Auth and roles
@@ -183,3 +184,8 @@ Run scripts with frontend dev server running on `127.0.0.1:5173`.
 - Backend upload endpoint: `POST /uploads/image`
 - Uploaded files are served from: `/uploads/<filename>`
 - Reuse this helper in any future module needing image upload to keep UX/API behavior consistent
+
+
+
+
+
