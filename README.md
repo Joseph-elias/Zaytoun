@@ -167,10 +167,10 @@ Run scripts with frontend dev server running on `127.0.0.1:5173`.
 - Strong MVP with full end-to-end business flows
 - Good automated test coverage for backend APIs
 - Browser QA smoke coverage for critical frontend flows
+- CI/CD pipeline available with GitHub Actions + Render deployment workflow
 - Not yet optimized for high-scale production traffic (10k concurrent users) until infra hardening phase
 
 ## Recommended next phase (when feature scope stabilizes)
-- CI/CD pipeline with full test matrix
 - Postgres/Supabase production migration
 - Redis/cache + observability stack
 - Rate limiting/security hardening

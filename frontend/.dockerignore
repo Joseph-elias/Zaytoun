@@ -1,0 +1,19 @@
+﻿# Dependencies and build output
+node_modules/
+dist/
+
+# Git / IDE
+.git/
+.vscode/
+.idea/
+
+# Logs and reports
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+playwright-report/
+test-results/
+
+# Env
+.env
+.env.*

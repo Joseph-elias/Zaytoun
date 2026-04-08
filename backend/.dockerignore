@@ -1,0 +1,25 @@
+﻿# Python cache / virtualenv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+
+# Tests and docs not needed in runtime image
+tests/
+README.md
+
+# Local runtime files
+worker_radar.db
+tests/test_worker_radar.db
+uploads/
+
+# Git / IDE
+.git/
+.vscode/
+.idea/
+
+# Env files
+.env
