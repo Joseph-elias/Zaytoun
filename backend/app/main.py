@@ -14,6 +14,7 @@ from app.api.routes_olive_usages import router as olive_usages_router
 from app.api.routes_olive_inventory_items import router as olive_inventory_items_router
 from app.api.routes_olive_land_pieces import router as olive_land_pieces_router
 from app.api.routes_market import router as market_router
+from app.api.routes_agro_copilot import router as agro_copilot_router
 from app.api.routes_uploads import router as uploads_router
 from app.db.session import engine
 
@@ -84,6 +85,7 @@ def create_app() -> FastAPI:
     app.include_router(olive_inventory_items_router)
     app.include_router(olive_land_pieces_router)
     app.include_router(market_router)
+    app.include_router(agro_copilot_router)
     app.include_router(uploads_router)
     return app
 

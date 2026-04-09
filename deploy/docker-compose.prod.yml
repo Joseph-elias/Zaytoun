@@ -1,13 +1,42 @@
-﻿services:
+services:
+  agro-copilot:
+    image: ghcr.io/${GHCR_OWNER}/zaytoun-agro-copilot:${IMAGE_TAG}
+    container_name: zaytoun-agro-copilot
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-45}
+      CORS_ORIGINS: ${AGRO_CORS_ORIGINS:-}
+      INTERNAL_API_KEY: ${AGRO_COPILOT_API_KEY}
+      WEB_CONCURRENCY: ${AGRO_WEB_CONCURRENCY:-1}
+      WEB_TIMEOUT: ${AGRO_WEB_TIMEOUT:-120}
+      WEB_GRACEFUL_TIMEOUT: ${AGRO_WEB_GRACEFUL_TIMEOUT:-40}
+      WEB_KEEPALIVE: ${AGRO_WEB_KEEPALIVE:-5}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   backend:
     image: ghcr.io/${GHCR_OWNER}/zaytoun-backend:${IMAGE_TAG}
     container_name: zaytoun-backend
     restart: unless-stopped
+    depends_on:
+      - agro-copilot
     environment:
       DATABASE_URL: ${DATABASE_URL}
       DB_FALLBACK_URL: ${DATABASE_URL}
       AUTH_SECRET_KEY: ${AUTH_SECRET_KEY}
       AUTH_ALGORITHM: ${AUTH_ALGORITHM:-HS256}
+      AGRO_COPILOT_API_BASE_URL: ${AGRO_COPILOT_API_BASE_URL:-http://agro-copilot:8001}
+      AGRO_COPILOT_API_KEY: ${AGRO_COPILOT_API_KEY:-}
+      AGRO_COPILOT_TIMEOUT_SECONDS: ${AGRO_COPILOT_TIMEOUT_SECONDS:-120}
+      AGRO_COPILOT_MAX_RETRIES: ${AGRO_COPILOT_MAX_RETRIES:-2}
+      AGRO_COPILOT_RETRY_BACKOFF_MS: ${AGRO_COPILOT_RETRY_BACKOFF_MS:-300}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
       WEB_TIMEOUT: ${WEB_TIMEOUT:-60}

@@ -91,6 +91,14 @@ jobs:
             VITE_API_BASE_URL=/api
           tags: zaytoun-frontend:ci
 
+      - name: Build agro-copilot image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Agro-copilot
+          file: ./Agro-copilot/Dockerfile
+          push: false
+          tags: zaytoun-agro-copilot:ci
+
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
@@ -106,3 +114,8 @@ jobs:
         if: secrets.RENDER_FRONTEND_DEPLOY_HOOK != ''
         run: |
           curl -fsS -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+
+      - name: Trigger Render agro-copilot deploy
+        if: secrets.RENDER_AGRO_COPILOT_DEPLOY_HOOK != ''
+        run: |
+          curl -fsS -X POST "${{ secrets.RENDER_AGRO_COPILOT_DEPLOY_HOOK }}"

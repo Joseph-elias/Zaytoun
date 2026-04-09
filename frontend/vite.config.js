@@ -21,6 +21,7 @@ export default defineConfig({
         oliveSeason: resolve(__dirname, "olive-season.html"),
         inventory: resolve(__dirname, "inventory.html"),
         insight: resolve(__dirname, "insight.html"),
+        agroCopilot: resolve(__dirname, "agro-copilot.html"),
       },
     },
   },

@@ -1,4 +1,24 @@
-﻿services:
+services:
+  - type: web
+    name: zaytoun-agro-copilot
+    runtime: python
+    rootDir: Agro-copilot
+    plan: starter
+    autoDeploy: true
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: OPENAI_TIMEOUT_SECONDS
+        value: "45"
+      - key: INTERNAL_API_KEY
+        sync: false
+
   - type: web
     name: zaytoun-backend
     runtime: python
@@ -16,6 +36,16 @@
         sync: false
       - key: AUTH_ALGORITHM
         value: HS256
+      - key: AGRO_COPILOT_API_BASE_URL
+        sync: false
+      - key: AGRO_COPILOT_API_KEY
+        sync: false
+      - key: AGRO_COPILOT_TIMEOUT_SECONDS
+        value: "120"
+      - key: AGRO_COPILOT_MAX_RETRIES
+        value: "2"
+      - key: AGRO_COPILOT_RETRY_BACKOFF_MS
+        value: "300"
 
   - type: static
     name: zaytoun-frontend

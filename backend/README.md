@@ -51,6 +51,12 @@ FastAPI backend for Worker Radar, covering auth, workers, bookings, olive operat
 - customer review endpoint with **separable product/store ratings**
 - store profile endpoints
 
+### Agro Copilot integration (farmer-only)
+- `GET /agro-copilot/health`
+- `GET /agro-copilot/knowledge/sources`
+- `POST /agro-copilot/chat`
+- `POST /agro-copilot/diagnose`
+
 ## Local Run
 ```powershell
 cd backend
@@ -96,6 +102,7 @@ Test modules:
 - `tests/test_auth_workers_bookings.py`
 - `tests/test_olive_api.py`
 - `tests/test_market_api.py`
+- `tests/test_agro_copilot_api.py`
 - shared helpers in `tests/helpers.py`
 
 ## Configuration
@@ -107,6 +114,11 @@ Important env vars:
 - `DB_FALLBACK_URL`
 - `AUTH_SECRET_KEY`
 - `AUTH_ALGORITHM`
+- `AGRO_COPILOT_API_BASE_URL`
+- `AGRO_COPILOT_API_KEY`
+- `AGRO_COPILOT_TIMEOUT_SECONDS`
+- `AGRO_COPILOT_MAX_RETRIES`
+- `AGRO_COPILOT_RETRY_BACKOFF_MS`
 
 Default local DB resolves to an absolute file path under `backend/worker_radar.db`.
 

@@ -1,0 +1,47 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local env/config secrets
+.env
+.env.*
+!.env.example
+
+# ML training outputs and local checkpoints
+backend/models/
+!backend/models/.gitkeep
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+
+# Large local datasets/artifacts (keep source code, ignore generated data)
+backend/data/datasets/
+!backend/data/datasets/.gitkeep
+
+# Downloaded archives
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Logs
+*.log

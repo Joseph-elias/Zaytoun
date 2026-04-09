@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     # Auth config
     auth_secret_key: str = "change-me-in-production"
     auth_algorithm: str = "HS256"
+    agro_copilot_api_base_url: str | None = None
+    agro_copilot_api_key: str | None = None
+    agro_copilot_timeout_seconds: int = 120
+    agro_copilot_max_retries: int = 2
+    agro_copilot_retry_backoff_ms: int = 300
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

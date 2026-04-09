@@ -39,3 +39,10 @@ backend/.env
 # IDE
 .vscode/
 .idea/
+
+# Local helper artifacts
+repo_files.txt
+
+# Agro-copilot local runtime files
+Agro-copilot/.venv/
+Agro-copilot/.env

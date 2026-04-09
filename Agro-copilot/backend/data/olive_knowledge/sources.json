@@ -1,0 +1,2154 @@
+[
+  {
+    "id": "aub_fafs_agricultural_sciences",
+    "title": "AUB Faculty of Agricultural and Food Sciences - Agricultural Sciences",
+    "url": "https://www.aub.edu.lb/fafs/agri/Pages/AgriculturalSciences.aspx",
+    "publisher": "American University of Beirut",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_academic_portal"
+  },
+  {
+    "id": "aub_thesis_local_olive_varieties",
+    "title": "AUB ScholarWorks - Local Olive Varieties in Lebanon thesis entry",
+    "url": "https://scholarworks.aub.edu.lb/items/b317e725-1265-496a-8832-d401ff03c2c5",
+    "publisher": "American University of Beirut ScholarWorks",
+    "accessed_on": "2026-04-08",
+    "trust_level": "institutional_repository"
+  },
+  {
+    "id": "aub_thesis_olive_knot",
+    "title": "AUB ScholarWorks - Olive Knot related thesis entry",
+    "url": "https://scholarworks.aub.edu.lb/handle/10938/6092?show=full",
+    "publisher": "American University of Beirut ScholarWorks",
+    "accessed_on": "2026-04-08",
+    "trust_level": "institutional_repository"
+  },
+  {
+    "id": "australian_olive_anthracnose_tutorial",
+    "title": "Australian Olive Association: IPDM Anthracnose tutorial",
+    "url": "https://australianolives.com.au/resource/ipdm-anthracnose-tutorial/",
+    "publisher": "Australian Olive Association",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "c3s_climate_data_store",
+    "title": "Copernicus Climate Data Store (CDS)",
+    "url": "https://cds.climate.copernicus.eu/",
+    "publisher": "Copernicus Climate Change Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "c3s_seasonal_forecast_portal",
+    "title": "C3S Seasonal Forecast portal",
+    "url": "https://climate.copernicus.eu/seasonal-forecasts",
+    "publisher": "Copernicus Climate Change Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_climate_service"
+  },
+  {
+    "id": "chelsa_climate_portal",
+    "title": "CHELSA high-resolution climate data portal",
+    "url": "https://chelsa-climate.org/",
+    "publisher": "CHELSA",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "chirps_v3",
+    "title": "CHIRPS v3 Rainfall Dataset",
+    "url": "https://www.chc.ucsb.edu/data/chirps3",
+    "publisher": "Climate Hazards Center, UC Santa Barbara",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "cirad_climolivemed_project",
+    "title": "CLIMOLIVEMED Project (CIRAD) - Olive resilience to climate change",
+    "url": "https://www.cirad.fr/en/worldwide/cirad-worldwide/projects/projet-climolivemed",
+    "publisher": "CIRAD",
+    "accessed_on": "2026-04-08",
+    "trust_level": "research_project_portal"
+  },
+  {
+    "id": "copernicus_cdse_ecosystem_docs",
+    "title": "Copernicus Data Space Ecosystem documentation",
+    "url": "https://documentation.dataspace.copernicus.eu/Ecosystem.html",
+    "publisher": "Copernicus Data Space Ecosystem",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_data_access_docs"
+  },
+  {
+    "id": "copernicus_dataspace_api",
+    "title": "Copernicus Data Space APIs",
+    "url": "https://documentation.dataspace.copernicus.eu/APIs.html",
+    "publisher": "Copernicus Data Space Ecosystem",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_data_access_docs"
+  },
+  {
+    "id": "copernicus_dataspace_sentinel_hub",
+    "title": "Copernicus Data Space - Sentinel Hub APIs",
+    "url": "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub.html",
+    "publisher": "Copernicus Data Space Ecosystem",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_data_access_docs"
+  },
+  {
+    "id": "copernicus_global_land_cover_product",
+    "title": "Copernicus Global Land Cover product",
+    "url": "https://land.copernicus.eu/en/products/global-dynamic-land-cover",
+    "publisher": "Copernicus Land Monitoring Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "copernicus_land_service",
+    "title": "Copernicus Land Monitoring Service portal",
+    "url": "https://land.copernicus.eu/",
+    "publisher": "Copernicus Land Monitoring Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_climate_service"
+  },
+  {
+    "id": "copernicus_seasonal_single_levels",
+    "title": "Copernicus seasonal forecast data on single levels",
+    "url": "https://www.copernicus.eu/en/access-data/copernicus-services-catalogue/seasonal-forecast-daily-and-subdaily-data-single-levels",
+    "publisher": "Copernicus Climate Change Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "crea_difesa_certificazione_portal",
+    "title": "CREA Difesa e Certificazione portal (Italy)",
+    "url": "https://www.crea.gov.it/web/difesa-e-certificazione",
+    "publisher": "CREA - Italian Council for Agricultural Research and Economics",
+    "accessed_on": "2026-04-08",
+    "trust_level": "national_research_institute"
+  },
+  {
+    "id": "ec_agridata_olive_portal",
+    "title": "European Commission Agri-food Data Portal - Olive oil and table olives",
+    "url": "https://agridata.ec.europa.eu/extensions/DataPortal/olive-oil.html",
+    "publisher": "European Commission",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "ec_olive_oil_market_monitoring",
+    "title": "European Commission: Olive oil market monitoring (prices, production, trade)",
+    "url": "https://agriculture.ec.europa.eu/data-and-analysis/markets/price-data/price-monitoring-sector/olive-oil_en",
+    "publisher": "European Commission - Agriculture and Rural Development",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "ec_olive_oil_sector_overview",
+    "title": "European Commission - Olive oil sector overview",
+    "url": "https://agriculture.ec.europa.eu/farming/crop-productions-and-plant-based-products/olive-oil_en",
+    "publisher": "European Commission - Agriculture and Rural Development",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "ecmwf_atlas",
+    "title": "ECMWF Climate Atlas",
+    "url": "https://climate.copernicus.eu/climate-atlas",
+    "publisher": "Copernicus Climate Change Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_climate_service"
+  },
+  {
+    "id": "ecmwf_c3s_seasonal_dataset",
+    "title": "ECMWF dataset - C3S Seasonal Forecasts",
+    "url": "https://www.ecmwf.int/en/forecasts/dataset/c3s-seasonal-forecasts",
+    "publisher": "ECMWF / Copernicus Climate Change Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "ecmwf_cds_api_howto",
+    "title": "CDS API - How to use",
+    "url": "https://cds.climate.copernicus.eu/how-to-api",
+    "publisher": "Copernicus Climate Data Store",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_data_access_docs"
+  },
+  {
+    "id": "ecmwf_era5_dataset_overview",
+    "title": "ECMWF ERA5 dataset overview",
+    "url": "https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5",
+    "publisher": "ECMWF",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "ecmwf_esotc_2024_release",
+    "title": "ECMWF media release for European State of the Climate 2024",
+    "url": "https://www.ecmwf.int/en/about/media-centre/news/2025/2024-european-state-climate-report-published",
+    "publisher": "ECMWF",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_climate_service"
+  },
+  {
+    "id": "efsa_xylella_host_db_2026",
+    "title": "EFSA update of Xylella spp. host plant database (2026)",
+    "url": "https://www.efsa.europa.eu/en/efsajournal/pub/9840",
+    "publisher": "European Food Safety Authority",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_guideline"
+  },
+  {
+    "id": "efsa_xylella_press_2016",
+    "title": "EFSA News: Xylella in Apulia review update (2016)",
+    "url": "https://www.efsa.europa.eu/en/press/news/160818",
+    "publisher": "European Food Safety Authority",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_update"
+  },
+  {
+    "id": "efsa_xylella_statement_2015_4082",
+    "title": "EFSA Statement on scientific and technical information on Xylella fastidiosa (2015)",
+    "url": "https://www.efsa.europa.eu/en/efsajournal/pub/4082",
+    "publisher": "European Food Safety Authority",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_guideline"
+  },
+  {
+    "id": "efsa_xylella_topic",
+    "title": "EFSA Topic - Xylella fastidiosa",
+    "url": "https://www.efsa.europa.eu/en/topics/topic/xylella-fastidiosa",
+    "publisher": "European Food Safety Authority",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_guideline"
+  },
+  {
+    "id": "eppo_armime",
+    "title": "EPPO Global Database - Armillaria mellea (ARMIME)",
+    "url": "https://gd.eppo.int/taxon/ARMIME",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_armime_categorization",
+    "title": "EPPO Global Database - Armillaria mellea (ARMIME) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/ARMIME/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_armime_distribution",
+    "title": "EPPO Global Database - Armillaria mellea (ARMIME) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/ARMIME/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_armime_eppolinks",
+    "title": "EPPO Global Database - Armillaria mellea (ARMIME) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/ARMIME/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_armime_hosts",
+    "title": "EPPO Global Database - Armillaria mellea (ARMIME) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/ARMIME/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_collac",
+    "title": "EPPO Global Database - Colletotrichum acutatum sensu lato (COLLAC)",
+    "url": "https://gd.eppo.int/taxon/COLLAC",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_collac_categorization",
+    "title": "EPPO Global Database - Colletotrichum acutatum sensu lato (COLLAC) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/COLLAC/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_collac_distribution",
+    "title": "EPPO Global Database - Colletotrichum acutatum sensu lato (COLLAC) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/COLLAC/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_collac_eppolinks",
+    "title": "EPPO Global Database - Colletotrichum acutatum sensu lato (COLLAC) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/COLLAC/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_collac_hosts",
+    "title": "EPPO Global Database - Colletotrichum acutatum sensu lato (COLLAC) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/COLLAC/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_cyclol_categorization",
+    "title": "EPPO Global Database - Venturia oleaginea (CYCLOL) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/CYCLOL/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_cyclol_distribution",
+    "title": "EPPO Global Database - Venturia oleaginea (CYCLOL) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/CYCLOL/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_cyclol_eppolinks",
+    "title": "EPPO Global Database - Venturia oleaginea (CYCLOL) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/CYCLOL/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_cyclol_hosts",
+    "title": "EPPO Global Database - Venturia oleaginea (CYCLOL) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/CYCLOL/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_cycol",
+    "title": "EPPO Global Database - Venturia oleaginea (CYCLOL)",
+    "url": "https://gd.eppo.int/taxon/CYCLOL",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_dacuol",
+    "title": "EPPO Q-bank - Bactrocera oleae (DACUOL)",
+    "url": "https://qbank.eppo.int/arthropods/taxon/DACUOL/",
+    "publisher": "EPPO Q-bank",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_dacuol_categorization",
+    "title": "EPPO Global Database - Bactrocera oleae (DACUOL) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/DACUOL/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_dacuol_distribution",
+    "title": "EPPO Global Database - Bactrocera oleae (DACUOL) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/DACUOL/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_dacuol_eppolinks",
+    "title": "EPPO Global Database - Bactrocera oleae (DACUOL) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/DACUOL/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_dacuol_hosts",
+    "title": "EPPO Global Database - Bactrocera oleae (DACUOL) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/DACUOL/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_data_services_docs",
+    "title": "EPPO Data Services Documentation",
+    "url": "https://data.eppo.int/documentation/",
+    "publisher": "EPPO Data Services",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasource"
+  },
+  {
+    "id": "eppo_data_services_rest",
+    "title": "EPPO Data Services REST API Documentation",
+    "url": "https://data.eppo.int/documentation/rest",
+    "publisher": "EPPO Data Services",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasource"
+  },
+  {
+    "id": "eppo_euphol",
+    "title": "EPPO Global Database - Euphyllura olivina (EUPHOL)",
+    "url": "https://gd.eppo.int/taxon/EUPHOL",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-09",
+    "trust_level": "official_phytosanitary_database"
+  },
+  {
+    "id": "eppo_phytnn",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. nicotianae (PHYTNN)",
+    "url": "https://gd.eppo.int/taxon/PHYTNN",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnn_categorization",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. nicotianae (PHYTNN) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/PHYTNN/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnn_distribution",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. nicotianae (PHYTNN) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/PHYTNN/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnn_eppolinks",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. nicotianae (PHYTNN) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/PHYTNN/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnn_hosts",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. nicotianae (PHYTNN) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/PHYTNN/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnp",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. parasitica (PHYTNP)",
+    "url": "https://gd.eppo.int/taxon/PHYTNP",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnp_categorization",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. parasitica (PHYTNP) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/PHYTNP/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnp_distribution",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. parasitica (PHYTNP) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/PHYTNP/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnp_eppolinks",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. parasitica (PHYTNP) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/PHYTNP/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_phytnp_hosts",
+    "title": "EPPO Global Database - Phytophthora nicotianae var. parasitica (PHYTNP) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/PHYTNP/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_prayol_categorization",
+    "title": "EPPO Global Database - Prays oleae (PRAYOL) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/PRAYOL/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_prayol_distribution",
+    "title": "EPPO Global Database - Prays oleae (PRAYOL) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/PRAYOL/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_prayol_eppolinks",
+    "title": "EPPO Global Database - Prays oleae (PRAYOL) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/PRAYOL/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_prayol_hosts",
+    "title": "EPPO Global Database - Prays oleae (PRAYOL) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/PRAYOL/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_psdmsa",
+    "title": "EPPO Global Database - Pseudomonas savastanoi pv. savastanoi (PSDMSA)",
+    "url": "https://gd.eppo.int/taxon/PSDMSA",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_psdmsa_categorization",
+    "title": "EPPO Global Database - Pseudomonas savastanoi pv. savastanoi (PSDMSA) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/PSDMSA/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_psdmsa_distribution",
+    "title": "EPPO Global Database - Pseudomonas savastanoi pv. savastanoi (PSDMSA) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/PSDMSA/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_psdmsa_eppolinks",
+    "title": "EPPO Global Database - Pseudomonas savastanoi pv. savastanoi (PSDMSA) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/PSDMSA/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_psdmsa_hosts",
+    "title": "EPPO Global Database - Pseudomonas savastanoi pv. savastanoi (PSDMSA) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/PSDMSA/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_saisol",
+    "title": "EPPO Global Database - Saissetia oleae (SAISOL)",
+    "url": "https://gd.eppo.int/taxon/SAISOL",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-09",
+    "trust_level": "official_phytosanitary_database"
+  },
+  {
+    "id": "eppo_vertda",
+    "title": "EPPO Global Database - Verticillium dahliae (VERTDA)",
+    "url": "https://gd.eppo.int/taxon/VERTDA",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_vertda_categorization",
+    "title": "EPPO Global Database - Verticillium dahliae (VERTDA) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/VERTDA/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_vertda_distribution",
+    "title": "EPPO Global Database - Verticillium dahliae (VERTDA) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/VERTDA/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_vertda_eppolinks",
+    "title": "EPPO Global Database - Verticillium dahliae (VERTDA) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/VERTDA/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_vertda_hosts",
+    "title": "EPPO Global Database - Verticillium dahliae (VERTDA) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/VERTDA/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_xylefa_categorization",
+    "title": "EPPO Global Database - Xylella fastidiosa (XYLEFA) [Categorization]",
+    "url": "https://gd.eppo.int/taxon/XYLEFA/categorization",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_xylefa_distribution",
+    "title": "EPPO Global Database - Xylella fastidiosa (XYLEFA) [Distribution]",
+    "url": "https://gd.eppo.int/taxon/XYLEFA/distribution",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_xylefa_eppolinks",
+    "title": "EPPO Global Database - Xylella fastidiosa (XYLEFA) [EPPO links]",
+    "url": "https://gd.eppo.int/taxon/XYLEFA/eppolinks",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_xylefa_hosts",
+    "title": "EPPO Global Database - Xylella fastidiosa (XYLEFA) [Hosts]",
+    "url": "https://gd.eppo.int/taxon/XYLEFA/hosts",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "eppo_xylella",
+    "title": "EPPO Datasheet - Xylella fastidiosa",
+    "url": "https://gd.eppo.int/taxon/XYLEFA/datasheet",
+    "publisher": "EPPO Global Database",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_regulatory_datasheet"
+  },
+  {
+    "id": "era5_land",
+    "title": "Copernicus ERA5-Land Hourly Data",
+    "url": "https://www.copernicus.eu/en/access-data/copernicus-services-catalogue/era5-land-hourly-data-1950-present",
+    "publisher": "Copernicus / ECMWF",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "esa_cci_soil_moisture_data",
+    "title": "ESA CCI Soil Moisture data access page",
+    "url": "https://climate.esa.int/en/projects/soil-moisture/data/",
+    "publisher": "European Space Agency Climate Change Initiative",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "esa_cci_soil_moisture_project",
+    "title": "ESA Climate Change Initiative - Soil Moisture project",
+    "url": "https://climate.esa.int/es/projects/soil-moisture/",
+    "publisher": "European Space Agency Climate Change Initiative",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_monitoring_service"
+  },
+  {
+    "id": "esdac_lucas_2009_topsoil",
+    "title": "ESDAC LUCAS 2009 Topsoil dataset",
+    "url": "https://esdac.jrc.ec.europa.eu/content/lucas-2009-topsoil-data",
+    "publisher": "European Commission JRC - ESDAC",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "esdac_octop_soc_europe",
+    "title": "ESDAC OCTOP: Topsoil Organic Carbon Content for Europe",
+    "url": "https://esdac.jrc.ec.europa.eu/content/octop-topsoil-organic-carbon-content-europe",
+    "publisher": "European Commission JRC - ESDAC",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_geospatial_catalog"
+  },
+  {
+    "id": "esdac_rusle2015_erosion",
+    "title": "ESDAC RUSLE2015 soil erosion by water dataset",
+    "url": "https://esdac.jrc.ec.europa.eu/content/soil-erosion-water-rusle2015",
+    "publisher": "European Commission JRC - ESDAC",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_geospatial_catalog"
+  },
+  {
+    "id": "eurostat_comext_api_guide",
+    "title": "Eurostat API guide for Comext datasets",
+    "url": "https://ec.europa.eu/eurostat/web/user-guides/data-browser/api-data-access/api-getting-started/comext-database",
+    "publisher": "Eurostat",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_data_access_docs"
+  },
+  {
+    "id": "eurostat_itg_database",
+    "title": "Eurostat database - International trade in goods",
+    "url": "https://ec.europa.eu/eurostat/web/international-trade-in-goods/database",
+    "publisher": "Eurostat",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "fao_aquastat_main_database",
+    "title": "FAO AQUASTAT Main Database",
+    "url": "https://www.fao.org/aquastat/en/databases/maindatabase",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "fao_aquastat_portal",
+    "title": "FAO AQUASTAT Portal",
+    "url": "https://www.fao.org/aquastat/en/",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "fao_aquastat_wapor_page",
+    "title": "AQUASTAT WaPOR geospatial page",
+    "url": "https://www.fao.org/aquastat/en/geospatial-information/wapor/",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "fao_crop_salt_tolerance_annex",
+    "title": "FAO Annex 1 - Crop salt tolerance data",
+    "url": "https://www.fao.org/4/y4263e/y4263e0e.htm",
+    "publisher": "FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "fao_faostat_api_2026",
+    "title": "FAOSTAT launches API Developer Portal (2026 update)",
+    "url": "https://www.fao.org/statistics/highlights-archive/highlights-detail/faostat-launches-a-new-api-developer-portal-to-make-data-access-easier/en",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "fao_gaez_data_viewer",
+    "title": "FAO GAEZ data viewer",
+    "url": "https://gaez.fao.org/pages/data-viewer",
+    "publisher": "FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_decision_support_portal"
+  },
+  {
+    "id": "fao_gaez_portal",
+    "title": "FAO Global Agro-Ecological Zones (GAEZ) portal",
+    "url": "https://gaez.fao.org/",
+    "publisher": "FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_decision_support_portal"
+  },
+  {
+    "id": "fao_geonetwork",
+    "title": "FAO GeoNetwork geospatial catalog",
+    "url": "https://www.fao.org/geonetwork",
+    "publisher": "FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_geospatial_catalog"
+  },
+  {
+    "id": "fao_global_map_salt_affected_soils",
+    "title": "FAO Global Map of Salt-affected Soils",
+    "url": "https://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/global-map-of-salt-affected-soils/en/",
+    "publisher": "FAO Soils Portal",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "fao_glosolan_network",
+    "title": "FAO GLOSOLAN - Global Soil Laboratory Network",
+    "url": "https://www.fao.org/global-soil-partnership/glosolan/en/",
+    "publisher": "FAO Global Soil Partnership",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "fao_gsocmap_portal_en",
+    "title": "FAO Global Soil Organic Carbon Map (GSOCmap) portal",
+    "url": "https://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/global-soil-organic-carbon-map-gsocmap/en/",
+    "publisher": "FAO Soils Portal",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "fao_gsocseq_map",
+    "title": "FAO Global Soil Organic Carbon Sequestration Potential (GSOCseq) Map",
+    "url": "https://www.fao.org/soils-portal/data-hub/soil-maps-and-databases/global-soil-organic-carbon-sequestration-potential-gsocseq-map/en/",
+    "publisher": "FAO Global Soil Partnership",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_geospatial_platform"
+  },
+  {
+    "id": "fao_hih_geospatial",
+    "title": "FAO Hand-in-Hand Geospatial Platform",
+    "url": "https://www.fao.org/hih-geospatial-platform/en",
+    "publisher": "FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_geospatial_platform"
+  },
+  {
+    "id": "fao_hwsd_v12",
+    "title": "FAO Harmonized World Soil Database v1.2",
+    "url": "https://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/harmonized-world-soil-database-v12/en/",
+    "publisher": "FAO Soils Portal",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "fao_hwsd_v20",
+    "title": "FAO Harmonized World Soil Database v2.0",
+    "url": "https://www.fao.org/soils-portal/soil-survey/soil-maps-and-databases/harmonized-world-soil-database-v20/en/",
+    "publisher": "FAO Soils Portal",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "fao_lb_cpf_2023_2026",
+    "title": "FAO Lebanon Country Programming Framework (2023-2026)",
+    "url": "https://www.fao.org/lebanon/our-office/country-programming-framework/en",
+    "publisher": "FAO in Lebanon",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_guideline"
+  },
+  {
+    "id": "fao_lb_iwrm_regional_monitoring",
+    "title": "FAO Lebanon: Improved Water Resources Monitoring System (IWRM)",
+    "url": "https://www.fao.org/lebanon/home/improved-water-resources-monitoring-system-%28iwrm%29-at-regional-level-in-lebanon/en",
+    "publisher": "FAO in Lebanon",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_monitoring_service"
+  },
+  {
+    "id": "fao_lb_nas_2020_2025_news",
+    "title": "FAO Lebanon news: National Agriculture Strategy (NAS) 2020-2025",
+    "url": "https://www.fao.org/lebanon/news/detail/Lebanon-National-Agriculture-Strategy-2020-2025-addressing-the-priorities-of-the-agrifood-sector-in-Lebanon/en",
+    "publisher": "FAO in Lebanon",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "fao_lb_nas_2026_2035_validation",
+    "title": "FAO Lebanon news: NAS 2026-2035 strategic framework validation",
+    "url": "https://www.fao.org/lebanon/news/detail/lebanon-validates-strategic-framework-and-sesa-scoping-for-the-national-agriculture-strategy-2026-2035/en",
+    "publisher": "FAO in Lebanon",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_institutional_update"
+  },
+  {
+    "id": "fao_microdata_lebanon_ag_census_2010",
+    "title": "FAO Microdata - Lebanon Agricultural Census 2010",
+    "url": "https://microdata.fao.org/index.php/catalog/1633",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics"
+  },
+  {
+    "id": "fao_morocco_olive_sector_2024",
+    "title": "FAO Investment Centre - Building resilience and value in Morocco olive oil sector",
+    "url": "https://www.fao.org/investment-centre/latest/news/detail/more-per-drop--building-resilience-and-adding-value-in-morocco-s-olive-oil-sector/",
+    "publisher": "FAO Investment Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_report"
+  },
+  {
+    "id": "fao_olive_crop_water",
+    "title": "FAO Crop Information - Olive (Water Requirements and Irrigation Scheduling)",
+    "url": "https://www.fao.org/land-water/databases-and-software/crop-information/olive/en/",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_guideline"
+  },
+  {
+    "id": "fao_olive_germplasm_bank_2024",
+    "title": "FAO Treaty news - World Olive Germplasm Bank of C?rdoba under Treaty auspices (2024)",
+    "url": "https://www.fao.org/plant-treaty/news/news-detail/Landmark-agreement-places-the-World-Olive-Germplasm-Bank-of-Cordoba-%28Spain%29-under-the-auspices-of-the-International-Treaty/en",
+    "publisher": "FAO International Treaty on Plant Genetic Resources",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_institutional_update"
+  },
+  {
+    "id": "fao_recsoil_initiative",
+    "title": "FAO RECSOIL - Recarbonization of Global Agricultural Soils",
+    "url": "https://www.fao.org/global-soil-partnership/areas-of-work/recsoil/recsoil-home",
+    "publisher": "FAO Global Soil Partnership",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_guideline"
+  },
+  {
+    "id": "fao_tunisia_liquid_gold_2023",
+    "title": "FAO feature: Turning Tunisia’s magnificent olives into liquid gold",
+    "url": "https://www.fao.org/newsroom/story/Turning-Tunisia-s-magnificent-olives-into-liquid-gold/en",
+    "publisher": "FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_report"
+  },
+  {
+    "id": "fao_tunisian_olive_sector_success_story",
+    "title": "FAO Investment Centre - Tunisian olive oil sector success story",
+    "url": "https://www.fao.org/support-to-investment/our-work/success-story-detail/en/c/1158413/",
+    "publisher": "FAO Investment Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_report"
+  },
+  {
+    "id": "fao_wapor_data_page",
+    "title": "FAO WaPOR data page (remote sensing for water productivity)",
+    "url": "https://www.fao.org/in-action/remote-sensing-for-water-productivity/wapor-data/",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "fao_wapor_landwater_portal",
+    "title": "FAO WaPOR Land & Water Portal",
+    "url": "https://www.fao.org/land-water/databases-and-software/wapor/en/",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "faolex_lbn_general_profile",
+    "title": "FAOLEX Lebanon general profile (policies and legislation)",
+    "url": "https://www.fao.org/faolex/country-profiles/general-profile/en/?iso3=LBN",
+    "publisher": "FAOLEX / FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "faolex_lbn_nas_pdf_2020_2025",
+    "title": "FAOLEX PDF: Lebanon National Agriculture Strategy (NAS) 2020-2025",
+    "url": "https://faolex.fao.org/docs/pdf/leb202167E.pdf",
+    "publisher": "FAOLEX / FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_guideline"
+  },
+  {
+    "id": "figshare_oqds_trees_dataset_v4",
+    "title": "Figshare dataset referenced by OQDS satellite study (v4)",
+    "url": "https://doi.org/10.6084/m9.figshare.28191245.v4",
+    "publisher": "Figshare",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "frontiers_editorial_olive_stress_2025",
+    "title": "Editorial: Abiotic and biotic stress responses of olive trees under climate change (Frontiers, 2025)",
+    "url": "https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2025.1677040/full",
+    "publisher": "Frontiers in Plant Science",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_editorial"
+  },
+  {
+    "id": "frontiers_olive_stress_topic_2025",
+    "title": "Frontiers Research Topic - Abiotic and Biotic Stress Responses of Olive Trees under Climate Change",
+    "url": "https://www.frontiersin.org/research-topics/63775/abiotic-and-biotic-stress-responses-of-olive-trees-under-climate-change/articles",
+    "publisher": "Frontiers in Plant Science",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_collection"
+  },
+  {
+    "id": "gbif_bactrocera_oleae",
+    "title": "GBIF Species - Bactrocera oleae",
+    "url": "https://www.gbif.org/species/7587619",
+    "publisher": "Global Biodiversity Information Facility (GBIF)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "gdo_edo_portal",
+    "title": "European Drought Observatory (EDO)",
+    "url": "https://edo.jrc.ec.europa.eu/edov2/php/index.php?id=1000",
+    "publisher": "European Commission Joint Research Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_drought_observatory"
+  },
+  {
+    "id": "gdo_global_drought_observatory",
+    "title": "Global Drought Observatory (GDO)",
+    "url": "https://edo.jrc.ec.europa.eu/gdo/php/index.php?id=2001",
+    "publisher": "European Commission Joint Research Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_drought_observatory"
+  },
+  {
+    "id": "gee_catalog_chirps_daily",
+    "title": "Google Earth Engine Data Catalog - CHIRPS Daily",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/UCSB-CHG_CHIRPS_DAILY",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_catalog_era5_land_daily",
+    "title": "Google Earth Engine Data Catalog - ERA5-Land Daily Aggregates",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_DAILY_AGGR",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_catalog_mod16a2gf",
+    "title": "Google Earth Engine Data Catalog - MOD16A2GF Evapotranspiration",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD16A2GF",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_chirps_pentad",
+    "title": "GEE Catalog - CHIRPS Pentad",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/UCSB-CHG_CHIRPS_PENTAD",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_fldas_noah",
+    "title": "GEE Catalog - FLDAS Noah Land Surface Model Monthly",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/NASA_FLDAS_NOAH01_C_GL_M_V001",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_hydrosheds_dem",
+    "title": "GEE Catalog - HydroSHEDS DEM conditioned (03VFDEM)",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/WWF_HydroSHEDS_03VFDEM",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_landsat8_l2",
+    "title": "GEE Catalog - Landsat 8 Collection 2 L2",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C02_T1_L2",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_landsat9_l2",
+    "title": "GEE Catalog - Landsat 9 Collection 2 L2",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC09_C02_T1_L2",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_mcd12q1",
+    "title": "GEE Catalog - MODIS Land Cover Type Yearly (MCD12Q1)",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MCD12Q1",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_mod09ga",
+    "title": "GEE Catalog - MODIS Surface Reflectance Daily (MOD09GA)",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD09GA",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_mod11a2",
+    "title": "GEE Catalog - MODIS Land Surface Temperature 8-Day (MOD11A2)",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A2",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_mod13q1",
+    "title": "GEE Catalog - MODIS Vegetation Indices 16-Day (MOD13Q1)",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD13Q1",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_noaa_cfsv2",
+    "title": "GEE Catalog - NOAA CFSv2 6-hourly Forecast",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/NOAA_CFSV2_FOR6H",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_s2_cloud_prob",
+    "title": "GEE Catalog - Sentinel-2 Cloud Probability",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_CLOUD_PROBABILITY",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_sentinel2_sr",
+    "title": "GEE Catalog - Sentinel-2 SR Harmonized",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_smap_l4",
+    "title": "GEE Catalog - SMAP L4 Global 3-hourly 9km Soil Moisture",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/NASA_SMAP_SPL4SMGP_007",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_srtm_dem",
+    "title": "GEE Catalog - SRTM DEM",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/USGS_SRTMGL1_003",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "gee_terraclimate",
+    "title": "GEE Catalog - TerraClimate Monthly Climate and Water Balance",
+    "url": "https://developers.google.com/earth-engine/datasets/catalog/IDAHO_EPSCOR_TERRACLIMATE",
+    "publisher": "Google Earth Engine",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_catalog"
+  },
+  {
+    "id": "icarda_lebanon_country_page",
+    "title": "ICARDA Lebanon country research page",
+    "url": "https://icarda.org/research/country/lebanon",
+    "publisher": "ICARDA",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_research_portal"
+  },
+  {
+    "id": "icarda_olive_search_portal",
+    "title": "ICARDA search portal (olive-related publications and innovations)",
+    "url": "https://icarda.org/search?keyword=olive",
+    "publisher": "ICARDA",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_research_portal"
+  },
+  {
+    "id": "icarda_partner_led_research_lebanon_2023",
+    "title": "ICARDA partner-led research in Lebanon (Terbol field activities)",
+    "url": "https://icarda.org/media/news/icardas-partner-led-research-lebanon",
+    "publisher": "ICARDA",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_institutional_update"
+  },
+  {
+    "id": "ifapa_control_olivar_2009",
+    "title": "Control de plagas y enfermedades del olivo (IFAPA/SERVIFAPA)",
+    "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/servifapa/registro-servifapa/6277e122-3ef3-4896-bc7e-3e3541e96a77",
+    "publisher": "IFAPA (Junta de Andaluc?a)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guideline"
+  },
+  {
+    "id": "ifapa_control_olivar_pdf",
+    "title": "Control en plagas y enfermedades del olivar en primavera (PDF)",
+    "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/servifapa/registro-servifapa/6277e122-3ef3-4896-bc7e-3e3541e96a77/download",
+    "publisher": "IFAPA (Junta de Andaluc?a)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guideline"
+  },
+  {
+    "id": "ifapa_cover_crops_olive_guide_2015",
+    "title": "IFAPA: Guía de cubiertas vegetales en olivar (2015)",
+    "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/servifapa/registro-servifapa/26479626-ed74-411b-9ac8-0da05770418c",
+    "publisher": "IFAPA / Junta de Andalucía",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guideline"
+  },
+  {
+    "id": "ifapa_slow_growth_cover_strips_2020",
+    "title": "IFAPA: Slow-growth cover crop strip management in olive orchards (2020)",
+    "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/servifapa/registro-servifapa/c4a3e4c5-56a9-4675-9859-5ae0a1445b57",
+    "publisher": "IFAPA / Junta de Andalucía",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guideline"
+  },
+  {
+    "id": "iobc_ip_guidelines_olives",
+    "title": "IOBC IP Guidelines for Olives",
+    "url": "https://iobc-wprs.org/ip-tools/general-and-crop-specific-ip-guidelines/olives/",
+    "publisher": "IOBC-WPRS",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_guideline"
+  },
+  {
+    "id": "ioc_olive_oil_dashboard",
+    "title": "International Olive Council - Olive Oil Dashboard",
+    "url": "https://www.internationaloliveoil.org/wp-content/uploads/2023/12/IOC-Olive-Oil-Dashboard.html",
+    "publisher": "International Olive Council",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "ioc_production_techniques_pdf",
+    "title": "IOC - Production Techniques in Olive Growing (PDF)",
+    "url": "https://www.internationaloliveoil.org/wp-content/uploads/2019/12/Olivicultura_eng.pdf",
+    "publisher": "International Olive Council",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_guideline"
+  },
+  {
+    "id": "ioc_production_techniques_product",
+    "title": "IOC Publication - Production Techniques in Olive Growing",
+    "url": "https://www.internationaloliveoil.org/product/production-techniques-in-olive-growing/",
+    "publisher": "International Olive Council",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_guideline"
+  },
+  {
+    "id": "ioc_statistics",
+    "title": "International Olive Council - Statistics Portal",
+    "url": "https://www.internationaloliveoil.org/what-we-do/statistics/",
+    "publisher": "International Olive Council",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_statistics"
+  },
+  {
+    "id": "ioc_world_catalogue_portal",
+    "title": "World Catalogue of Olive Varieties Portal",
+    "url": "https://worldolivecatalogue.internationaloliveoil.org/en/document/module-1-varieties",
+    "publisher": "International Olive Council",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "ioc_world_catalogue_product",
+    "title": "IOC Publication - World Catalogue of Olive Varieties",
+    "url": "https://www.internationaloliveoil.org/product/world-catalogue-of-olive-varieties/",
+    "publisher": "International Olive Council",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "ipcc_ar6_wg2_impacts_adaptation",
+    "title": "IPCC AR6 Working Group II: Impacts, Adaptation and Vulnerability",
+    "url": "https://www.ipcc.ch/report/ar6/wg2/",
+    "publisher": "IPCC",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "isric_soilgrids_faq",
+    "title": "ISRIC SoilGrids FAQ and methodology notes",
+    "url": "https://www.isric.org/explore/soilgrids/faq-soilgrids",
+    "publisher": "ISRIC - World Soil Information",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_docs"
+  },
+  {
+    "id": "isric_wosis_database",
+    "title": "ISRIC WoSIS Soil Profile Database",
+    "url": "https://www.isric.org/explore/wosis",
+    "publisher": "ISRIC - World Soil Information",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "jrc_asap_platform",
+    "title": "JRC ASAP early warning platform (agricultural anomalies)",
+    "url": "https://agricultural-production-hotspots.ec.europa.eu/",
+    "publisher": "European Commission Joint Research Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_early_warning_platform"
+  },
+  {
+    "id": "jrc_drought_highlight_2024",
+    "title": "JRC highlights 2024 - Droughts and agricultural monitoring",
+    "url": "https://joint-research-centre.ec.europa.eu/jrc-highlights-report-2024/droughts_en",
+    "publisher": "European Commission Joint Research Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_monitoring_service"
+  },
+  {
+    "id": "jrc_mars_bulletin",
+    "title": "JRC MARS Bulletin (EU crop/weather monitoring)",
+    "url": "https://joint-research-centre.ec.europa.eu/monitoring-agricultural-resources-mars/jrc-mars-bulletin_en",
+    "publisher": "European Commission Joint Research Centre",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_monitoring_service"
+  },
+  {
+    "id": "junta_cover_crops_olive_book_2007",
+    "title": "Junta de Andalucía: Cubiertas vegetales en olivar (book)",
+    "url": "https://www.juntadeandalucia.es/servicios/publicaciones/detalle/51437.html",
+    "publisher": "Junta de Andalucía",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guidebook"
+  },
+  {
+    "id": "junta_olivar_gip_guide",
+    "title": "Gu?as de Gesti?n Integrada de Plagas: Olivar (Junta de Andaluc?a)",
+    "url": "https://www.juntadeandalucia.es/organismos/agriculturapescaaguaydesarrollorural/areas/agricultura/sanidad-vegetal/paginas/productos-fitosanitarios-gip-oli.html",
+    "publisher": "Junta de Andaluc?a - Agricultura, Pesca, Agua y Desarrollo Rural",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guideline"
+  },
+  {
+    "id": "junta_plagas_enfermedades_olivo_2017",
+    "title": "T?cnicas de cultivo: Plagas y enfermedades del olivo (2017)",
+    "url": "https://www.juntadeandalucia.es/servicios/publicaciones/detalle/78307.html",
+    "publisher": "Junta de Andaluc?a",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guidebook"
+  },
+  {
+    "id": "junta_soil_management_olive_example",
+    "title": "Junta de Andalucía: Sistemas de manejo del suelo (ejemplo del olivar)",
+    "url": "https://www.juntadeandalucia.es/organismos/agriculturapescaaguaydesarrollorural/areas/agricultura/sostenibilidad/paginas/agricultura-gestion-suelo-sistemas-laboreo.html",
+    "publisher": "Junta de Andalucía",
+    "accessed_on": "2026-04-08",
+    "trust_level": "regional_extension_guideline"
+  },
+  {
+    "id": "kaggle_olive_leaf_dataset",
+    "title": "Kaggle Olive Leaf Image Dataset (Healthy, Peacock Spot, Aculus)",
+    "url": "https://www.kaggle.com/datasets/habibulbasher01644/olive-leaf-image-dataset",
+    "publisher": "Kaggle dataset listing",
+    "accessed_on": "2026-04-08",
+    "trust_level": "community_dataset"
+  },
+  {
+    "id": "kaggle_olive_leaf_disease_zeytin",
+    "title": "Kaggle - Olive Leaf Disease (zeytin)",
+    "url": "https://www.kaggle.com/datasets/serhathoca/zeytin",
+    "publisher": "Kaggle dataset listing",
+    "accessed_on": "2026-04-08",
+    "trust_level": "community_dataset"
+  },
+  {
+    "id": "lari_official",
+    "title": "Lebanese Agricultural Research Institute (LARI) - Official Website",
+    "url": "https://www.lari.gov.lb/",
+    "publisher": "Lebanese Agricultural Research Institute",
+    "accessed_on": "2026-04-08",
+    "trust_level": "national_research_institute"
+  },
+  {
+    "id": "lari_stations",
+    "title": "LARI Stations and National Agro-Research Network",
+    "url": "https://www.lari.gov.lb/stations/1",
+    "publisher": "Lebanese Agricultural Research Institute",
+    "accessed_on": "2026-04-08",
+    "trust_level": "national_research_institute"
+  },
+  {
+    "id": "mapa_gip_olivar_guide",
+    "title": "MAPA Spain: Integrated Pest Management Guide for Olive (Olivar)",
+    "url": "https://www.mapa.gob.es/es/agricultura/temas/sanidad-vegetal/productos-fitosanitarios/guias-gestion-plagas/olivar/",
+    "publisher": "Ministerio de Agricultura, Pesca y Alimentación (Spain)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "national_research_institute"
+  },
+  {
+    "id": "mdpi_agronomy_arbequina_rdi_2023",
+    "title": "Influence of Regulated Deficit Irrigation on Arbequina yield and EVOO profile (Agronomy, 2023)",
+    "url": "https://www.mdpi.com/2073-4395/13/1/31",
+    "publisher": "MDPI Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_agronomy_boleae_landscape_2022",
+    "title": "Olive Landscape Affects Bactrocera oleae Abundance, Movement and Infestation (2022)",
+    "url": "https://www.mdpi.com/2073-4395/12/1/4",
+    "publisher": "MDPI Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_agronomy_boleae_yeast_volatiles_2022",
+    "title": "Bactrocera oleae response to yeast volatile blends as attractants (2022)",
+    "url": "https://www.mdpi.com/2073-4395/12/1/72",
+    "publisher": "MDPI Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_agronomy_olive_climate_review_2020",
+    "title": "Mediterranean Olive Orchards under Climate Change: Review (Agronomy, 2020)",
+    "url": "https://www.mdpi.com/2073-4395/11/1/56",
+    "publisher": "MDPI Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_review"
+  },
+  {
+    "id": "mdpi_agronomy_tunisian_cultivars_drought_2023",
+    "title": "Eco-Physiological Behavior of Tunisian Olive Cultivars under Drought Stress (Agronomy, 2023)",
+    "url": "https://www.mdpi.com/2073-4395/13/3/720",
+    "publisher": "MDPI Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_applbiosci_boleae_water_deprivation_2024",
+    "title": "Factors affecting water deprivation resistance in Bactrocera oleae (2024)",
+    "url": "https://www.mdpi.com/2813-0464/3/3/21",
+    "publisher": "MDPI Applied Biosciences",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_biology_xylella_drought_2022",
+    "title": "Xylella fastidiosa and Drought Stress in Olive Trees (Biology, 2022)",
+    "url": "https://www.mdpi.com/2079-7737/11/1/112",
+    "publisher": "MDPI Biology",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_climate_olive_adaptation_2020",
+    "title": "Adaptation of Mediterranean Olive Groves to Climate Change through Sustainable Practices (Climate, 2020)",
+    "url": "https://www.mdpi.com/2225-1154/8/4/54",
+    "publisher": "MDPI Climate",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_crops_verticillium_77_cultivars_2026",
+    "title": "Comparative Assessment of Verticillium dahliae Tolerance in 77 Olive Cultivars (2026)",
+    "url": "https://www.mdpi.com/2673-7655/6/1/9",
+    "publisher": "MDPI Crops",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_horticulturae_boleae_nanoemulsions_2022",
+    "title": "Essential oil nano-emulsions against olive fruit fly Bactrocera oleae (2022)",
+    "url": "https://www.mdpi.com/2311-7524/8/3/240",
+    "publisher": "MDPI Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_horticulturae_italian_cultivars_drought_2023",
+    "title": "Morpho-Physiological Responses of Italian Olive Cultivars to Drought Stress (Horticulturae, 2023)",
+    "url": "https://www.mdpi.com/2311-7524/9/7/830",
+    "publisher": "MDPI Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_horticulturae_phenotyping_drought_2022",
+    "title": "Phenotyping Olive Cultivars for Drought Tolerance (Horticulturae, 2022)",
+    "url": "https://www.mdpi.com/2311-7524/8/10/939",
+    "publisher": "MDPI Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_horticulturae_rdi_olive_oil_quality_2023",
+    "title": "Quality of Olive Oil Obtained by Regulated Deficit Irrigation (Horticulturae, 2023)",
+    "url": "https://www.mdpi.com/2311-7524/9/5/557",
+    "publisher": "MDPI Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_insects_boleae_epicuticular_waxes_2020",
+    "title": "Fruit epicuticular waxes and Bactrocera oleae attachment by cultivar (2020)",
+    "url": "https://www.mdpi.com/2075-4450/11/3/189",
+    "publisher": "MDPI Insects",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_insects_mealworm_frass_boleae_2025",
+    "title": "Mealworm frass as attractant for Bactrocera oleae (2025)",
+    "url": "https://www.mdpi.com/2075-4450/16/5/466",
+    "publisher": "MDPI Insects",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_jfungi_epicoccum_verticillium_colletotrichum_2025",
+    "title": "Epicoccum nigrum effects on Verticillium dahliae and Colletotrichum acutatum (2025)",
+    "url": "https://www.mdpi.com/2309-608X/11/2/129",
+    "publisher": "Journal of Fungi (MDPI)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_molecules_boleae_oil_quality_2022",
+    "title": "Bactrocera oleae infestation alters volatile/phenolic composition of virgin olive oil (2022)",
+    "url": "https://www.mdpi.com/1420-3049/27/5/1650",
+    "publisher": "MDPI Molecules",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_olive_fruit_fly_map_2024",
+    "title": "Control Strategies for the Olive Fruit Fly (Bactrocera oleae) - A Systematic Map (Agronomy, 2024)",
+    "url": "https://www.mdpi.com/2073-4395/14/12/2929",
+    "publisher": "MDPI Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_olive_pests_2023",
+    "title": "Current Status of the Main Olive Pests: Useful IPM Strategies and Genetic Tools (Applied Sciences, 2023)",
+    "url": "https://www.mdpi.com/2076-3417/13/21/12078",
+    "publisher": "MDPI Applied Sciences",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_olive_psyllid_2020",
+    "title": "Current Distribution of the Olive Psyllid, Euphyllura olivina, in California",
+    "url": "https://www.mdpi.com/2075-4450/11/3/146",
+    "publisher": "Insects (MDPI)",
+    "accessed_on": "2026-04-09",
+    "trust_level": "peer_reviewed_article"
+  },
+  {
+    "id": "mdpi_phloeotribus_verticillium_2021",
+    "title": "Lack of Evidence for Transmission of Verticillium by Phloeotribus scarabaeoides (2021)",
+    "url": "https://www.mdpi.com/2076-0817/10/5/534",
+    "publisher": "MDPI Pathogens",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "mdpi_plants_climate_resilient_olive_2024",
+    "title": "Optimizing Agroecological Measures for Climate-Resilient Olive Farming (Plants, 2024)",
+    "url": "https://www.mdpi.com/2223-7747/13/6/900",
+    "publisher": "MDPI Plants",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "nasa_power_api",
+    "title": "NASA POWER API Documentation",
+    "url": "https://power.larc.nasa.gov/api/pages/",
+    "publisher": "NASA POWER",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "nasa_power_parameters",
+    "title": "NASA POWER Parameters Dictionary",
+    "url": "https://power.larc.nasa.gov/docs/tutorials/parameters/",
+    "publisher": "NASA POWER",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_docs"
+  },
+  {
+    "id": "nature_spei_daily_dataset_2024",
+    "title": "Global multi-timescale daily SPEI dataset 1982-2021 (Scientific Data, 2024)",
+    "url": "https://www.nature.com/articles/s41597-024-03047-z",
+    "publisher": "Nature Scientific Data",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_dataset_paper"
+  },
+  {
+    "id": "oecd_fao_outlook_2025_2034_oilseeds",
+    "title": "OECD-FAO Agricultural Outlook 2025-2034 - Oilseeds and oilseed products",
+    "url": "https://www.oecd.org/en/publications/oecd-fao-agricultural-outlook-2025-2034_601276cd-en/full-report/oilseeds-and-oilseed-products_42c09daa.html",
+    "publisher": "OECD / FAO",
+    "accessed_on": "2026-04-08",
+    "trust_level": "intergovernmental_reference"
+  },
+  {
+    "id": "pmc_olive_anthracnose_review",
+    "title": "Olive anthracnose review (open access)",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6638118/",
+    "publisher": "PubMed Central",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "pmc_olive_leaf_spot_review_2023",
+    "title": "Olive leaf spot caused by Venturia oleaginea: An updated review",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9868462/",
+    "publisher": "Frontiers in Plant Science (PMC)",
+    "accessed_on": "2026-04-09",
+    "trust_level": "peer_reviewed_review"
+  },
+  {
+    "id": "pmc_olive_nutrition_stress_2019",
+    "title": "Olive Nutritional Status and Tolerance to Biotic and Abiotic Stresses (Frontiers, 2019)",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6769400/",
+    "publisher": "PubMed Central / Frontiers in Plant Science",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "pmc_oqds_satellite_dataset_2025",
+    "title": "Detecting olive quick decline syndrome: satellite-based dataset (Data in Brief, 2025)",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12142346/",
+    "publisher": "PubMed Central / Data in Brief",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_dataset_paper"
+  },
+  {
+    "id": "pubmed_cercospora_olive_2005",
+    "title": "Characterisation of Pseudocercospora cladosporioides (cercospora leaf spot of olives)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/16175790/",
+    "publisher": "PubMed / Mycological Research",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "pubmed_lebanese_olive_germplasm_2016",
+    "title": "In situ evaluation of fruit and oil characteristics of main Lebanese olive germplasm",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/26250960/",
+    "publisher": "Journal of the Science of Food and Agriculture / PubMed",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "pubmed_olive_anthracnose_2009",
+    "title": "Elucidation of the disease cycle of olive anthracnose (Phytopathology, 2009)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/19351251/",
+    "publisher": "PubMed / Phytopathology",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "pubmed_olive_anthracnose_2012",
+    "title": "Mummified fruit as inoculum and disease dynamics of olive anthracnose (Phytopathology, 2012)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/22957822/",
+    "publisher": "PubMed / Phytopathology",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "pubmed_olive_salinity_oil_quality_2019",
+    "title": "Irrigation-induced salinity affects olive oil quality and health-promoting properties (PubMed)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/30047164/",
+    "publisher": "PubMed / Journal of the Science of Food and Agriculture",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "roboflow_olive_dataset",
+    "title": "Roboflow Universe - Olive Dataset (Disease Research)",
+    "url": "https://universe.roboflow.com/disease-research/olive-3xxag",
+    "publisher": "Roboflow Universe",
+    "accessed_on": "2026-04-08",
+    "trust_level": "community_dataset"
+  },
+  {
+    "id": "sciencedirect_agrformet_olive_sustainability_2021",
+    "title": "Enhancing sustainability of Mediterranean olive groves with adaptation measures (Agricultural and Forest Meteorology, 2021)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0168192321004287",
+    "publisher": "ScienceDirect / Agricultural and Forest Meteorology",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_agsy_olive_adaptation_2020",
+    "title": "Identifying adaptation strategies to climate change for Mediterranean olive orchards (Agricultural Systems, 2020)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0308521X20307988",
+    "publisher": "ScienceDirect / Agricultural Systems",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_agwat_olive_economic_components_2021",
+    "title": "Impact of climate change on economic components of Mediterranean olive orchards (Agricultural Water Management, 2021)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0378377421000251",
+    "publisher": "ScienceDirect / Agricultural Water Management",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_agwat_olive_irrigation_portugal_2020",
+    "title": "Olive tree irrigation as a climate change adaptation measure in Portugal (Agricultural Water Management, 2020)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0378377419311680",
+    "publisher": "ScienceDirect / Agricultural Water Management",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_agwat_olive_response_adaptation_2018",
+    "title": "Olive response and adaptation strategies under semi-arid conditions (Agricultural Water Management, 2018)",
+    "url": "https://www.sciencedirect.com/science/article/abs/pii/S0378377418303494",
+    "publisher": "ScienceDirect / Agricultural Water Management",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_cover_crops_tropical_olive_2024",
+    "title": "Cover crop management improves soil quality and mitigates erosion in olive orchards (Scientia Horticulturae, 2024)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0304423824002516",
+    "publisher": "ScienceDirect / Scientia Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_eja_olive_sustainability_2021",
+    "title": "Sustainability of olive growing under future climate scenarios (Eur J Agronomy, 2021)",
+    "url": "https://www.sciencedirect.com/science/article/abs/pii/S1161030121000915",
+    "publisher": "ScienceDirect / European Journal of Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_iwm_olive_soil_fertility_2025",
+    "title": "Integrated weed management in olive orchard and effects on soil fertility (EJA, 2025)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S1161030125002023",
+    "publisher": "ScienceDirect / European Journal of Agronomy",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_olive_microbiome_2026",
+    "title": "Olive plant microbiome and climate-resilience dynamics (Total Environment Microbiology, 2026)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S3050641725000552",
+    "publisher": "ScienceDirect / Total Environment Microbiology",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_review"
+  },
+  {
+    "id": "sciencedirect_olive_nutrient_def_2016",
+    "title": "Symptoms of nutrient deficiencies in young olive trees (Scientia Horticulturae, 2016)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0304423816303338",
+    "publisher": "ScienceDirect / Scientia Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "sciencedirect_salinity_olive_2005",
+    "title": "Salinity and olive: Growth, salt tolerance, photosynthesis and yield (Agricultural Water Management)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0378377405002295",
+    "publisher": "ScienceDirect / Agricultural Water Management",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_review"
+  },
+  {
+    "id": "sciencedirect_soc_olive_arid_2013",
+    "title": "Evolution of soil organic carbon in an olive orchard under arid climate (Scientia Horticulturae, 2013)",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0304423812005547",
+    "publisher": "ScienceDirect / Scientia Horticulturae",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed"
+  },
+  {
+    "id": "soil_copernicus_olive_erosion_review_2026",
+    "title": "Soil erosion in Mediterranean olive groves: a review (SOIL, 2026)",
+    "url": "https://soil.copernicus.org/articles/12/93/2026/",
+    "publisher": "SOIL (Copernicus Publications)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_review"
+  },
+  {
+    "id": "soilgrids",
+    "title": "ISRIC SoilGrids",
+    "url": "https://www.isric.org/explore/soilgrids",
+    "publisher": "ISRIC - World Soil Information",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "spei_database_portal",
+    "title": "SPEI Global Drought Database (SPEIbase)",
+    "url": "https://spei.csic.es/database.html",
+    "publisher": "CSIC / SPEI",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "terraclimate_official",
+    "title": "TerraClimate project page",
+    "url": "https://www.climatologylab.org/terraclimate.html",
+    "publisher": "Climatology Lab / University of Idaho",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "ucd_olive_center",
+    "title": "UC Davis Olive Center",
+    "url": "https://olivecenter.ucdavis.edu/",
+    "publisher": "University of California, Davis",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_american_plum_borer",
+    "title": "UC IPM Olive - American Plum Borer",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/american-plum-borer/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_ants",
+    "title": "UC IPM Olive - Ants",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/ants/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_armillaria",
+    "title": "UC IPM Olive - Armillaria Root Rot (Oak Root Fungus)",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/armillaria-root-rot-oak-root-fungus/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_black_scale",
+    "title": "UC IPM Olive - Black Scale",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/black-scale/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_botryosphaeria_blight",
+    "title": "UC IPM Olive - Botryosphaeria Blight",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/botryosphaeria-blight/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_branch_twig_borer",
+    "title": "UC IPM Olive - Branch and Twig Borer",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/branch-and-twig-borer/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_california_red_scale",
+    "title": "UC IPM Olive - California Red Scale",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/california-red-scale/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_greedy_latania_scale",
+    "title": "UC IPM Olive - Greedy Scale and Latania Scale",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/greedy-scale-and-latania-scale/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_mycocentrospora",
+    "title": "UC IPM Olive - Mycocentrospora",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/mycocentrospora/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_nematodes",
+    "title": "UC IPM Olive - Nematodes",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/nematodes/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_oleander_scale",
+    "title": "UC IPM Olive - Oleander Scale",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/oleander-scale/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_fruit_fly",
+    "title": "UC IPM Olive - Olive Fruit Fly",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/olive-fruit-fly/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_integrated_weed_management",
+    "title": "UC IPM Olive: Integrated weed management",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/integrated-weed-management/",
+    "publisher": "UC Statewide IPM Program",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_knot",
+    "title": "UC IPM Olive - Olive Knot",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/olive-knot/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_mite",
+    "title": "UC IPM Olive - Olive Mite",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/olive-mite/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_organic_weed_management",
+    "title": "UC IPM Olive: Weed management in organic orchards",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/weed-management-in-organic-orchards/",
+    "publisher": "UC Statewide IPM Program",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_psyllid",
+    "title": "UC IPM Olive - Olive Psyllid",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/olive-psyllid/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_olive_scale",
+    "title": "UC IPM Olive - Olive Scale",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/olive-scale/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_peacock_spot",
+    "title": "UC IPM Olive - Peacock Spot",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/peacock-spot/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_phytophthora_root_crown_rot",
+    "title": "UC IPM Olive - Phytophthora Root and Crown Rot",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/phytophthora-root-and-crown-rot/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_verticillium_wilt",
+    "title": "UC IPM Olive - Verticillium Wilt",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/verticillium-wilt/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_weevils",
+    "title": "UC IPM Olive - Weevils",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/weevils/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "ucipm_western_flower_thrips",
+    "title": "UC IPM Olive - Western Flower Thrips",
+    "url": "https://ipm.ucanr.edu/agriculture/olive/western-flower-thrips/",
+    "publisher": "UC Statewide IPM Program (UC ANR)",
+    "accessed_on": "2026-04-08",
+    "trust_level": "extension_guideline"
+  },
+  {
+    "id": "unccd_drought_toolbox",
+    "title": "UNCCD Drought Toolbox",
+    "url": "https://www.unccd.int/actions/drought-toolbox",
+    "publisher": "UNCCD",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_toolkit"
+  },
+  {
+    "id": "undata_comtrade_olive_oil_1509",
+    "title": "UNdata Comtrade view for olive oil HS 1509",
+    "url": "https://data.un.org/Data.aspx?d=ComTrade&f=_l1Code%3A16%3BcmdCode%3A150940&q=Olive+Oil",
+    "publisher": "United Nations Statistics Division",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "undata_comtrade_olive_pomace_151010",
+    "title": "UNdata Comtrade view for olive pomace oil HS 151010",
+    "url": "https://data.un.org/Data.aspx?d=ComTrade&f=_l1Code%3A16%3BcmdCode%3A151010&q=Olive+Oil",
+    "publisher": "United Nations Statistics Division",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "undrr_global_drought_2021",
+    "title": "UNDRR Global Assessment Report Special Report on Drought 2021",
+    "url": "https://www.undrr.org/publication/global-assessment-report-disaster-risk-reduction-special-report-drought-2021",
+    "publisher": "UNDRR",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_report"
+  },
+  {
+    "id": "unsd_hs1509_classification",
+    "title": "UN Statistics Division HS classification detail for olive oil (HS 1509)",
+    "url": "https://unstats.un.org/unsd/classifications/Econ/Detail/EN/32/1509",
+    "publisher": "United Nations Statistics Division",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics"
+  },
+  {
+    "id": "usda_fas_oilseeds_world_markets_trade",
+    "title": "USDA FAS - Oilseeds: World Markets and Trade",
+    "url": "https://www.fas.usda.gov/data/oilseeds-world-markets-and-trade-05102024",
+    "publisher": "USDA Foreign Agricultural Service",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics"
+  },
+  {
+    "id": "usda_soilgrids_overview_alt",
+    "title": "ISRIC SoilGrids overview page",
+    "url": "https://www.isric.org/explore/soilgrids",
+    "publisher": "ISRIC - World Soil Information",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset_portal"
+  },
+  {
+    "id": "usgs_landsat_missions",
+    "title": "USGS Landsat Missions",
+    "url": "https://www.usgs.gov/landsat-missions",
+    "publisher": "USGS",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_earth_observation_portal"
+  },
+  {
+    "id": "wmo_drought_page",
+    "title": "WMO drought overview page",
+    "url": "https://wmo.int/topics/drought",
+    "publisher": "World Meteorological Organization",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_guideline"
+  },
+  {
+    "id": "wmo_european_state_climate_2024",
+    "title": "WMO European State of the Climate 2024",
+    "url": "https://public.wmo.int/publication-series/european-state-of-climate-2024",
+    "publisher": "World Meteorological Organization",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_climate_service"
+  },
+  {
+    "id": "wmo_global_state_climate_2024",
+    "title": "WMO State of the Global Climate 2024",
+    "url": "https://wmo.int/publication-series/state-of-global-climate-2024",
+    "publisher": "World Meteorological Organization",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_climate_service"
+  },
+  {
+    "id": "wmo_state_climate_2023",
+    "title": "WMO State of the Global Climate 2023",
+    "url": "https://wmo.int/publication-series/state-of-global-climate-2023",
+    "publisher": "World Meteorological Organization",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_report"
+  },
+  {
+    "id": "worldbank_commodity_markets_portal_2026",
+    "title": "World Bank Commodity Markets portal",
+    "url": "https://www.worldbank.org/en/research/commodity-markets",
+    "publisher": "World Bank",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics_portal"
+  },
+  {
+    "id": "worldbank_lebanon_drought_2018",
+    "title": "World Bank - Droughts and Agriculture in Lebanon: Causes, Consequences, and Risk Management",
+    "url": "https://openknowledge.worldbank.org/entities/publication/c3749143-d42c-5056-a15d-4b3101361df0",
+    "publisher": "World Bank",
+    "accessed_on": "2026-04-08",
+    "trust_level": "international_org_report"
+  },
+  {
+    "id": "worldbank_pink_sheet_2026",
+    "title": "World Bank Commodities Price Data (Pink Sheet, 2026)",
+    "url": "https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/world-bank-commodities-price-data-the-pink-sheet",
+    "publisher": "World Bank Prospects Group",
+    "accessed_on": "2026-04-08",
+    "trust_level": "official_statistics"
+  },
+  {
+    "id": "worldclim_bioclim_vars",
+    "title": "WorldClim Bioclimatic Variables",
+    "url": "https://www.worldclim.org/data/bioclim.html",
+    "publisher": "WorldClim",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "worldclim_cmip6_future",
+    "title": "WorldClim CMIP6 Future Climate Data",
+    "url": "https://www.worldclim.org/data/cmip6/cmip6climate.html",
+    "publisher": "WorldClim",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "worldclim_data_index",
+    "title": "WorldClim Climate Data Index",
+    "url": "https://worldclim.org/data/index.html",
+    "publisher": "WorldClim",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "worldclim_v21_historical",
+    "title": "WorldClim v2.1 Historical Climate Data",
+    "url": "https://www.worldclim.org/data/worldclim21.html",
+    "publisher": "WorldClim",
+    "accessed_on": "2026-04-08",
+    "trust_level": "scientific_dataset"
+  },
+  {
+    "id": "zenodo_olive_erosion_dataset_2025",
+    "title": "Dataset and code for Mediterranean olive grove soil erosion synthesis (Zenodo)",
+    "url": "https://doi.org/10.5281/zenodo.17952722",
+    "publisher": "Zenodo",
+    "accessed_on": "2026-04-08",
+    "trust_level": "peer_reviewed_dataset_paper"
+  },
+  {
+    "id": "zenodo_xylella_olive_quick_decline_2017",
+    "title": "Olive quick decline and Xylella fastidiosa in Southern Italy (Zenodo, 2017)",
+    "url": "https://zenodo.org/records/830600",
+    "publisher": "Zenodo",
+    "accessed_on": "2026-04-08",
+    "trust_level": "conference_proceeding"
+  }
+]

@@ -1,191 +1,108 @@
-﻿# Worker Radar
+# Zaytoun Platform
 
-Worker Radar is a monolith-first platform for agricultural operations, connecting workers, farmers, and customers through one application.
+Zaytoun is a production-minded agricultural platform that unifies workforce operations, olive farm management, digital commerce, and AI-assisted disease support in one system.
 
-Current product scope includes:
-- Worker discovery and booking workflows
-- Olive season, labor, sales, usage, and inventory management
-- Farmer market storefronts with customer ordering, chat, and separable ratings
+## My Why
 
+This platform was built from my love for my land, shaped by my real experience as a farmer, and driven by the urgent need for digitization in agriculture. I created Zaytoun to bring practical, modern tools to farmers and agricultural workers, so daily operations become easier, decisions become smarter, and rural work gains the efficiency and visibility it deserves.
 
-## Product Areas
+This repository demonstrates a complex real-world integration challenge:
+- multi-role business workflows (`worker`, `farmer`, `customer`)
+- transactional operations (bookings, market orders, ratings, messaging)
+- farm-domain planning and finance tracking (olive seasons, labor, inventory, sales)
+- secure AI microservice integration (farmer-only Agro Copilot with backend proxy and service-to-service key)
 
-### 1) Auth and roles
-- JWT-based auth with register/login
-- Roles:
-- `worker`
-- `farmer`
-- `customer`
+## Why This Project Matters
 
-### 2) Worker operations
-- Workers can create and manage their own team profiles
-- Farmer can search/filter workers by village, availability, date, and rate constraints
-- Worker map/location support in the frontend
+Most projects solve one isolated problem. Zaytoun solves an ecosystem problem.
 
-### 3) Booking lifecycle
-- Farmer sends booking proposals
-- Worker accepts/rejects
-- Farmer confirms/cancels
-- Proposal updates/deletes allowed before final confirmation
-- Booking messages and booking event history included
+It handles:
+- labor supply and demand matching
+- farm-season planning and operational accounting
+- marketplace conversion from production to customer orders
+- AI-assisted agronomy support for field decisions
 
-### 4) Olive management
-- Land pieces registry
-- Olive season records with piece-level tracking
-- Financial logic for pressing cost in money or oil tanks
-- Labor-day inputs, sales, usage, inventory, and carry-over by year
-- Insights views embedded in olive workflows
+The platform is intentionally built to be useful now while already prepared for scale-up and deployment hardening.
 
-### 5) Market module (UberEats-like flow)
-- Farmer creates listings (photo/logo/description/location/quantity optional)
-- Customer browses store cards and enters a store detail page
-- Cart checkout creates one order per cart line
-- Farmer validates/rejects orders and sets pickup time
-- Order chat between farmer and customer
-- Store profile editor (name, banner, about, opening hours)
-- Image upload from device (PNG/JPG/WEBP) for banner/logo/product photos
+## System Highlights
 
-### 6) Separable ratings
-- Store rating and product rating are independent
-- Product ratings aggregate per item
-- Store ratings aggregate per farmer/store
-- Customer can save product rating or store rating separately
+### 1) Role-driven platform design
+- JWT auth and role-based access controls
+- strict ownership rules for worker/farmer/customer data
+- protected farmer-only AI endpoints via backend authorization
 
-## Architecture (Current)
+### 2) End-to-end operational depth
+- worker profiles, filtering, map/location-aware discovery
+- booking lifecycle with status transitions, negotiation, and timeline events
+- olive season management with labor, sales, usage, inventory carry-over, and insights
+
+### 3) Commerce workflows
+- farmer storefront management
+- customer browsing, cart and ordering
+- farmer validation, pickup flow, order messaging
+- separable product and store ratings
+
+### 4) AI integration done professionally
+- Agro Copilot integrated as a dedicated service
+- backend proxy layer (`/agro-copilot/*`) to enforce business access policy
+- internal service key support (`INTERNAL_API_KEY` / `AGRO_COPILOT_API_KEY`)
+- deploy wiring for Render + Docker Compose + CI validation
+
+## Current Stage
+
+**Stage: Advanced MVP / Pre-Production Integration**
+
+What is already strong:
+- complete core feature loops across labor, farm operations, market, and AI support
+- test coverage on key backend business flows
+- CI/CD pipeline and deployment blueprints
+- production-style auth boundaries and service separation
+
+What is next for full production scale:
+- observability (metrics, tracing, dashboards)
+- rate limiting and abuse protection policies
+- load testing and performance tuning under concurrency
+- stronger reliability controls (queueing/circuit breaker where needed)
+
+## Architecture
+
 - **Backend:** FastAPI + SQLAlchemy + Alembic
-- **Frontend:** Vite multi-page app with vanilla JS modules
-- **DB (default local):** SQLite (`backend/worker_radar.db`)
-- **DB target later:** PostgreSQL/Supabase via `DATABASE_URL`
+- **Frontend:** Vite multi-page app (vanilla JS modules)
+- **Database (local):** SQLite
+- **Production target:** PostgreSQL/Supabase
+- **AI Service:** Agro Copilot (FastAPI), proxied by backend
+- **Deployment:** Render + Docker Compose + GitHub Actions CI/CD
 
-Repository:
-- `backend/` API, models, migrations, tests
-- `frontend/` UI pages, JS modules, QA scripts
+## Repository Structure
 
-## Run Locally
+- `backend/` main API, models, migrations, tests
+- `frontend/` web app pages, modules, UI assets
+- `Agro-copilot/` olive disease assistant service (integrated into main platform)
+- `deploy/` production compose and deployment docs
 
-### Backend
+## Local Run (Quick)
+
+### 1) Agro Copilot
 ```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -r requirements.txt
-.\.venv\Scripts\alembic -c alembic.ini upgrade head
-.\.venv\Scripts\python -m uvicorn app.main:app --reload
+cd Agro-copilot
+.\.venv\Scripts\python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8001
 ```
 
-Backend docs:
-- `http://127.0.0.1:8000/docs`
+### 2) Backend
+```powershell
+cd backend
+.\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
 
-### Frontend
+### 3) Frontend
 ```powershell
 cd frontend
-npm install
-npm run dev
+$env:VITE_API_BASE_URL="http://127.0.0.1:8000"
+npm.cmd run dev
 ```
 
-Frontend app:
-- `http://127.0.0.1:5173/`
+Open: `http://127.0.0.1:5173`
 
-## Environment
+## Recruiter Note
 
-### Backend
-- Config is loaded from `backend/app/core/config.py`
-- `.env` is optional for local dev
-- Important vars:
-- `DATABASE_URL` (for Postgres/Supabase)
-- `DB_FALLBACK_URL`
-- `AUTH_SECRET_KEY`
-- `AUTH_ALGORITHM`
-
-Default local DB resolves to absolute path under `backend/worker_radar.db`.
-
-### Frontend
-- Use `frontend/.env.example`
-- API base:
-- `VITE_API_BASE_URL=http://127.0.0.1:8000`
-
-## Database and migrations
-
-Apply latest migrations:
-```powershell
-cd backend
-.\.venv\Scripts\alembic -c alembic.ini upgrade head
-```
-
-Check current revision:
-```powershell
-cd backend
-.\.venv\Scripts\alembic -c alembic.ini current
-```
-
-Create migration:
-```powershell
-cd backend
-.\.venv\Scripts\alembic -c alembic.ini revision --autogenerate -m "describe_change"
-.\.venv\Scripts\alembic -c alembic.ini upgrade head
-```
-
-## Testing and QA
-
-### Backend tests
-```powershell
-cd backend
-$env:PYTHONPATH='.'
-.\.venv\Scripts\pytest -q
-```
-
-Test suite is now split for maintainability:
-- `backend/tests/test_auth_workers_bookings.py`
-- `backend/tests/test_olive_api.py`
-- `backend/tests/test_market_api.py`
-- Shared helpers in `backend/tests/helpers.py`
-
-### Frontend build
-```powershell
-cd frontend
-npm run build
-```
-
-### Frontend automated QA scripts
-Located in `frontend/scripts/`:
-- `qa-full.mjs`
-- `ui-feedback-smoke.mjs`
-- `qa-button-bug.mjs`
-- `qa-usage-history-check.mjs`
-
-Run scripts with frontend dev server running on `127.0.0.1:5173`.
-
-## Key pages
-- `workers.html` Worker directory + filters/map
-- `register.html` Worker profile creation
-- `my-profiles.html` Worker-owned profiles
-- `bookings.html` Booking workflows
-- `olive-season.html` Olive season and budgeting workflows
-- `inventory.html` Inventory management
-- `insight.html` Analytics
-- `market.html` Market storefronts, orders, cart, ratings
-
-## Current maturity
-- Strong MVP with full end-to-end business flows
-- Good automated test coverage for backend APIs
-- Browser QA smoke coverage for critical frontend flows
-- CI/CD pipeline available with GitHub Actions + Render deployment workflow
-- Not yet optimized for high-scale production traffic (10k concurrent users) until infra hardening phase
-
-## Recommended next phase (when feature scope stabilizes)
-- Postgres/Supabase production migration
-- Redis/cache + observability stack
-- Rate limiting/security hardening
-- Load/performance testing and SLO tuning
-
-
-## Shared frontend upload pattern
-- Frontend image uploads use: `frontend/src/upload.js`
-- Helper function: `uploadImageFile(file)`
-- Backend upload endpoint: `POST /uploads/image`
-- Uploaded files are served from: `/uploads/<filename>`
-- Reuse this helper in any future module needing image upload to keep UX/API behavior consistent
-
-
-
-
-
+This project is intentionally ambitious. The value is not only in features, but in how the system handles cross-domain complexity, role safety, deployment readiness, and practical AI integration in a high-friction real-world context.

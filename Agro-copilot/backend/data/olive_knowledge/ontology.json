@@ -1,0 +1,217 @@
+{
+  "categories": [
+    "disease",
+    "pest",
+    "climate",
+    "management",
+    "economics"
+  ],
+  "decision_types": [
+    "diagnosis",
+    "management_plan",
+    "contextual",
+    "economic_decision",
+    "advisory"
+  ],
+  "organ_targets": [
+    "leaf",
+    "flower",
+    "fruit",
+    "twig",
+    "branch",
+    "trunk",
+    "root",
+    "whole_tree",
+    "whole_farm",
+    "soil"
+  ],
+  "phenology_stages": [
+    "nursery",
+    "vegetative",
+    "flowering",
+    "fruit_set",
+    "fruiting",
+    "harvest",
+    "post_harvest",
+    "spring",
+    "summer",
+    "autumn",
+    "winter",
+    "all_season"
+  ],
+  "symptom_tags": [
+    "leaf_spot",
+    "chlorosis",
+    "defoliation",
+    "gall",
+    "swelling",
+    "dieback",
+    "fruit_rot",
+    "mummification",
+    "yield_loss",
+    "oviposition_sting",
+    "larval_tunneling",
+    "flower_damage",
+    "fruit_drop",
+    "boring_galleries",
+    "gray_underside",
+    "water_stress",
+    "growth_reduction",
+    "ripening",
+    "quality_tradeoff",
+    "economic_risk",
+    "regional_risk_context",
+    "general_assessment",
+    "larval_feeding",
+    "soil_condition",
+    "salinity_risk",
+    "erosion_risk",
+    "runoff_pattern",
+    "soil_cover_management"
+  ],
+  "severity_levels": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "phenology_focus_levels": [
+    "early",
+    "peak",
+    "late"
+  ],
+  "category_intents": {
+    "disease": [
+      "symptom diagnosis",
+      "differential diagnosis"
+    ],
+    "pest": [
+      "pest diagnosis",
+      "monitoring and thresholds"
+    ],
+    "climate": [
+      "weather/stress response"
+    ],
+    "management": [
+      "operational guidance"
+    ],
+    "economics": [
+      "cost and market decisions"
+    ]
+  },
+  "classifier_policies": {
+    "peacock_min_score": 0.85,
+    "peacock_min_margin": 0.15,
+    "low_conf_threshold": 0.6,
+    "healthy_high_conf_threshold": 0.8
+  },
+  "classifier_label_mapping": [
+    {
+      "label": "healthy",
+      "aliases": [
+        "healthy_leaf",
+        "normal_leaf"
+      ],
+      "display": {
+        "en": "Healthy leaf",
+        "fr": "Feuille saine",
+        "ar": "ورقة سليمة"
+      },
+      "knowledge_prefixes": [],
+      "routing": "healthy"
+    },
+    {
+      "label": "peacock_spot",
+      "aliases": [
+        "olive_leaf_spot",
+        "spilocaea_oleaginea"
+      ],
+      "display": {
+        "en": "Peacock spot",
+        "fr": "Oeil de paon",
+        "ar": "تبقع عين الطاووس"
+      },
+      "knowledge_prefixes": [
+        "peacock_spot"
+      ],
+      "routing": "disease"
+    },
+    {
+      "label": "anthracnose",
+      "aliases": [
+        "olive_anthracnose"
+      ],
+      "display": {
+        "en": "Anthracnose",
+        "fr": "Anthracnose",
+        "ar": "الانثراكنوز"
+      },
+      "knowledge_prefixes": [
+        "olive_anthracnose"
+      ],
+      "routing": "disease"
+    },
+    {
+      "label": "blackscale",
+      "aliases": [
+        "black_scale",
+        "sooty_mold_black_scale"
+      ],
+      "display": {
+        "en": "Black scale",
+        "fr": "Cochenille noire",
+        "ar": "الحشرة القشرية السوداء"
+      },
+      "knowledge_prefixes": [
+        "sooty_mold_black_scale",
+        "olive_scale"
+      ],
+      "routing": "pest"
+    },
+    {
+      "label": "psyllid",
+      "aliases": [
+        "olive_psyllid"
+      ],
+      "display": {
+        "en": "Olive psyllid",
+        "fr": "Psylle de l'olivier",
+        "ar": "بسيلا الزيتون"
+      },
+      "knowledge_prefixes": [
+        "olive_psyllid"
+      ],
+      "routing": "pest"
+    },
+    {
+      "label": "tuberculosis",
+      "aliases": [
+        "olive_knot"
+      ],
+      "display": {
+        "en": "Olive knot",
+        "fr": "Noeud de l'olivier",
+        "ar": "سل الزيتون"
+      },
+      "knowledge_prefixes": [
+        "olive_knot"
+      ],
+      "routing": "disease"
+    },
+    {
+      "label": "aculus_olearius",
+      "aliases": [
+        "olive_mite",
+        "aculus"
+      ],
+      "display": {
+        "en": "Olive mite (Aculus olearius)",
+        "fr": "Acarien de l'olivier (Aculus olearius)",
+        "ar": "اكاروس الزيتون (Aculus olearius)"
+      },
+      "knowledge_prefixes": [
+        "olive_mite"
+      ],
+      "routing": "pest"
+    }
+  ]
+}
