@@ -7,6 +7,13 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function createSessionId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `olive-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -104,20 +111,26 @@ export class OliveChatWidget {
       requestTimeoutMs: Number(config.requestTimeoutMs || 120000),
       maxImageMb: Number(config.maxImageMb || 8),
       requestHeaders: config.requestHeaders || {},
+      sessionsEndpointPath: config.sessionsEndpointPath || "/api/v1/chat/sessions",
       onResponse: typeof config.onResponse === "function" ? config.onResponse : null,
       onError: typeof config.onError === "function" ? config.onError : null,
       title: config.title || "Olive Copilot",
       subtitle: config.subtitle || "Ask about olive diseases, treatment, and field actions.",
+      sessionId: config.sessionId || createSessionId(),
     };
 
     this.imageBase64 = null;
     this.imageName = "";
+    this.sessions = [];
 
     this.render();
     this.bindEvents();
-    this.addAssistantMessage(
-      "Hello. Describe what you see on your olive trees, and optionally attach a leaf photo."
-    );
+    this.bootstrapSessions().catch((error) => {
+      this.setStatus(String(error?.message || error), true);
+      this.addAssistantMessage(
+        "Hello. Describe what you see on your olive trees, and optionally attach a leaf photo."
+      );
+    });
   }
 
   render() {
@@ -136,6 +149,11 @@ export class OliveChatWidget {
               <option value="ar">Arabic</option>
             </select>
           </label>
+          <label class="olive-lang-wrap">
+            <span>Chat</span>
+            <select id="olive-session-select"></select>
+          </label>
+          <button id="olive-new-chat" class="olive-secondary-btn" type="button">New Chat</button>
         </header>
 
         <main id="olive-messages" class="olive-chat-messages"></main>
@@ -165,6 +183,8 @@ export class OliveChatWidget {
     this.sendEl = this.root.querySelector("#olive-send");
     this.statusEl = this.root.querySelector("#olive-status");
     this.langEl = this.root.querySelector("#olive-language");
+    this.sessionSelectEl = this.root.querySelector("#olive-session-select");
+    this.newChatEl = this.root.querySelector("#olive-new-chat");
     this.attachStateEl = this.root.querySelector("#olive-attach-state");
     this.langEl.value = this.config.language;
   }
@@ -201,6 +221,113 @@ export class OliveChatWidget {
     this.removeImageEl.addEventListener("click", () => {
       this.clearImage();
       this.setStatus("Image removed.");
+    });
+    this.newChatEl.addEventListener("click", () => this.createNewChat());
+    this.sessionSelectEl.addEventListener("change", () => {
+      const nextId = this.sessionSelectEl.value;
+      if (nextId) {
+        this.switchSession(nextId);
+      }
+    });
+  }
+
+  async bootstrapSessions() {
+    await this.loadSessionsFromServer();
+    if (!this.sessions.length) {
+      await this.createNewChat();
+      return;
+    }
+    const hasCurrent = this.sessions.some((row) => row.session_id === this.config.sessionId);
+    if (!hasCurrent) {
+      this.config.sessionId = this.sessions[0].session_id;
+    }
+    this.refreshSessionSelect();
+    await this.loadCurrentSessionHistory();
+  }
+
+  async loadSessionsFromServer() {
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}`;
+    const rows = await requestJsonWithTimeout(
+      url,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+    this.sessions = Array.isArray(rows) ? rows : [];
+  }
+
+  async createNewChat() {
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}`;
+    const created = await requestJsonWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+    const newId = created?.session_id || createSessionId();
+    await this.loadSessionsFromServer();
+    this.config.sessionId = newId;
+    this.refreshSessionSelect();
+    this.messagesEl.innerHTML = "";
+    this.addAssistantMessage("New chat started. Tell me what you see and we will analyze it together.");
+    this.setStatus("New chat ready.");
+  }
+
+  refreshSessionSelect() {
+    const rows = this.sessions.length
+      ? this.sessions
+      : [{ session_id: this.config.sessionId, preview: "Current chat", updated_at: "" }];
+    const options = rows.map((row, idx) => {
+      const labelBase = row.preview ? row.preview.slice(0, 40) : `Chat ${idx + 1}`;
+      const selected = row.session_id === this.config.sessionId ? "selected" : "";
+      return `<option value="${escapeHtml(row.session_id)}" ${selected}>${escapeHtml(labelBase || `Chat ${idx + 1}`)}</option>`;
+    });
+    this.sessionSelectEl.innerHTML = options.join("");
+  }
+
+  async switchSession(sessionId) {
+    this.config.sessionId = sessionId;
+    this.refreshSessionSelect();
+    await this.loadCurrentSessionHistory();
+    this.setStatus("Switched chat.");
+  }
+
+  async loadCurrentSessionHistory() {
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}/${encodeURIComponent(this.config.sessionId)}/history`;
+    const payload = await requestJsonWithTimeout(
+      url,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+    const turns = Array.isArray(payload?.history) ? payload.history : [];
+    this.messagesEl.innerHTML = "";
+    if (!turns.length) {
+      this.addAssistantMessage("Hello. Describe what you see on your olive trees, and optionally attach a leaf photo.");
+      return;
+    }
+    turns.forEach((turn) => {
+      if (turn?.user) {
+        this.addUserMessage(String(turn.user));
+      }
+      if (turn?.assistant) {
+        this.addAssistantMessage(`<p>${escapeHtml(String(turn.assistant))}</p>`);
+      }
     });
   }
 
@@ -262,6 +389,7 @@ export class OliveChatWidget {
       message,
       observed_symptoms: [],
       language: this.langEl.value || "en",
+      session_id: this.config.sessionId,
       image_urls: [],
       image_base64: this.imageBase64 || null,
       image_path: null,
@@ -301,6 +429,8 @@ export class OliveChatWidget {
       this.addAssistantMessage(buildAssistantHtml(data));
       this.setStatus("Done.");
       this.clearImage();
+      await this.loadSessionsFromServer();
+      this.refreshSessionSelect();
       if (this.config.onResponse) {
         this.config.onResponse(data);
       }

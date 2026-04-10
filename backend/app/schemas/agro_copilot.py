@@ -12,6 +12,7 @@ class AgroCopilotDiagnosisRequest(BaseModel):
     farmer_note: str = Field(min_length=1, max_length=2000)
     observed_symptoms: list[str] = Field(default_factory=list, max_length=30)
     language: SupportedLanguage | None = None
+    session_id: str | None = Field(default=None, max_length=120)
     image_urls: list[str] = Field(default_factory=list, max_length=5)
     image_base64: str | None = None
     image_path: str | None = None
@@ -21,6 +22,7 @@ class AgroCopilotChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     observed_symptoms: list[str] = Field(default_factory=list, max_length=30)
     language: SupportedLanguage | None = None
+    session_id: str | None = Field(default=None, max_length=120)
     image_urls: list[str] = Field(default_factory=list, max_length=5)
     image_base64: str | None = None
     image_path: str | None = None
@@ -66,6 +68,9 @@ class AgroCopilotDiagnosisResponse(BaseModel):
     model_trace_summary: str
     matched_category: str | None = None
     matched_subcategory: str | None = None
+    session_id: str | None = None
+    response_source: str = "fallback"
+    fallback_reason: str | None = None
     evidence_sources: list[AgroCopilotEvidenceSource] = Field(default_factory=list)
     classifier_debug: AgroCopilotClassifierDebug | None = None
 

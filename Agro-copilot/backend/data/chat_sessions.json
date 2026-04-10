@@ -1,0 +1,18 @@
+{
+  "sessions": {
+    "sess_cb5ee05257844155bce6a2c03afe20d6": {
+      "created_at": 1775822049.0251365,
+      "updated_at": 1775822049.0286784,
+      "turns": [
+        {
+          "user": "I see spots on olive leaves",
+          "assistant": "Our chat assistant is temporarily unavailable. | The language service is currently offline.",
+          "at": "2026-04-10T11:54:09Z",
+          "entry_id": "olive__qa_case",
+          "category": "",
+          "language": "en"
+        }
+      ]
+    }
+  }
+}

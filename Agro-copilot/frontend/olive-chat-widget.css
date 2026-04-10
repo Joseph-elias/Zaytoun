@@ -73,6 +73,7 @@ body {
   border-radius: 10px;
   background: #fff;
   padding: 7px 10px;
+  min-width: 140px;
 }
 
 .olive-chat-messages {

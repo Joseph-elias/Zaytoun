@@ -567,18 +567,12 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 
 /* ===== App Shell Upgrade (Global Non-Auth Pages) ===== */
 .page:not(.auth-page):not(.embedded-view) {
-  display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
-  gap: 1rem;
-  align-items: start;
+  display: block;
   min-height: 100vh;
 }
 
 .page:not(.auth-page):not(.embedded-view) > .hero {
-  grid-column: 1;
-  position: sticky;
-  top: .9rem;
-  align-self: start;
+  position: static;
   border: 1px solid #c7d5af;
   border-radius: 18px;
   padding: .9rem;
@@ -586,13 +580,10 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
     radial-gradient(220px 140px at 0% -20%, rgba(216,132,47,.2), transparent 70%),
     linear-gradient(180deg, rgba(246,251,236,.94), rgba(233,243,212,.9));
   box-shadow: 0 12px 28px rgba(61,77,45,.12);
-  max-height: calc(100vh - 1.8rem);
-  overflow: auto;
+  margin-bottom: 1rem;
 }
 
 .page:not(.auth-page):not(.embedded-view) > .app-content-stack {
-  grid-column: 2;
-  grid-row: 1;
   display: grid;
   gap: 1rem;
   align-content: start;
@@ -609,21 +600,23 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 }
 
 .page:not(.auth-page):not(.embedded-view) .tabs {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: .45rem;
   margin-bottom: 0;
 }
 
 .side-profile-banner {
-  display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: .65rem;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: .65rem;
   border: 1px solid #c5d4b0;
   border-radius: 14px;
   padding: .65rem;
   background: rgba(255,255,255,.7);
-  margin-bottom: .7rem;
+  margin-bottom: .2rem;
 }
 
 .side-avatar {
@@ -653,7 +646,6 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 }
 
 .side-settings-link {
-  grid-column: 1 / -1;
   text-decoration: none;
   font-size: .8rem;
   font-weight: 700;
@@ -663,10 +655,11 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
   padding: .42rem .55rem;
   background: #fff;
   text-align: center;
+  margin-left: auto;
 }
 
 .side-nav-title {
-  margin: .25rem 0 .4rem;
+  margin: .45rem 0 .4rem;
   font-size: .72rem;
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -675,17 +668,19 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 }
 
 .side-nav-links {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: .45rem;
 }
 
 .side-nav-link {
   border-radius: 12px;
-  justify-content: flex-start;
+  justify-content: center;
   padding: .62rem .75rem;
   font-weight: 700;
   border-color: #bdcd9f;
   background: linear-gradient(180deg, #ffffff, #f2f7e5);
+  white-space: nowrap;
 }
 
 .side-nav-link.active {
@@ -695,29 +690,19 @@ legend { padding:0 .3rem; font-weight:700; color:var(--olive-800); }
 }
 
 @media (max-width: 980px) {
-  .page:not(.auth-page):not(.embedded-view) {
-    grid-template-columns: 1fr;
-  }
-
-  .page:not(.auth-page):not(.embedded-view) > .hero,
-  .page:not(.auth-page):not(.embedded-view) > .app-content-stack {
-    grid-column: 1;
-  }
-
-  .page:not(.auth-page):not(.embedded-view) > .hero {
-    position: static;
-    max-height: none;
-  }
-
   .page:not(.auth-page):not(.embedded-view) .tabs {
     display: flex;
     flex-wrap: wrap;
     gap: .45rem;
   }
 
-  .side-nav-links {
-    display: flex;
-    flex-wrap: wrap;
+  .side-profile-banner {
+    align-items: flex-start;
+  }
+
+  .side-settings-link {
+    margin-left: 0;
+    width: 100%;
   }
 }
 

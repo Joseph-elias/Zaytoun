@@ -7,6 +7,13 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function createSessionId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `olive-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -18,47 +25,51 @@ function fileToBase64(file) {
 
 function formatList(items) {
   if (!Array.isArray(items) || !items.length) {
-    return "<li>No details provided.</li>";
+    return "";
   }
   return items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
 }
 
-function buildAssistantHtml(data) {
+function renderListSection(title, items) {
+  const html = formatList(items);
+  if (!html) return "";
   return `
-    <div class="olive-msg-title">${escapeHtml(data?.probable_issue || "Unknown issue")}</div>
+    <div class="olive-msg-section">
+      <div class="olive-msg-section-title">${escapeHtml(title)}</div>
+      <ul>${html}</ul>
+    </div>
+  `;
+}
+
+function renderTextSection(title, text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  return `
+    <div class="olive-msg-section">
+      <div class="olive-msg-section-title">${escapeHtml(title)}</div>
+      <p>${escapeHtml(value)}</p>
+    </div>
+  `;
+}
+
+function buildAssistantHtml(data) {
+  const mainReply = String(data?.probable_issue || "").trim() || "I’m not sure yet. Could you share more details?";
+  const trace = String(data?.model_trace_summary || "").trim();
+  const source = String(data?.response_source || "fallback").trim() || "fallback";
+  return `
+    <p>${escapeHtml(mainReply)}</p>
     <div class="olive-msg-meta">
       <span class="olive-chip">confidence: ${escapeHtml(data?.confidence_band || "unknown")}</span>
       <span class="olive-chip">urgency: ${escapeHtml(data?.urgency || "unknown")}</span>
       <span class="olive-chip">lang: ${escapeHtml(data?.language || "en")}</span>
+      <span class="olive-chip">source: ${escapeHtml(source)}</span>
     </div>
-    <div class="olive-msg-section">
-      <div class="olive-msg-section-title">Why</div>
-      <ul>${formatList(data?.why_it_thinks_that)}</ul>
-    </div>
-    <div class="olive-msg-section">
-      <div class="olive-msg-section-title">What to check next</div>
-      <ul>${formatList(data?.what_to_check_next)}</ul>
-    </div>
-    <div class="olive-msg-section">
-      <div class="olive-msg-section-title">Safe actions</div>
-      <ul>${formatList(data?.safe_actions)}</ul>
-    </div>
-    <details class="olive-msg-details">
-      <summary>More details</summary>
-      <div class="olive-msg-section">
-        <div class="olive-msg-section-title">Alternative causes</div>
-        <ul>${formatList(data?.alternative_causes)}</ul>
-      </div>
-      <div class="olive-msg-section">
-        <div class="olive-msg-section-title">When to call agronomist</div>
-        <p>${escapeHtml(data?.when_to_call_agronomist || "")}</p>
-      </div>
-      <div class="olive-msg-section">
-        <div class="olive-msg-section-title">Follow-up questions</div>
-        <ul>${formatList(data?.recommended_followup_questions)}</ul>
-      </div>
-      <div class="olive-trace">${escapeHtml(data?.model_trace_summary || "")}</div>
-    </details>
+    ${(data?.fallback_reason || trace)
+      ? `<details class="olive-msg-details"><summary>Trace</summary>
+          ${data?.fallback_reason ? `<div class="olive-trace">fallback_reason: ${escapeHtml(data.fallback_reason)}</div>` : ""}
+          ${trace ? `<div class="olive-trace">${escapeHtml(trace)}</div>` : ""}
+        </details>`
+      : ""}
   `;
 }
 
@@ -104,55 +115,71 @@ export class OliveChatWidget {
       requestTimeoutMs: Number(config.requestTimeoutMs || 120000),
       maxImageMb: Number(config.maxImageMb || 8),
       requestHeaders: config.requestHeaders || {},
+      sessionsEndpointPath: config.sessionsEndpointPath || "/agro-copilot/chat/sessions",
       onResponse: typeof config.onResponse === "function" ? config.onResponse : null,
       onError: typeof config.onError === "function" ? config.onError : null,
       title: config.title || "Olive Copilot",
       subtitle: config.subtitle || "Ask about olive diseases, treatment, and field actions.",
+      sessionId: config.sessionId || createSessionId(),
     };
 
     this.imageBase64 = null;
     this.imageName = "";
+    this.sessions = [];
 
     this.render();
     this.bindEvents();
-    this.addAssistantMessage("Hello. Describe what you see on your olive trees, and optionally attach a leaf photo.");
+    this.bootstrapSessions().catch((error) => {
+      this.setStatus(String(error?.message || error), true);
+      this.addAssistantMessage("Hello. Describe what you see on your olive trees, and optionally attach a leaf photo.");
+    });
   }
 
   render() {
     this.root.innerHTML = `
       <div class="olive-chat-shell">
-        <header class="olive-chat-header">
-          <div>
-            <h1>${escapeHtml(this.config.title)}</h1>
-            <p>${escapeHtml(this.config.subtitle)}</p>
+        <aside class="olive-chat-sidebar">
+          <div class="olive-sidebar-head">
+            <h2>Chats</h2>
+            <button id="olive-new-chat" class="olive-secondary-btn olive-new-chat-btn" type="button">+ New Chat</button>
           </div>
-          <label class="olive-lang-wrap">
-            <span>Language</span>
-            <select id="olive-language">
-              <option value="en">English</option>
-              <option value="fr">Francais</option>
-              <option value="ar">Arabic</option>
-            </select>
-          </label>
-        </header>
+          <div id="olive-session-list" class="olive-session-list"></div>
+        </aside>
 
-        <main id="olive-messages" class="olive-chat-messages"></main>
-
-        <footer class="olive-chat-composer">
-          <div id="olive-attach-state" class="olive-attach-state"></div>
-          <div class="olive-composer-row">
-            <textarea id="olive-input" placeholder="Type your message..." rows="2"></textarea>
-          </div>
-          <div class="olive-composer-actions">
-            <label class="olive-attach-btn">
-              Attach Photo
-              <input id="olive-image" type="file" accept="image/*" hidden />
+        <div class="olive-chat-main">
+          <header class="olive-chat-header">
+            <div>
+              <h1>${escapeHtml(this.config.title)}</h1>
+              <p>${escapeHtml(this.config.subtitle)}</p>
+            </div>
+            <label class="olive-lang-wrap">
+              <span>Language</span>
+              <select id="olive-language">
+                <option value="en">English</option>
+                <option value="fr">Francais</option>
+                <option value="ar">Arabic</option>
+              </select>
             </label>
-            <button id="olive-remove-image" class="olive-secondary-btn" type="button">Remove Photo</button>
-            <button id="olive-send" class="olive-send-btn" type="button">Send</button>
-          </div>
-          <div id="olive-status" class="olive-status"></div>
-        </footer>
+          </header>
+
+          <main id="olive-messages" class="olive-chat-messages"></main>
+
+          <footer class="olive-chat-composer">
+            <div id="olive-attach-state" class="olive-attach-state"></div>
+            <div class="olive-composer-row">
+              <textarea id="olive-input" placeholder="Type your message..." rows="2"></textarea>
+            </div>
+            <div class="olive-composer-actions">
+              <label class="olive-attach-btn">
+                Attach Photo
+                <input id="olive-image" type="file" accept="image/*" hidden />
+              </label>
+              <button id="olive-remove-image" class="olive-secondary-btn" type="button">Remove Photo</button>
+              <button id="olive-send" class="olive-send-btn" type="button">Send</button>
+            </div>
+            <div id="olive-status" class="olive-status"></div>
+          </footer>
+        </div>
       </div>
     `;
 
@@ -163,6 +190,8 @@ export class OliveChatWidget {
     this.sendEl = this.root.querySelector("#olive-send");
     this.statusEl = this.root.querySelector("#olive-status");
     this.langEl = this.root.querySelector("#olive-language");
+    this.sessionListEl = this.root.querySelector("#olive-session-list");
+    this.newChatEl = this.root.querySelector("#olive-new-chat");
     this.attachStateEl = this.root.querySelector("#olive-attach-state");
     this.langEl.value = this.config.language;
   }
@@ -199,6 +228,162 @@ export class OliveChatWidget {
     this.removeImageEl.addEventListener("click", () => {
       this.clearImage();
       this.setStatus("Image removed.");
+    });
+    this.newChatEl.addEventListener("click", () => this.createNewChat());
+    this.sessionListEl.addEventListener("click", (event) => {
+      const deleteTarget = event.target.closest("[data-delete-session-id]");
+      if (deleteTarget) {
+        const deleteId = deleteTarget.getAttribute("data-delete-session-id") || "";
+        if (deleteId) {
+          this.deleteSession(deleteId);
+        }
+        return;
+      }
+      const target = event.target.closest("[data-session-id]");
+      const nextId = target?.getAttribute("data-session-id") || "";
+      if (nextId) {
+        this.switchSession(nextId);
+      }
+    });
+  }
+
+  async bootstrapSessions() {
+    await this.loadSessionsFromServer();
+    if (!this.sessions.length) {
+      await this.createNewChat();
+      return;
+    }
+    const hasCurrent = this.sessions.some((row) => row.session_id === this.config.sessionId);
+    if (!hasCurrent) {
+      this.config.sessionId = this.sessions[0].session_id;
+    }
+    this.refreshSessionList();
+    await this.loadCurrentSessionHistory();
+  }
+
+  async loadSessionsFromServer() {
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}`;
+    const rows = await requestJsonWithTimeout(
+      url,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+    this.sessions = Array.isArray(rows) ? rows : [];
+  }
+
+  async createNewChat() {
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}`;
+    const created = await requestJsonWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+    const newId = created?.session_id || createSessionId();
+    await this.loadSessionsFromServer();
+    this.config.sessionId = newId;
+    this.refreshSessionList();
+    this.messagesEl.innerHTML = "";
+    this.addAssistantMessage("New chat started. Tell me what you see and we will analyze it together.");
+    this.setStatus("New chat ready.");
+  }
+
+  refreshSessionList() {
+    const rows = this.sessions.length
+      ? this.sessions
+      : [{ session_id: this.config.sessionId, preview: "Current chat", updated_at: "" }];
+    const cards = rows.map((row, idx) => {
+      const labelBase = row.preview ? row.preview.slice(0, 40) : `Chat ${idx + 1}`;
+      const active = row.session_id === this.config.sessionId ? "is-active" : "";
+      return `
+        <div class="olive-session-row ${active}">
+          <button type="button" class="olive-session-item ${active}" data-session-id="${escapeHtml(row.session_id)}">
+            ${escapeHtml(labelBase || `Chat ${idx + 1}`)}
+          </button>
+          <button type="button" class="olive-session-delete" data-delete-session-id="${escapeHtml(row.session_id)}" title="Delete chat">
+            x
+          </button>
+        </div>
+      `;
+    });
+    this.sessionListEl.innerHTML = cards.join("");
+  }
+
+  async switchSession(sessionId) {
+    this.config.sessionId = sessionId;
+    this.refreshSessionList();
+    await this.loadCurrentSessionHistory();
+    this.setStatus("Switched chat.");
+  }
+
+  async deleteSession(sessionId) {
+    const yes = window.confirm("Delete this chat session?");
+    if (!yes) {
+      return;
+    }
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}/${encodeURIComponent(sessionId)}`;
+    await requestJsonWithTimeout(
+      url,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+
+    await this.loadSessionsFromServer();
+    if (!this.sessions.length) {
+      await this.createNewChat();
+      return;
+    }
+    if (this.config.sessionId === sessionId) {
+      this.config.sessionId = this.sessions[0].session_id;
+      await this.loadCurrentSessionHistory();
+    }
+    this.refreshSessionList();
+    this.setStatus("Chat deleted.");
+  }
+
+  async loadCurrentSessionHistory() {
+    const url = `${this.config.apiBaseUrl}${this.config.sessionsEndpointPath}/${encodeURIComponent(this.config.sessionId)}/history`;
+    const payload = await requestJsonWithTimeout(
+      url,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.config.requestHeaders,
+        },
+      },
+      this.config.requestTimeoutMs
+    );
+    const turns = Array.isArray(payload?.history) ? payload.history : [];
+    this.messagesEl.innerHTML = "";
+    if (!turns.length) {
+      this.addAssistantMessage("Hello. Describe what you see on your olive trees, and optionally attach a leaf photo.");
+      return;
+    }
+    turns.forEach((turn) => {
+      if (turn?.user) {
+        this.addUserMessage(String(turn.user));
+      }
+      if (turn?.assistant) {
+        this.addAssistantMessage(`<p>${escapeHtml(String(turn.assistant))}</p>`);
+      }
     });
   }
 
@@ -260,6 +445,7 @@ export class OliveChatWidget {
       message,
       observed_symptoms: [],
       language: this.langEl.value || "en",
+      session_id: this.config.sessionId,
       image_urls: [],
       image_base64: this.imageBase64 || null,
       image_path: null,
@@ -299,6 +485,11 @@ export class OliveChatWidget {
       this.addAssistantMessage(buildAssistantHtml(data));
       this.setStatus("Done.");
       this.clearImage();
+      if (data?.session_id) {
+        this.config.sessionId = String(data.session_id);
+      }
+      await this.loadSessionsFromServer();
+      this.refreshSessionList();
       if (this.config.onResponse) {
         this.config.onResponse(data);
       }

@@ -118,6 +118,36 @@ async def agro_copilot_chat(
     return await _proxy_json("/api/v1/chat", method="POST", payload=payload.model_dump())
 
 
+@router.post("/chat/sessions")
+async def agro_copilot_create_chat_session(current_user: User = Depends(require_roles("farmer"))) -> Any:
+    _ = current_user
+    return await _proxy_json("/api/v1/chat/sessions", method="POST")
+
+
+@router.get("/chat/sessions")
+async def agro_copilot_list_chat_sessions(current_user: User = Depends(require_roles("farmer"))) -> Any:
+    _ = current_user
+    return await _proxy_json("/api/v1/chat/sessions")
+
+
+@router.get("/chat/sessions/{session_id}/history")
+async def agro_copilot_chat_session_history(
+    session_id: str,
+    current_user: User = Depends(require_roles("farmer")),
+) -> Any:
+    _ = current_user
+    return await _proxy_json(f"/api/v1/chat/sessions/{session_id}/history")
+
+
+@router.delete("/chat/sessions/{session_id}")
+async def agro_copilot_delete_chat_session(
+    session_id: str,
+    current_user: User = Depends(require_roles("farmer")),
+) -> Any:
+    _ = current_user
+    return await _proxy_json(f"/api/v1/chat/sessions/{session_id}", method="DELETE")
+
+
 @router.post("/diagnose", response_model=AgroCopilotDiagnosisResponse)
 async def agro_copilot_diagnose(
     payload: AgroCopilotDiagnosisRequest,

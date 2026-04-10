@@ -1,9 +1,11 @@
 import logging
+import os
 
 from backend.app.core.language import resolve_language
 from backend.app.models.diagnosis import DiagnosisRequest, DiagnosisResponse
 from backend.app.services.classifier_service import predict_from_request
-from backend.app.services.llm_service import describe_leaf_image
+from backend.app.services.chat_memory import append_turn, build_memory_hint, ensure_session, get_conversation_history, get_last_turn
+from backend.app.services.llm_service import describe_leaf_image, llm_is_available, maybe_generate_grounded_response
 from backend.app.services.retrieval import (
     KnowledgeEntry,
     RetrievedCase,
@@ -24,6 +26,7 @@ PEACOCK_MIN_SCORE = float(POLICIES.get("peacock_min_score", 0.85))
 PEACOCK_MIN_MARGIN = float(POLICIES.get("peacock_min_margin", 0.15))
 LOW_CONF_THRESHOLD = float(POLICIES.get("low_conf_threshold", 0.60))
 HEALTHY_HIGH_CONF_THRESHOLD = float(POLICIES.get("healthy_high_conf_threshold", 0.80))
+DEBUG_MODE = str(os.getenv("DIAGNOSIS_DEBUG", "false")).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _confidence_from_retrieval_score(score: int, hint: str) -> str:
@@ -32,6 +35,31 @@ def _confidence_from_retrieval_score(score: int, hint: str) -> str:
     if score >= 2:
         return "medium" if hint in {"medium", "high"} else "low"
     return "low"
+
+
+def _looks_context_dependent(text: str) -> bool:
+    normalized = " ".join(text.lower().split())
+    if len(normalized.split()) <= 8:
+        return True
+    markers = ("is it", "this leaf", "that leaf", "same", "again", "peacock", "it")
+    return any(marker in normalized for marker in markers)
+
+
+def _is_explicit_topic_shift(text: str) -> bool:
+    normalized = " ".join(text.lower().split())
+    shift_markers = (
+        "soil",
+        "ph",
+        "salinity",
+        "fertilizer",
+        "irrigation",
+        "economics",
+        "market",
+        "price",
+        "labor",
+        "yield",
+    )
+    return any(marker in normalized for marker in shift_markers)
 
 
 def _top1_top2_margin(top_k: list[dict]) -> float | None:
@@ -91,6 +119,16 @@ def _select_cases_from_prefixes(prefixes: tuple[str, ...], top_k: int = 3) -> li
 
     matched.sort(key=lambda r: r.score, reverse=True)
     return matched[:top_k]
+
+
+def _select_case_by_entry_id(entry_id: str) -> list[RetrievedCase]:
+    if not entry_id:
+        return []
+    bundle = load_knowledge_bundle()
+    for entry in bundle.entries:
+        if entry.id == entry_id:
+            return [RetrievedCase(entry=entry, score=100)]
+    return []
 
 
 def _clarify_probable_issue(probable_issue: str, language: str, classifier_debug: dict | None) -> str:
@@ -238,6 +276,146 @@ def _fallback_response(language: str, classifier_trace: str, classifier_debug: d
     )
 
 
+def _chat_service_unavailable_response(language: str) -> DiagnosisResponse:
+    data = {
+        "en": {
+            "issue": "Our chat assistant is temporarily unavailable.",
+            "why": ["The language service is currently offline."],
+            "check": ["Please retry in a few minutes."],
+            "safe": ["Do not apply risky treatment until guidance is available."],
+            "call": "Contact your agronomist if symptoms are urgent or rapidly spreading.",
+            "follow_up": ["Can you retry later or upload a clear leaf image for diagnosis fallback?"],
+        },
+        "fr": {
+            "issue": "Notre assistant conversationnel est temporairement indisponible.",
+            "why": ["Le service de langage est actuellement hors ligne."],
+            "check": ["Veuillez reessayer dans quelques minutes."],
+            "safe": ["Evitez les traitements risqués jusqu'au retour du service."],
+            "call": "Contactez votre agronome si les symptomes sont urgents ou s'aggravent vite.",
+            "follow_up": ["Pouvez-vous reessayer plus tard ou envoyer une photo claire de feuille ?"],
+        },
+        "ar": {
+            "issue": "مساعد الدردشة غير متاح مؤقتا.",
+            "why": ["خدمة اللغة متوقفة حاليا."],
+            "check": ["يرجى المحاولة مرة اخرى بعد بضع دقائق."],
+            "safe": ["تجنب اي علاج عالي المخاطر حتى عودة الخدمة."],
+            "call": "تواصل مع المهندس الزراعي اذا كانت الاعراض عاجلة او تنتشر بسرعة.",
+            "follow_up": ["هل يمكنك المحاولة لاحقا او رفع صورة ورقة واضحة؟"],
+        },
+    }[language]
+    return DiagnosisResponse(
+        probable_issue=data["issue"],
+        confidence_band="low",
+        alternative_causes=[],
+        why_it_thinks_that=data["why"],
+        what_to_check_next=data["check"],
+        urgency="low",
+        safe_actions=data["safe"],
+        when_to_call_agronomist=data["call"],
+        recommended_followup_questions=data["follow_up"],
+        language=language,
+        model_trace_summary="llm_unavailable_text_chat",
+        matched_category=None,
+        matched_subcategory=None,
+        response_source="fallback",
+        fallback_reason="llm_unavailable",
+        evidence_sources=[],
+        classifier_debug=None,
+    )
+
+
+def _hide_debug_fields(response: DiagnosisResponse) -> DiagnosisResponse:
+    if DEBUG_MODE:
+        return response
+    return response.model_copy(
+        update={
+            "classifier_debug": None,
+            "model_trace_summary": "",
+        }
+    )
+
+
+def _conversation_fallback(response: DiagnosisResponse) -> DiagnosisResponse:
+    issue = str(response.probable_issue or "").strip()
+    check_hint = response.what_to_check_next[0] if response.what_to_check_next else ""
+    action_hint = response.safe_actions[0] if response.safe_actions else ""
+    call_hint = str(response.when_to_call_agronomist or "").strip()
+
+    if response.language == "fr":
+        text = issue or "Je ne suis pas certain du diagnostic avec les elements actuels."
+        if check_hint:
+            text += f" Commencez par: {check_hint}."
+        if action_hint:
+            text += f" Ensuite: {action_hint}."
+        if call_hint:
+            text += f" Si aggravation: {call_hint}"
+    elif response.language == "ar":
+        text = issue or "لست متأكدا من التشخيص بالمعطيات الحالية."
+        if check_hint:
+            text += f" ابدأ ب: {check_hint}."
+        if action_hint:
+            text += f" ثم: {action_hint}."
+        if call_hint:
+            text += f" وعند التدهور: {call_hint}"
+    else:
+        text = issue or "I am not fully certain from the current evidence."
+        if check_hint:
+            text += f" Start with: {check_hint}."
+        if action_hint:
+            text += f" Then: {action_hint}."
+        if call_hint:
+            text += f" If it worsens: {call_hint}"
+
+    return response.model_copy(update={"probable_issue": text})
+
+
+def _finalize_chatbot_response(
+    payload: DiagnosisRequest,
+    language: str,
+    fallback: DiagnosisResponse,
+    retrieved_top1: list[RetrievedCase],
+    has_image: bool,
+    session_id: str,
+    conversation_history: list[dict[str, str]],
+    user_message: str,
+) -> DiagnosisResponse:
+    if not llm_is_available():
+        if not has_image:
+            response = _chat_service_unavailable_response(language)
+        else:
+            response = _conversation_fallback(fallback).model_copy(
+                update={"response_source": "fallback", "fallback_reason": "llm_unavailable"}
+            )
+    else:
+        response = maybe_generate_grounded_response(
+            payload=payload,
+            fallback=fallback,
+            retrieved=retrieved_top1[:1],
+            evidence_sources=fallback.evidence_sources,
+            classifier_trace=fallback.model_trace_summary,
+            language=language,
+            conversation_history=conversation_history,
+        )
+        if not getattr(response, "response_source", ""):
+            response = response.model_copy(update={"response_source": "llm", "fallback_reason": None})
+
+    cleaned = _hide_debug_fields(response)
+    with_session = cleaned.model_copy(update={"session_id": session_id or None})
+    assistant_summary = with_session.probable_issue
+    if with_session.why_it_thinks_that:
+        assistant_summary = f"{assistant_summary} | {with_session.why_it_thinks_that[0]}"
+    entry_id = retrieved_top1[0].entry.id if retrieved_top1 else None
+    append_turn(
+        session_id,
+        user_message,
+        assistant_summary,
+        entry_id=entry_id,
+        category=with_session.matched_category,
+        language=with_session.language,
+    )
+    return with_session
+
+
 def _build_entry_response(
     entry: KnowledgeEntry,
     retrieved: list[RetrievedCase],
@@ -280,7 +458,15 @@ def _build_entry_response(
 def build_diagnosis(payload: DiagnosisRequest) -> DiagnosisResponse:
     language = resolve_language(payload.language)
     has_image = bool(payload.image_base64 or payload.image_path or payload.image_urls)
+    session_id = ensure_session(payload.session_id)
+    conversation_history = get_conversation_history(session_id)
+    last_turn = get_last_turn(session_id)
+    memory_hint = build_memory_hint(session_id)
     base_text = " ".join([payload.farmer_note, *payload.observed_symptoms]).strip()
+    query_text = base_text
+    if memory_hint and _looks_context_dependent(base_text):
+        query_text = f"{base_text} {memory_hint}".strip()
+    user_memory_message = base_text if not has_image else f"{base_text} [image]"
 
     if has_image:
         prediction = predict_from_request(payload)
@@ -296,34 +482,95 @@ def build_diagnosis(payload: DiagnosisRequest) -> DiagnosisResponse:
             )
 
             if gated_label == "healthy" and prediction.score >= HEALTHY_HIGH_CONF_THRESHOLD:
-                return _healthy_response(language, trace, classifier_debug)
+                fallback = _healthy_response(language, trace, classifier_debug)
+                return _finalize_chatbot_response(
+                    payload, language, fallback, [], has_image=True, session_id=session_id, conversation_history=conversation_history, user_message=user_memory_message
+                )
 
             mapping = get_classifier_mapping(gated_label) or {}
             prefixes = tuple(mapping.get("knowledge_prefixes", []))
             if prefixes and prediction.score >= LOW_CONF_THRESHOLD:
                 direct = _select_cases_from_prefixes(prefixes, top_k=3)
                 if direct:
-                    return _build_entry_response(direct[0].entry, direct, language, trace, classifier_debug)
+                    fallback = _build_entry_response(direct[0].entry, direct, language, trace, classifier_debug)
+                    return _finalize_chatbot_response(
+                        payload,
+                        language,
+                        fallback,
+                        [direct[0]],
+                        has_image=True,
+                        session_id=session_id,
+                        conversation_history=conversation_history,
+                        user_message=user_memory_message,
+                    )
 
             vision_desc = describe_leaf_image(payload, language)
-            desc_query = f"{base_text} {vision_desc or ''}".strip()
+            desc_query = f"{query_text} {vision_desc or ''}".strip()
             retrieved = retrieve_cases(desc_query)
             if retrieved:
-                return _build_entry_response(
+                fallback = _build_entry_response(
                     retrieved[0].entry,
                     retrieved,
                     language,
                     f"{trace} fallback=vision_description_retrieval; vision_description={vision_desc or 'none'}.",
                     classifier_debug,
                 )
-            return _fallback_response(
+                return _finalize_chatbot_response(
+                    payload,
+                    language,
+                    fallback,
+                    [retrieved[0]],
+                    has_image=True,
+                    session_id=session_id,
+                    conversation_history=conversation_history,
+                    user_message=user_memory_message,
+                )
+            fallback = _fallback_response(
                 language,
                 f"{trace} fallback=vision_description_retrieval_no_match; vision_description={vision_desc or 'none'}.",
                 classifier_debug,
                 note="No knowledge match.",
             )
+            return _finalize_chatbot_response(
+                payload, language, fallback, [], has_image=True, session_id=session_id, conversation_history=conversation_history, user_message=user_memory_message
+            )
 
-    retrieved = retrieve_cases(base_text)
+    if _looks_context_dependent(base_text) and not _is_explicit_topic_shift(base_text):
+        entry_id = str((last_turn or {}).get("entry_id") or "").strip()
+        anchored = _select_case_by_entry_id(entry_id)
+        if anchored:
+            fallback = _build_entry_response(
+                anchored[0].entry,
+                anchored,
+                language,
+                "text-only follow-up path anchored to previous diagnosis.",
+                None,
+            )
+            return _finalize_chatbot_response(
+                payload,
+                language,
+                fallback,
+                anchored,
+                has_image=False,
+                session_id=session_id,
+                conversation_history=conversation_history,
+                user_message=user_memory_message,
+            )
+
+    retrieved = retrieve_cases(query_text)
     if retrieved:
-        return _build_entry_response(retrieved[0].entry, retrieved, language, "text-only retrieval path.", None)
-    return _fallback_response(language, "text-only retrieval path; no match.", None)
+        fallback = _build_entry_response(retrieved[0].entry, retrieved, language, "text-only retrieval path.", None)
+        return _finalize_chatbot_response(
+            payload,
+            language,
+            fallback,
+            [retrieved[0]],
+            has_image=False,
+            session_id=session_id,
+            conversation_history=conversation_history,
+            user_message=user_memory_message,
+        )
+    fallback = _fallback_response(language, "text-only retrieval path; no match.", None)
+    return _finalize_chatbot_response(
+        payload, language, fallback, [], has_image=False, session_id=session_id, conversation_history=conversation_history, user_message=user_memory_message
+    )
