@@ -1,4 +1,4 @@
-﻿import { API_BASE } from "./config.js";
+import { API_BASE } from "./config.js";
 import { authHeaders, clearSession } from "./session.js";
 
 function extractUploadErrorMessage(err, fallbackMessage) {
@@ -23,7 +23,7 @@ export async function uploadImageFile(file, { endpoint = "/uploads/image", filen
 
   if (response.status === 401 || response.status === 403) {
     clearSession();
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return null;
   }
 
@@ -34,3 +34,5 @@ export async function uploadImageFile(file, { endpoint = "/uploads/image", filen
 
   return String(data?.url || "").trim() || null;
 }
+
+

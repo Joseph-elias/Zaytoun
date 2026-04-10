@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession } from "./session.js";
 
@@ -23,7 +23,7 @@ async function requestJson(url, options = {}) {
   const response = await fetch(url, { headers: authHeaders(), ...options });
   if (response.status === 401 || response.status === 403) {
     clearSession();
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return null;
   }
 
@@ -196,4 +196,6 @@ if (seasonForm?.elements?.season_year) {
 }
 
 fetchLandPieces();
+
+
 

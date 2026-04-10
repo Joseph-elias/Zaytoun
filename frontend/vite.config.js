@@ -1,4 +1,4 @@
-﻿import { resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { defineConfig } from "vite";
 
@@ -11,7 +11,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, "index.html"),
-        login: resolve(__dirname, "login.html"),
         signup: resolve(__dirname, "signup.html"),
         register: resolve(__dirname, "register.html"),
         myProfiles: resolve(__dirname, "my-profiles.html"),
@@ -26,3 +25,4 @@ export default defineConfig({
     },
   },
 });
+

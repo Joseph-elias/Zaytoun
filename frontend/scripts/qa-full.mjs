@@ -1,4 +1,4 @@
-﻿import { chromium } from "playwright";
+import { chromium } from "playwright";
 
 const API = "http://127.0.0.1:8000";
 const WEB = "http://127.0.0.1:5173";
@@ -61,7 +61,7 @@ assert(land.ok, `land piece create failed: ${land.status}`);
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 
-await page.goto(`${WEB}/login.html`);
+await page.goto(`${WEB}/index.html`);
 await page.evaluate((s) => localStorage.setItem("worker_radar_session", JSON.stringify(s)), session);
 await page.goto(`${WEB}/olive-season.html`, { waitUntil: "networkidle" });
 await page.fill('#olive-season-form input[name="season_year"]', '2025');
@@ -181,13 +181,13 @@ await page.fill('#budget-oil-tank-price', '100');
 const saveBtn = page.locator('#save-oil-tank-price-btn');
 await saveBtn.click();
 await waitForText(saveBtn, /Saving|Loading/i, 2000);
-await waitForText(saveBtn, /Done ✓/i, 5000);
+await waitForText(saveBtn, /Done ?/i, 5000);
 
 page.once('dialog', (d) => d.accept());
 const delBtn = page.locator('#delete-oil-tank-price-btn');
 await delBtn.click();
 await waitForText(delBtn, /Deleting|Loading/i, 2000);
-await waitForText(delBtn, /Done ✓/i, 5000);
+await waitForText(delBtn, /Done ?/i, 5000);
 
 // 6) Sales guard via API: cannot sell more than remaining
 const badSale = await api('/olive-sales', {
@@ -199,3 +199,5 @@ assert(!badSale.ok && badSale.status === 400, `expected bad sale 400, got ${badS
 
 console.log('QA_FULL_PASS');
 await browser.close();
+
+

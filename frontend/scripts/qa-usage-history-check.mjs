@@ -1,4 +1,4 @@
-﻿import { chromium } from "playwright";
+import { chromium } from "playwright";
 
 const API='http://127.0.0.1:8000';
 const WEB='http://127.0.0.1:5173';
@@ -15,7 +15,7 @@ const seasonId=season.body.id;
 
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage();
-await page.goto(`${WEB}/login.html`);
+await page.goto(`${WEB}/index.html`);
 await page.evaluate((sess)=>localStorage.setItem('worker_radar_session', JSON.stringify(sess)), s);
 await page.goto(`${WEB}/olive-season.html`,{waitUntil:'networkidle'});
 await page.click('#olive-mode-usage');
@@ -30,3 +30,5 @@ await page.waitForTimeout(2500);
 const txt = await page.$eval('#usage-history-list', el => el.innerText);
 console.log(txt);
 await browser.close();
+
+

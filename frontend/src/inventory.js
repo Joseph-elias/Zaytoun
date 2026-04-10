@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
@@ -52,7 +52,7 @@ if (isEmbedded) {
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function setMessage(text, ok = true) {
@@ -79,7 +79,7 @@ async function requestJson(url, options = {}) {
   const response = await fetch(url, { headers: authHeaders(), ...options });
   if (response.status === 401 || response.status === 403) {
     clearSession();
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return null;
   }
 
@@ -295,4 +295,6 @@ refreshItemsBtn.addEventListener("click", loadData);
 loadData().catch((error) => {
   inventoryKpis.innerHTML = `<p class="message error">${error.message || "Could not load inventory"}</p>`;
 });
+
+
 

@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { initLocationPicker } from "./location-picker.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
@@ -71,7 +71,7 @@ if (session?.user?.latitude !== null && session?.user?.longitude !== null) {
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function setMessage(text, ok = true) {
@@ -223,7 +223,7 @@ form.addEventListener("submit", async (event) => {
         const err = await response.json().catch(() => ({}));
         if (response.status === 401) {
           clearSession();
-          window.location.href = "./login.html";
+          window.location.href = "./index.html";
           return;
         }
         throw new Error(err?.detail || "You do not have permission for this action.");
@@ -246,6 +246,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 renderAvailabilityPanel();
+
+
 
 
 

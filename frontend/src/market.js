@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireAuth, roleHome } from "./session.js";
 import { uploadImageFile } from "./upload.js";
@@ -88,7 +88,7 @@ installFoldToggle(listingToggleBtn, listingContent);
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function setFormMessage(text, ok = true) {
@@ -177,13 +177,13 @@ function quantityText(value, unitLabel) {
 function starsText(value) {
   const rating = Number(value || 0);
   if (!rating || rating < 1) return "No ratings yet";
-  return "★".repeat(rating) + "☆".repeat(Math.max(0, 5 - rating));
+  return "?".repeat(rating) + "?".repeat(Math.max(0, 5 - rating));
 }
 
 function ratingLabel(avg, count) {
   const safeCount = Number(count || 0);
   if (!safeCount || avg === null || avg === undefined) return "No ratings yet";
-  return `${Number(avg).toFixed(1)} ★ (${safeCount})`;
+  return `${Number(avg).toFixed(1)} ? (${safeCount})`;
 }
 
 function findInventoryItemById(itemId) {
@@ -224,7 +224,7 @@ async function requestJson(url, options = {}) {
   const response = await fetch(url, { headers: authHeaders(), ...options });
   if (response.status === 401 || response.status === 403) {
     clearSession();
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return null;
   }
   if (!response.ok) {
@@ -740,7 +740,7 @@ function orderCard(order) {
                  <p class="sub"><strong>Product Rating</strong></p>
                  <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="product">
                    ${[1, 2, 3, 4, 5]
-                     .map((value) => `<button class="star-btn ${Number(order.product_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="product" aria-label="${value} product stars">${Number(order.product_rating || 0) >= value ? "★" : "☆"}</button>`)
+                     .map((value) => `<button class="star-btn ${Number(order.product_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="product" aria-label="${value} product stars">${Number(order.product_rating || 0) >= value ? "?" : "?"}</button>`)
                      .join("")}
                  </div>
                  <input type="hidden" name="product_rating" value="${order.product_rating || ""}" />
@@ -751,7 +751,7 @@ function orderCard(order) {
                  <p class="sub"><strong>Market/Store Rating</strong></p>
                  <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="market">
                    ${[1, 2, 3, 4, 5]
-                     .map((value) => `<button class="star-btn ${Number(order.market_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="market" aria-label="${value} market stars">${Number(order.market_rating || 0) >= value ? "★" : "☆"}</button>`)
+                     .map((value) => `<button class="star-btn ${Number(order.market_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="market" aria-label="${value} market stars">${Number(order.market_rating || 0) >= value ? "?" : "?"}</button>`)
                      .join("")}
                  </div>
                  <input type="hidden" name="market_rating" value="${order.market_rating || ""}" />
@@ -1367,7 +1367,7 @@ marketOrdersList.addEventListener("click", async (event) => {
     stars.forEach((btn) => {
       const val = Number(btn.dataset.starValue || 0);
       btn.classList.toggle("is-on", val <= rating);
-      btn.textContent = val <= rating ? "★" : "☆";
+      btn.textContent = val <= rating ? "?" : "?";
     });
     return;
   }
@@ -1415,6 +1415,8 @@ refreshOrdersBtn?.addEventListener("click", loadOrders);
 Promise.all([loadMarketItems(), loadOrders(), isFarmer ? loadStoreProfile() : Promise.resolve()]).catch((error) => {
   marketItemsList.innerHTML = `<p class="message error">${escapeHtml(error.message || "Could not load market")}</p>`;
 });
+
+
 
 
 

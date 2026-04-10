@@ -2,6 +2,10 @@
 
 Zaytoun is a production-minded agricultural platform that unifies workforce operations, olive farm management, digital commerce, and AI-assisted disease support in one system.
 
+## Product Preview
+
+![Zaytoun Landing Page](assets/landing-marketing.jpeg)
+
 ## My Why
 
 This platform was built from my love for my land, shaped by my real experience as a farmer, and driven by the urgent need for digitization in agriculture. I created Zaytoun to bring practical, modern tools to farmers and agricultural workers, so daily operations become easier, decisions become smarter, and rural work gains the efficiency and visibility it deserves.

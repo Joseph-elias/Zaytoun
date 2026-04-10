@@ -1,4 +1,4 @@
-﻿import { chromium } from "playwright";
+import { chromium } from "playwright";
 
 const API = "http://127.0.0.1:8000";
 const WEB = "http://127.0.0.1:5173";
@@ -51,7 +51,7 @@ const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext();
 const page = await context.newPage();
 
-await page.goto(`${WEB}/login.html`);
+await page.goto(`${WEB}/index.html`);
 await page.evaluate((sess) => {
   localStorage.setItem("worker_radar_session", JSON.stringify(sess));
 }, session);
@@ -70,7 +70,7 @@ await page.fill('#olive-season-form input[name="tanks_taken_home_20l"]', '6');
 const saveSeasonBtn = page.locator('#olive-season-form button[type="submit"]');
 await saveSeasonBtn.click();
 await expectTextSoon(saveSeasonBtn, /Saving|Loading/, 1500);
-await expectTextSoon(saveSeasonBtn, /Done ✓/, 3000);
+await expectTextSoon(saveSeasonBtn, /Done ?/, 3000);
 
 // Open budgeting tab and test Save price
 await page.click('#olive-mode-budget');
@@ -89,21 +89,21 @@ await page.fill('#budget-oil-tank-price', '130');
 const savePriceBtn = page.locator('#save-oil-tank-price-btn');
 await savePriceBtn.click();
 await expectTextSoon(savePriceBtn, /Saving|Loading/, 1500);
-await expectTextSoon(savePriceBtn, /Done ✓/, 3000);
+await expectTextSoon(savePriceBtn, /Done ?/, 3000);
 
 // Delete single price
 page.once('dialog', (dialog) => dialog.accept());
 const deletePriceBtn = page.locator('#delete-oil-tank-price-btn');
 await deletePriceBtn.click();
 await expectTextSoon(deletePriceBtn, /Deleting|Loading/, 1500);
-await expectTextSoon(deletePriceBtn, /Done ✓/, 3000);
+await expectTextSoon(deletePriceBtn, /Done ?/, 3000);
 
 // Clear all prices (Delete action)
 page.once('dialog', (dialog) => dialog.accept());
 const clearAllBtn = page.locator('#clear-all-oil-tank-prices-btn');
 await clearAllBtn.click();
 await expectTextSoon(clearAllBtn, /Clearing|Loading/, 1500);
-await expectTextSoon(clearAllBtn, /Done ✓/, 3000);
+await expectTextSoon(clearAllBtn, /Done ?/, 3000);
 
 // Season delete flow (Delete)
 await page.click('#olive-mode-season');
@@ -113,7 +113,7 @@ page.once('dialog', (dialog) => dialog.accept());
 const deleteSeasonBtn = page.locator('#delete-season-btn');
 await deleteSeasonBtn.click();
 await expectTextSoon(deleteSeasonBtn, /Deleting|Loading/, 1500);
-await expectTextSoon(deleteSeasonBtn, /Done ✓/, 3000);
+await expectTextSoon(deleteSeasonBtn, /Done ?/, 3000);
 
 console.log('UI_FEEDBACK_SMOKE_PASS');
 
@@ -129,3 +129,5 @@ async function expectTextSoon(locator, regex, timeoutMs) {
   const finalText = (await locator.innerText().catch(() => '')).trim();
   throw new Error(`Expected ${regex} within ${timeoutMs}ms, got "${finalText}"`);
 }
+
+

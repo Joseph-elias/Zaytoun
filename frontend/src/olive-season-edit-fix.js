@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession } from "./session.js";
 
@@ -98,7 +98,7 @@ async function requestJson(url, options = {}) {
   const response = await fetch(url, { headers: authHeaders(), ...options });
   if (response.status === 401 || response.status === 403) {
     clearSession();
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return null;
   }
   if (!response.ok) {
@@ -270,7 +270,7 @@ function setActionButtonBusy(button, label) {
   button.textContent = label;
 }
 
-function setActionButtonDone(button, label = "Done ✓") {
+function setActionButtonDone(button, label = "Done ?") {
   if (!button) return;
   button.classList.remove("is-loading", "is-error");
   button.classList.add("is-done");
@@ -646,6 +646,8 @@ usageHistoryList?.addEventListener("submit", async (event) => {
 });
 
 window.setTimeout(loadUsageHistory, 700);
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
@@ -24,7 +24,7 @@ if (session && appTabs) {
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function normalizeStatus(status) {
@@ -257,7 +257,7 @@ async function renderChat(bookingId, container) {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     if (!response.ok) throw new Error("Could not load conversation");
@@ -372,7 +372,7 @@ async function fetchMine() {
     const response = await fetch(`${API_BASE}/workers`, { headers: authHeaders() });
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     if (!response.ok) throw new Error("Could not load profiles");
@@ -396,7 +396,7 @@ async function fetchRequests() {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     if (!response.ok) throw new Error("Could not load booking requests");
@@ -487,7 +487,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
 
       if (response.status === 401 || response.status === 403) {
         clearSession();
-        window.location.href = "./login.html";
+        window.location.href = "./index.html";
         return;
       }
       if (!response.ok) {
@@ -550,7 +550,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
 
         if (response.status === 401 || response.status === 403) {
           clearSession();
-          window.location.href = "./login.html";
+          window.location.href = "./index.html";
           return;
         }
         if (!response.ok) {
@@ -597,7 +597,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
 
       if (response.status === 401 || response.status === 403) {
         clearSession();
-        window.location.href = "./login.html";
+        window.location.href = "./index.html";
         return;
       }
       if (!response.ok) {
@@ -653,7 +653,7 @@ bookingRequestsList.addEventListener("submit", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     if (!response.ok) {
@@ -706,7 +706,7 @@ listEl.addEventListener("click", async (event) => {
 
       if (response.status === 401 || response.status === 403) {
         clearSession();
-        window.location.href = "./login.html";
+        window.location.href = "./index.html";
         return;
       }
 
@@ -741,7 +741,7 @@ listEl.addEventListener("click", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -796,7 +796,7 @@ listEl.addEventListener("submit", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -819,6 +819,8 @@ refreshRequestsBtn.addEventListener("click", fetchRequests);
 refreshScheduleBtn.addEventListener("click", fetchRequests);
 fetchRequests();
 fetchMine();
+
+
 
 
 

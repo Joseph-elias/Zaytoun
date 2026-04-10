@@ -49,7 +49,7 @@ if (session && appTabs) {
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function money(value) {
@@ -481,7 +481,7 @@ async function fetchWorkers() {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -511,7 +511,7 @@ async function fetchDateCapacity(workerId, workDate) {
 
   if (response.status === 401 || response.status === 403) {
     clearSession();
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return null;
   }
   if (!response.ok) return null;
@@ -664,7 +664,7 @@ listEl.addEventListener("click", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -755,7 +755,7 @@ listEl.addEventListener("submit", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -785,6 +785,8 @@ fetchFarmerSeasons().then(fetchWorkers);
 window.addEventListener("beforeunload", () => {
   if (weatherRefreshTimerId) window.clearInterval(weatherRefreshTimerId);
 });
+
+
 
 
 

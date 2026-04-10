@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireAuth } from "./session.js";
 
@@ -24,7 +24,7 @@ if (session && appTabs) {
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function setMessage(text, ok = true) {
@@ -55,7 +55,7 @@ deleteForm.addEventListener("submit", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -71,4 +71,6 @@ deleteForm.addEventListener("submit", async (event) => {
     setMessage(error.message || "Could not delete account", false);
   }
 });
+
+
 

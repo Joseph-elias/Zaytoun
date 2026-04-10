@@ -1,4 +1,4 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { authHeaders, clearSession, renderAppTabs, requireRole } from "./session.js";
 
@@ -23,7 +23,7 @@ if (session && appTabs) {
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function normalizeStatus(status) {
@@ -212,7 +212,7 @@ async function renderChat(bookingId, container) {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     if (!response.ok) throw new Error("Could not load conversation");
@@ -259,7 +259,7 @@ async function fetchBookings() {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
 
@@ -324,7 +324,7 @@ bookingsList.addEventListener("click", async (event) => {
 
       if (response.status === 401 || response.status === 403) {
         clearSession();
-        window.location.href = "./login.html";
+        window.location.href = "./index.html";
         return;
       }
       if (!response.ok) {
@@ -386,7 +386,7 @@ bookingsList.addEventListener("click", async (event) => {
 
         if (response.status === 401 || response.status === 403) {
           clearSession();
-          window.location.href = "./login.html";
+          window.location.href = "./index.html";
           return;
         }
         if (!response.ok) {
@@ -433,7 +433,7 @@ bookingsList.addEventListener("click", async (event) => {
 
       if (response.status === 401 || response.status === 403) {
         clearSession();
-        window.location.href = "./login.html";
+        window.location.href = "./index.html";
         return;
       }
       if (!response.ok) {
@@ -466,7 +466,7 @@ bookingsList.addEventListener("click", async (event) => {
 
       if (response.status === 401 || response.status === 403) {
         clearSession();
-        window.location.href = "./login.html";
+        window.location.href = "./index.html";
         return;
       }
       if (!response.ok) {
@@ -522,7 +522,7 @@ bookingsList.addEventListener("submit", async (event) => {
 
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     if (!response.ok) {
@@ -544,6 +544,8 @@ filtersForm.addEventListener("submit", (event) => {
 
 refreshBtn.addEventListener("click", fetchBookings);
 fetchBookings();
+
+
 
 
 

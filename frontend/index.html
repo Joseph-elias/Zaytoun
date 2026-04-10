@@ -1,12 +1,112 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=/login.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Worker Radar</title>
+    <title>Zaytoun | Smart Agriculture Platform</title>
+    <meta
+      name="description"
+      content="Zaytoun digitizes olive-farm operations, workforce coordination, market workflows, and AI-assisted support."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/design-system.css" />
   </head>
-  <body>
-    <p>Redirecting to <a href="/login.html">Login</a>...</p>
+  <body class="landing-body">
+    <main class="landing-shell">
+      <section class="landing-hero-frame reveal-prep">
+        <div class="landing-overlay"></div>
+
+        <header class="landing-brand-row">
+          <a class="landing-brand" href="./index.html" aria-label="Zaytoun Home">
+            <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
+          </a>
+        </header>
+
+        <div class="landing-main-grid">
+          <section class="landing-login-panel">
+            <h2>Log In</h2>
+            <form id="landing-login-form" class="landing-login-form">
+              <label>
+                <span>Email</span>
+                <input name="phone" placeholder="Phone number" required minlength="4" />
+              </label>
+              <label>
+                <span>Password</span>
+                <input name="password" type="password" placeholder="Password" required minlength="6" />
+              </label>
+              <div class="landing-login-row">
+                <label class="landing-remember">
+                  <input type="checkbox" name="remember" checked />
+                  <span>Remember me</span>
+                </label>
+                <a href="./index.html">Forgot password?</a>
+              </div>
+              <button class="btn landing-login-btn" type="submit">Log In</button>
+            </form>
+            <p id="landing-login-message" class="message"></p>
+            <p class="landing-login-switch">
+              Don't have an account?
+              <a href="./signup.html">Sign Up</a>
+            </p>
+          </section>
+
+          <section class="landing-copy-block">
+            <h1>Welcome to Zaytoun</h1>
+            <p class="landing-subtitle">Digitizing Agriculture for Smarter Farming</p>
+            <p>
+              Zaytoun is a unified platform for olive farm management, workforce coordination,
+              digital marketplace, and AI-assisted disease support - built to make farming more
+              efficient and productive.
+            </p>
+          </section>
+        </div>
+
+        <section class="landing-features" aria-label="Platform features">
+          <article class="landing-feature-pill">
+            <span class="landing-feature-icon">WO</span>
+            <div>
+              <h3>Workforce Operations</h3>
+              <p>Coordinate tasks and streamline labor.</p>
+            </div>
+          </article>
+          <article class="landing-feature-pill">
+            <span class="landing-feature-icon">OF</span>
+            <div>
+              <h3>Olive Farm</h3>
+              <p>Manage olive seasons and inventory.</p>
+            </div>
+          </article>
+          <article class="landing-feature-pill">
+            <span class="landing-feature-icon">DC</span>
+            <div>
+              <h3>Digital Commerce</h3>
+              <p>Market and sell your olive products.</p>
+            </div>
+          </article>
+          <article class="landing-feature-pill">
+            <span class="landing-feature-icon">AI</span>
+            <div>
+              <h3>AI-Assisted Support</h3>
+              <p>Get smart recommendations for your farm.</p>
+            </div>
+          </article>
+        </section>
+
+        <p class="landing-bottom-signup">
+          Don't have an account?
+          <a href="./signup.html">Sign Up</a>
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="./src/landing.js"></script>
   </body>
 </html>
+
+

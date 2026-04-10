@@ -3,51 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Worker Radar | Create Account</title>
+    <title>Zaytoun | Create Account</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/design-system.css" />
   </head>
-  <body>
-    <div class="backdrop"></div>
-    <main class="page auth-page">
-      <section class="card auth-card">
-        <p class="eyebrow">Worker Radar</p>
-        <h1>Create Account</h1>
-        <p class="sub">Choose your role: worker, farmer, or customer.</p>
-        <form id="register-user-form" class="form-grid">
-          <label>Full Name<input name="full_name" required minlength="2" /></label>
-          <label>Phone<input name="phone" required minlength="4" /></label>
-          <label>Role
-            <select name="role" required>
-              <option value="worker">Worker</option>
-              <option value="farmer">Farmer</option>
-              <option value="customer">Customer</option>
-            </select>
-          </label>
-          <label>Password<input name="password" type="password" required minlength="6" /></label>
+  <body class="signup-scenic-body">
+    <main class="signup-scenic-shell">
+      <section class="signup-scenic-frame reveal-prep">
+        <div class="signup-scenic-overlay"></div>
 
-          <fieldset class="full availability-panel">
-            <legend>Account Location</legend>
-            <div class="actions-row">
-              <button class="btn ghost" id="account-use-my-location-btn" type="button">Use My Live Location</button>
+        <header class="signup-brand-row">
+          <a class="signup-brand" href="./index.html" aria-label="Zaytoun Home">
+            <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
+          </a>
+        </header>
+
+        <section class="signup-card">
+          <h1>Create Account</h1>
+          <p class="signup-sub">Choose your role: worker, farmer, or customer.</p>
+
+          <form id="register-user-form" class="signup-form">
+            <div class="signup-grid-two">
+              <label>Full Name<input name="full_name" required minlength="2" /></label>
+              <label>Phone<input name="phone" required minlength="4" /></label>
+              <label>Role
+                <select name="role" required>
+                  <option value="worker">Worker</option>
+                  <option value="farmer">Farmer</option>
+                  <option value="customer">Customer</option>
+                </select>
+              </label>
+              <label>Password<input name="password" type="password" required minlength="6" /></label>
             </div>
-            <label class="full">Address<input id="account-address" name="address" placeholder="Tap map or use live location" /></label>
-            <input id="account-latitude" name="latitude" type="hidden" />
-            <input id="account-longitude" name="longitude" type="hidden" />
-            <div id="account-location-map" class="map-picker"></div>
-          </fieldset>
 
-          <button class="btn full" type="submit">Create Account</button>
-        </form>
-        <p id="register-message" class="message"></p>
-        <p class="auth-switch">
-          Already have an account?
-          <a href="./login.html">Login</a>
-        </p>
+            <fieldset class="signup-location-panel">
+              <legend>Account Location</legend>
+              <div class="actions-row">
+                <button class="btn ghost" id="account-use-my-location-btn" type="button">Use My Live Location</button>
+              </div>
+              <label>Address<input id="account-address" name="address" placeholder="Enter your address or tap map to set your location" /></label>
+              <input id="account-latitude" name="latitude" type="hidden" />
+              <input id="account-longitude" name="longitude" type="hidden" />
+              <div id="account-location-map" class="map-picker signup-map"></div>
+            </fieldset>
+
+            <button class="btn signup-submit-btn" type="submit">Create Account</button>
+          </form>
+          <p id="register-message" class="message"></p>
+          <p class="auth-switch signup-switch">
+            Already have an account?
+            <a href="./index.html">Log in</a>
+          </p>
+        </section>
       </section>
     </main>
 
@@ -55,6 +66,5 @@
     <script type="module" src="./src/signup.js"></script>
   </body>
 </html>
-
 
 

@@ -1,4 +1,4 @@
-﻿import { API_BASE } from "./config.js";
+import { API_BASE } from "./config.js";
 
 const SESSION_KEY = "worker_radar_session";
 const ROLE_TABS = {
@@ -51,7 +51,7 @@ export function authHeaders(extra = {}) {
   };
 }
 
-export function requireAuth(redirect = "./login.html") {
+export function requireAuth(redirect = "./index.html") {
   const session = getSession();
   if (!session?.access_token || !session?.user?.role) {
     window.location.href = redirect;
@@ -80,7 +80,7 @@ export function roleHome(role) {
 
 export function redirectToRoleHome(session) {
   if (!session?.user?.role) {
-    window.location.href = "./login.html";
+    window.location.href = "./index.html";
     return;
   }
   window.location.href = roleHome(session.user.role);
@@ -167,3 +167,5 @@ export async function registerAccount(payload) {
 
   return response.json();
 }
+
+

@@ -1,4 +1,4 @@
-﻿# Worker Radar Frontend
+# Worker Radar Frontend
 
 Vite multi-page frontend for Worker Radar.
 
@@ -39,7 +39,7 @@ Vite multi-page frontend for Worker Radar.
 - Farmer home: `workers.html`
 - Customer home: `market.html`
 
-Unauthenticated users are redirected to `login.html`.
+Unauthenticated users are redirected to `index.html`.
 
 ## Local Run
 
@@ -81,3 +81,4 @@ Under `frontend/scripts/`:
 - `qa-usage-history-check.mjs`
 
 Run them against a live dev server on `127.0.0.1:5173`.
+

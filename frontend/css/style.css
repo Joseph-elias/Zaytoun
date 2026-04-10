@@ -1539,6 +1539,743 @@ body.image-fit-open {
   }
 }
 
+/* ===== Zaytoun Landing Page ===== */
+.landing-body {
+  min-height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  color: #f7f6ee;
+  background:
+    radial-gradient(1300px 560px at 5% -15%, rgba(126, 159, 79, .42), transparent 64%),
+    radial-gradient(1050px 440px at 102% 2%, rgba(230, 188, 102, .24), transparent 63%),
+    #152312;
+}
+
+.landing-shell {
+  min-height: 100dvh;
+  height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.landing-hero-frame {
+  position: relative;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background:
+    linear-gradient(106deg, rgba(14, 22, 11, .72) 0%, rgba(18, 29, 14, .52) 44%, rgba(49, 40, 20, .28) 100%),
+    url("../assets/landing-login-bg.png") center/cover no-repeat;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+}
+
+.landing-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(860px 340px at 87% 16%, rgba(251, 226, 147, .18), transparent 68%),
+    linear-gradient(96deg, rgba(10, 16, 8, .56) 0%, rgba(11, 18, 9, .38) 42%, rgba(11, 18, 9, .2) 100%);
+}
+
+.landing-brand-row {
+  position: relative;
+  z-index: 1;
+  padding: clamp(.75rem, 1.3vh, 1.2rem) clamp(1rem, 2.3vw, 2.2rem) .2rem;
+}
+
+.landing-brand {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.landing-brand img {
+  display: block;
+  width: clamp(190px, 18vw, 300px);
+  max-width: 62vw;
+  height: auto;
+  filter: brightness(1.28) contrast(1.05) drop-shadow(0 8px 20px rgba(8, 14, 7, .48));
+}
+
+.landing-main-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(.8rem, 1.2vw, 1.2rem);
+  padding: .25rem clamp(1rem, 2.3vw, 2.2rem) .1rem;
+  min-height: 0;
+  align-items: start;
+}
+
+.landing-login-panel {
+  width: min(100%, 340px);
+  padding: 1rem 1rem .92rem;
+  border-radius: 14px;
+  border: 1px solid rgba(201, 217, 167, .33);
+  background: linear-gradient(180deg, rgba(20, 30, 17, .68), rgba(15, 22, 12, .57));
+  backdrop-filter: blur(4px);
+  box-shadow: 0 14px 24px rgba(8, 13, 7, .38);
+  transform: translateY(-30px);
+}
+
+.landing-login-panel h2 {
+  margin: 0 0 .65rem;
+  font-size: clamp(1.55rem, 2.5vw, 1.95rem);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-weight: 800;
+  color: #f3f4eb;
+  letter-spacing: .01em;
+}
+
+.landing-login-form {
+  display: grid;
+  gap: .5rem;
+}
+
+.landing-login-form label {
+  display: grid;
+  gap: .27rem;
+}
+
+.landing-login-form label > span {
+  font-size: .84rem;
+  color: #d6e1be;
+  font-weight: 700;
+}
+
+.landing-login-form input[name="phone"],
+.landing-login-form input[type="password"] {
+  min-height: 38px;
+  border-radius: 9px;
+  border: 1px solid rgba(206, 220, 172, .56);
+  background: rgba(237, 245, 220, .13);
+  color: #f6faec;
+}
+
+.landing-login-form input::placeholder {
+  color: rgba(218, 229, 194, .72);
+}
+
+.landing-login-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .6rem;
+  font-size: .8rem;
+  margin-top: .1rem;
+}
+
+.landing-login-row a {
+  color: #d6e3bc;
+  text-decoration: none;
+}
+
+.landing-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: .32rem;
+  font-size: .8rem;
+}
+
+.landing-remember input {
+  min-height: 1rem;
+}
+
+.landing-login-btn.btn {
+  margin-top: .35rem;
+  padding: .5rem .82rem;
+  border-radius: 10px;
+  font-size: .98rem;
+  background: linear-gradient(180deg, #89a95f, #5a7439);
+  border: 1px solid rgba(208, 224, 173, .4);
+}
+
+.landing-login-switch {
+  margin: .58rem 0 0;
+  text-align: center;
+  font-size: .86rem;
+  color: #dfeacb;
+}
+
+.landing-login-switch a {
+  color: #f9f2df;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.landing-copy-block {
+  width: min(100%, 680px);
+  align-self: center;
+  padding: .1rem .2rem .2rem;
+}
+
+.landing-copy-block h1 {
+  margin: 0;
+  font-size: clamp(1.95rem, 3.8vw, 3.1rem);
+  color: #fbf7ea;
+  letter-spacing: .01em;
+  text-shadow: 0 3px 16px rgba(6, 10, 5, .3);
+}
+
+.landing-subtitle {
+  margin: .2rem 0 .95rem;
+  font-size: clamp(.96rem, 1.55vw, 1.5rem);
+  font-weight: 600;
+  color: #e6efd2;
+}
+
+.landing-copy-block p {
+  margin: 0;
+  max-width: 55ch;
+  color: #f3f7e7;
+  font-size: clamp(.92rem, 1.1vw, 1.03rem);
+  line-height: 1.58;
+  text-shadow: 0 1px 10px rgba(6, 10, 5, .32);
+}
+
+.landing-features {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(.35rem, .8vw, .62rem);
+  padding: clamp(.25rem, .8vh, .6rem) clamp(1rem, 2.3vw, 2.2rem) .02rem;
+  align-items: start;
+  margin-top: -8px;
+  margin-bottom: .75rem;
+}
+
+.landing-feature-pill {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .32rem;
+  align-items: start;
+  padding: .22rem .4rem;
+}
+
+.landing-feature-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(207, 222, 170, .58);
+  background: linear-gradient(160deg, rgba(128, 156, 84, .52), rgba(71, 95, 42, .52));
+  color: #f0f4e2;
+  font-size: .78rem;
+  letter-spacing: .03em;
+  font-weight: 800;
+  box-shadow: 0 10px 18px rgba(9, 14, 8, .32);
+  margin-bottom: .02rem;
+}
+
+.landing-feature-pill h3 {
+  margin: 0;
+  color: #f6f4ea;
+  font-size: .95rem;
+  font-weight: 700;
+}
+
+.landing-feature-pill p {
+  margin: .12rem 0 0;
+  color: #e5edd6;
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.landing-bottom-signup {
+  position: relative;
+  z-index: 1;
+  margin: .24rem 0 .38rem;
+  text-align: center;
+  font-size: clamp(.95rem, 1.35vw, 1.45rem);
+  color: #edf3de;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(6, 10, 5, .35);
+}
+
+.landing-bottom-signup a {
+  color: #faf3de;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.landing-body .message {
+  min-height: 1.15rem;
+  margin: .34rem 0 0;
+  color: #f1f6e3;
+}
+
+.landing-body .message.error {
+  color: #f4c6bd;
+}
+
+@media (min-width: 980px) {
+  .landing-main-grid {
+    grid-template-columns: minmax(320px, 360px) 1fr;
+    align-items: center;
+    min-height: clamp(260px, 41vh, 430px);
+    gap: clamp(1.1rem, 2vw, 1.9rem);
+    margin: 0;
+  }
+
+  .landing-features {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+    padding-top: .45rem;
+  }
+
+  .landing-feature-pill {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: .32rem;
+  }
+}
+
+@media (max-width: 979px) {
+  .landing-main-grid {
+    gap: .9rem;
+  }
+
+  .landing-copy-block {
+    padding-top: .2rem;
+  }
+
+  .landing-copy-block h1 {
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
+  }
+
+  .landing-subtitle {
+    font-size: clamp(.95rem, 4.3vw, 1.2rem);
+  }
+
+  .landing-bottom-signup {
+    margin-top: .25rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-height: 900px) {
+  .landing-brand-row {
+    padding-top: .45rem;
+    padding-bottom: .05rem;
+  }
+
+  .landing-brand img {
+    width: clamp(160px, 15vw, 230px);
+  }
+
+  .landing-main-grid {
+    padding-top: .05rem;
+    gap: .7rem;
+  }
+
+  .landing-login-panel {
+    width: min(100%, 310px);
+    padding: .78rem .8rem .74rem;
+    transform: translateY(-18px);
+  }
+
+  .landing-login-panel h2 {
+    font-size: 1.45rem;
+    margin-bottom: .42rem;
+  }
+
+  .landing-login-form {
+    gap: .34rem;
+  }
+
+  .landing-login-form input[name="phone"],
+  .landing-login-form input[type="password"] {
+    min-height: 34px;
+  }
+
+  .landing-login-row {
+    font-size: .73rem;
+  }
+
+  .landing-login-btn.btn {
+    font-size: .9rem;
+    padding-top: .42rem;
+    padding-bottom: .42rem;
+  }
+
+  .landing-login-switch {
+    font-size: .78rem;
+    margin-top: .42rem;
+  }
+
+  .landing-copy-block h1 {
+    font-size: clamp(1.45rem, 2.8vw, 2.2rem);
+  }
+
+  .landing-subtitle {
+    font-size: clamp(.83rem, 1.2vw, 1.05rem);
+    margin-bottom: .4rem;
+  }
+
+  .landing-copy-block p {
+    font-size: clamp(.79rem, .92vw, .9rem);
+    line-height: 1.42;
+  }
+
+  .landing-features {
+    gap: .15rem;
+    padding-top: .2rem;
+    margin-bottom: .5rem;
+  }
+
+  .landing-feature-pill {
+    padding-top: .08rem;
+    padding-bottom: .08rem;
+    grid-template-columns: 1fr;
+  }
+
+  .landing-feature-icon {
+    width: 38px;
+    height: 38px;
+    font-size: .62rem;
+  }
+
+  .landing-feature-pill h3 {
+    font-size: .8rem;
+  }
+
+  .landing-feature-pill p {
+    font-size: .72rem;
+    line-height: 1.25;
+    margin-top: .05rem;
+  }
+
+  .landing-bottom-signup {
+    font-size: clamp(.86rem, 1.1vw, 1rem);
+    margin-top: .02rem;
+    margin-bottom: .2rem;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 980px) {
+  .landing-main-grid {
+    min-height: 36vh;
+  }
+
+  .landing-copy-block p {
+    max-width: 52ch;
+  }
+
+  .landing-feature-pill p {
+    display: none;
+  }
+}
+
+/* ===== Scenic Signup ===== */
+.signup-scenic-body {
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  color: #f6f4ea;
+  background: #152312;
+}
+
+.signup-scenic-shell {
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.signup-scenic-frame {
+  position: relative;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background:
+    linear-gradient(108deg, rgba(18, 28, 14, .72) 0%, rgba(28, 38, 17, .38) 45%, rgba(73, 56, 20, .24) 100%),
+    url("../assets/landing-bg.png") center/cover no-repeat;
+}
+
+.signup-scenic-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 360px at 88% 18%, rgba(247, 213, 127, .2), transparent 66%),
+    linear-gradient(102deg, rgba(8, 14, 7, .72) 0%, rgba(9, 15, 7, .56) 45%, rgba(10, 15, 7, .36) 100%);
+}
+
+.signup-brand-row {
+  position: relative;
+  z-index: 1;
+  padding: clamp(.7rem, 1.4vh, 1.2rem) clamp(1rem, 2.1vw, 2rem) .28rem;
+}
+
+.signup-brand {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.signup-brand img {
+  display: block;
+  width: clamp(220px, 22vw, 320px);
+  max-width: 70vw;
+  height: auto;
+  filter: drop-shadow(0 10px 18px rgba(8, 12, 6, .5));
+}
+
+.signup-card {
+  position: relative;
+  z-index: 1;
+  width: min(700px, calc(100% - 2rem));
+  margin: 0 auto .08rem;
+  border-radius: 16px;
+  border: 1px solid rgba(208, 223, 173, .42);
+  background: linear-gradient(180deg, rgba(31, 39, 18, .66), rgba(22, 30, 14, .55));
+  backdrop-filter: blur(6px);
+  box-shadow: 0 18px 34px rgba(7, 11, 6, .5);
+  padding: clamp(.72rem, 1.4vw, 1.05rem);
+  align-self: start;
+  transform: translateY(-42px);
+}
+
+.signup-card h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  color: #fbf6e8;
+}
+
+.signup-sub {
+  margin: .14rem 0 .52rem;
+  color: #e8efd7;
+  font-size: clamp(.82rem, 1.1vw, .95rem);
+}
+
+.signup-form {
+  display: grid;
+  gap: .34rem;
+}
+
+.signup-grid-two {
+  display: grid;
+  gap: .32rem;
+  grid-template-columns: 1fr;
+}
+
+.signup-grid-two label,
+.signup-location-panel label {
+  display: grid;
+  gap: .26rem;
+  font-weight: 700;
+  color: #ebf2db;
+}
+
+.signup-grid-two input,
+.signup-grid-two select,
+.signup-location-panel input {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(204, 219, 166, .56);
+  background: rgba(243, 248, 232, .16);
+  color: #f5f9ea;
+}
+
+.signup-grid-two input::placeholder,
+.signup-location-panel input::placeholder {
+  color: rgba(219, 230, 195, .72);
+}
+
+.signup-grid-two input:focus,
+.signup-grid-two select:focus,
+.signup-location-panel input:focus {
+  border-color: rgba(204, 219, 166, .65);
+  box-shadow: 0 0 0 3px rgba(161, 191, 112, .2);
+}
+
+.signup-location-panel {
+  margin: 0;
+  border: 1px solid rgba(194, 210, 156, .44);
+  border-radius: 12px;
+  padding: .34rem .42rem .4rem;
+  background: rgba(23, 34, 14, .38);
+}
+
+.signup-location-panel legend {
+  padding: 0 .2rem;
+  color: #eef5dd;
+  font-weight: 800;
+}
+
+.signup-location-panel .actions-row {
+  margin-top: 0;
+  margin-bottom: .2rem;
+}
+
+.signup-location-panel .btn.ghost {
+  background: linear-gradient(180deg, rgba(241, 231, 152, .92), rgba(201, 186, 101, .88));
+  color: #2e351f;
+  border-color: rgba(212, 220, 159, .36);
+  box-shadow: 0 8px 14px rgba(14, 18, 8, .26);
+}
+
+.signup-map {
+  min-height: clamp(112px, 15.5vh, 170px);
+  border-radius: 10px;
+  border-color: rgba(194, 209, 157, .45);
+}
+
+.signup-submit-btn.btn {
+  width: 100%;
+  margin-top: .02rem;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(193, 205, 96, .9), rgba(130, 152, 55, .84));
+  color: #29301e;
+  border: 1px solid rgba(205, 221, 164, .35);
+  font-weight: 800;
+  padding-top: .44rem;
+  padding-bottom: .44rem;
+}
+
+.signup-scenic-body .message {
+  margin: .24rem 0 .08rem;
+  min-height: 1rem;
+  color: #e8f1d2;
+}
+
+.signup-scenic-body .message.error {
+  color: #f2c6bd;
+}
+
+.signup-switch {
+  margin: 0;
+  text-align: center;
+  color: #dce7c8;
+  font-size: .92rem;
+}
+
+.signup-switch a {
+  color: #fff5df;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (min-width: 880px) {
+  .signup-card {
+    margin-left: auto;
+    margin-right: auto;
+    width: min(700px, calc(100% - 4rem));
+  }
+
+  .signup-grid-two {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-height: 860px) {
+  .signup-brand-row {
+    padding-top: .45rem;
+    padding-bottom: .1rem;
+  }
+
+  .signup-brand img {
+    width: clamp(180px, 18vw, 250px);
+  }
+
+  .signup-card {
+    margin-top: .05rem;
+    margin-bottom: .06rem;
+    padding: .46rem .56rem;
+    transform: translateY(-28px);
+  }
+
+  .signup-card h1 {
+    font-size: clamp(1.28rem, 2vw, 1.65rem);
+  }
+
+  .signup-sub {
+    margin-bottom: .26rem;
+    font-size: .75rem;
+  }
+
+  .signup-grid-two input,
+  .signup-grid-two select,
+  .signup-location-panel input {
+    min-height: 30px;
+  }
+
+  .signup-map {
+    min-height: clamp(92px, 13.5vh, 128px);
+  }
+
+  .signup-submit-btn.btn {
+    padding-top: .36rem;
+    padding-bottom: .36rem;
+    font-size: .84rem;
+  }
+
+  .signup-form {
+    gap: .36rem;
+  }
+
+  .signup-grid-two {
+    gap: .32rem;
+  }
+
+  .signup-location-panel {
+    padding: .28rem .34rem .32rem;
+  }
+
+  .signup-scenic-body .message {
+    margin-top: .12rem;
+    min-height: .9rem;
+    font-size: .78rem;
+  }
+
+  .signup-switch {
+    font-size: .82rem;
+  }
+}
+
+@media (max-height: 760px) {
+  .signup-brand-row {
+    padding-top: .28rem;
+    padding-bottom: .02rem;
+  }
+
+  .signup-brand img {
+    width: clamp(150px, 14vw, 210px);
+  }
+
+  .signup-card {
+    width: min(670px, calc(100% - 1.4rem));
+    margin-top: .02rem;
+    margin-bottom: .03rem;
+    padding: .4rem .48rem;
+    transform: translateY(-34px);
+  }
+
+  .signup-card h1 {
+    font-size: clamp(1.1rem, 1.6vw, 1.32rem);
+  }
+
+  .signup-sub {
+    font-size: .69rem;
+    margin-bottom: .2rem;
+  }
+
+  .signup-grid-two input,
+  .signup-grid-two select,
+  .signup-location-panel input {
+    min-height: 28px;
+  }
+
+  .signup-map {
+    min-height: clamp(72px, 10.5vh, 104px);
+  }
+}
+
 
 
 

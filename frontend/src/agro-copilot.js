@@ -18,7 +18,7 @@ if (session && appTabs) {
 
 logoutBtn?.addEventListener("click", () => {
   clearSession();
-  window.location.href = "./login.html";
+  window.location.href = "./index.html";
 });
 
 function setMessage(text, ok = true) {
@@ -34,7 +34,7 @@ async function checkAgroHealth() {
     });
     if (response.status === 401 || response.status === 403) {
       clearSession();
-      window.location.href = "./login.html";
+      window.location.href = "./index.html";
       return;
     }
     const data = await response.json();
@@ -62,3 +62,5 @@ if (session) {
   });
   checkAgroHealth();
 }
+
+

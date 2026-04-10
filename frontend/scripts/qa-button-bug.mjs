@@ -1,4 +1,4 @@
-﻿import { chromium } from "playwright";
+import { chromium } from "playwright";
 
 const API='http://127.0.0.1:8000';
 const WEB='http://127.0.0.1:5173';
@@ -16,7 +16,7 @@ const seasonId=season.body.id;
 
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage();
-await page.goto(`${WEB}/login.html`);
+await page.goto(`${WEB}/index.html`);
 await page.evaluate((sess)=>localStorage.setItem('worker_radar_session', JSON.stringify(sess)), s);
 await page.goto(`${WEB}/olive-season.html`,{waitUntil:'networkidle'});
 await page.click('#olive-mode-usage');
@@ -29,3 +29,5 @@ await page.waitForTimeout(3500);
 const state=await page.$eval('#usage-form button[type="submit"]', b => ({disabled:b.disabled,text:b.textContent,className:b.className}));
 console.log(JSON.stringify(state));
 await browser.close();
+
+
