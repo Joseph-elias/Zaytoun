@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --olive-900: #1f2f1a;
+  --olive-800: #2f4825;
+  --olive-700: #3f6130;
+  --olive-600: #5f813f;
+  --cream-50: #f8f7f0;
+  --cream-100: #f0efe5;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: var(--cream-50);
+  background-color: #0f180d;
+}
+
+.bg-scenic {
+  background-image:
+    linear-gradient(180deg, rgba(9, 16, 8, 0.64) 0%, rgba(16, 26, 12, 0.46) 42%, rgba(29, 30, 18, 0.26) 100%),
+    url("/workers-directory-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+}
+
+.glass-soft {
+  background: rgba(247, 249, 240, 0.9);
+  border: 1px solid rgba(201, 210, 182, 0.86);
+  border-radius: 16px;
+}
+
+.field-focus:focus {
+  outline: none;
+  border-color: rgba(90, 132, 66, 0.78);
+  box-shadow: 0 0 0 4px rgba(95, 129, 63, 0.16);
+}

@@ -11,29 +11,33 @@
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/design-system.css" />
   </head>
-  <body>
-    <div class="backdrop"></div>
-    <main class="page page-workers">
-      <header class="hero">
-        <div class="list-head">
-          <p class="eyebrow">Worker Radar</p>
-          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+  <body class="workers-directory-body">
+    <main class="page page-workers workers-directory-page">
+      <header class="hero workers-directory-hero reveal-prep">
+        <div class="workers-hero-top">
+          <a class="workers-brand" href="./workers.html" aria-label="Zaytoun Home">
+            <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
+            <span>Zaytoun</span>
+          </a>
         </div>
         <h1>Workers Directory</h1>
-        <p class="sub" id="role-hint">Filter by location, date, availability, and separate men/women rates in seconds.</p>
-        <nav id="app-tabs" class="tabs"></nav>
+        <p class="sub">Find and manage available agricultural workers.</p>
+        <div class="workers-toolbar-row">
+          <nav id="app-tabs" class="tabs workers-app-tabs"></nav>
+          <button class="btn ghost workers-logout-btn" id="logout-btn" type="button">Logout</button>
+        </div>
       </header>
 
-      <section class="card">
+      <section class="card workers-filter-card reveal-prep">
         <div class="list-head">
           <h2>Filters</h2>
           <p id="live-weather" class="sub live-weather"><span id="live-weather-icon" class="live-weather-icon" aria-hidden="true">○</span><span id="live-weather-text">Live weather: tap "Use My Location".</span></p>
         </div>
-        <form id="filters-form" class="form-grid compact">
-          <label>Village<input name="village" /></label>
+        <form id="filters-form" class="form-grid compact workers-filters-grid">
+          <label>Village<input name="village" placeholder="Enter village or area..." /></label>
           <label>Availability
             <select name="available">
-              <option value="">All</option>
+              <option value="">All Available</option>
               <option value="true">Available</option>
               <option value="false">Busy</option>
             </select>
@@ -43,11 +47,11 @@
           </label>
           <label>Sort
             <select name="sort_by">
-              <option value="">Newest</option>
+              <option value="">Newest First</option>
               <option value="distance">Distance</option>
             </select>
           </label>
-          <label>Max Distance (km)<input name="max_distance_km" type="number" step="0.1" min="0" /></label>
+          <label>Max Distance (km)<input name="max_distance_km" type="number" step="0.1" min="0" placeholder="e.g., 25" /></label>
           <div class="actions-row">
             <button class="btn ghost" id="use-my-location-btn" type="button">Use My Location</button>
           </div>
@@ -58,17 +62,17 @@
               <option value="hour">Per Hour</option>
             </select>
           </label>
-          <label>Min Men Rate<input name="min_men_rate" type="number" step="0.01" min="0" /></label>
-          <label>Max Men Rate<input name="max_men_rate" type="number" step="0.01" min="0" /></label>
-          <label>Min Women Rate<input name="min_women_rate" type="number" step="0.01" min="0" /></label>
-          <label>Max Women Rate<input name="max_women_rate" type="number" step="0.01" min="0" /></label>
+          <label>Min Men Rate<input name="min_men_rate" type="number" step="0.01" min="0" placeholder="e.g., 15" /></label>
+          <label>Max Men Rate<input name="max_men_rate" type="number" step="0.01" min="0" placeholder="e.g., 50" /></label>
+          <label>Min Women Rate<input name="min_women_rate" type="number" step="0.01" min="0" placeholder="e.g., 10" /></label>
+          <label>Max Women Rate<input name="max_women_rate" type="number" step="0.01" min="0" placeholder="e.g., 35" /></label>
           <input type="hidden" name="near_latitude" />
           <input type="hidden" name="near_longitude" />
           <button class="btn" type="submit">Apply Filters</button>
         </form>
       </section>
 
-      <section class="card">
+      <section class="card workers-map-card reveal-prep">
         <div class="list-head">
           <h2>Workers Map</h2>
           <p id="map-hint" class="sub">Hover on marker for name/capacity. Click marker for full details below.</p>
@@ -79,7 +83,7 @@
         </section>
       </section>
 
-      <section class="card">
+      <section class="card workers-list-card reveal-prep">
         <div class="list-head">
           <h2>Workers</h2>
           <button class="btn ghost" id="refresh-btn" type="button">Refresh</button>
