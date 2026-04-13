@@ -66,8 +66,25 @@ function dateBadges(dates) {
   return (dates || []).map((d) => `<span class="badge day">${formatDate(d)}</span>`).join(" ");
 }
 
+function slotLabel(slot) {
+  return slot === "extra_time" ? "Extra Time" : "Full Day";
+}
+
+function slotBadges(windows) {
+  const rows = windows || [];
+  if (!rows.length) return "-";
+  return rows
+    .map((item) => `<span class="badge day">${formatDate(item.work_date)} - ${slotLabel(item.slot_type)}</span>`)
+    .join(" ");
+}
+
 function selectedWorkDate() {
   const raw = form.elements.work_date?.value;
+  return raw ? String(raw).trim() : "";
+}
+
+function selectedWorkSlot() {
+  const raw = form.elements.work_slot?.value;
   return raw ? String(raw).trim() : "";
 }
 
@@ -103,10 +120,16 @@ async function fetchFarmerSeasons() {
     farmerSeasons = [];
   }
 }
-function bookingRequestRow(defaultDate = "") {
+function bookingRequestRow(defaultDate = "", defaultSlot = "full_day") {
   return `
     <div class="worker-grid full booking-request-row">
       <label>Work Date<input name="work_date" type="date" value="${defaultDate}" required /></label>
+      <label>Work Slot
+        <select name="work_slot" required>
+          <option value="full_day" ${defaultSlot === "full_day" ? "selected" : ""}>Full Day</option>
+          <option value="extra_time" ${defaultSlot === "extra_time" ? "selected" : ""}>Extra Time</option>
+        </select>
+      </label>
       <label>Men Needed<input name="requested_men" type="number" min="0" value="0" required /></label>
       <label>Women Needed<input name="requested_women" type="number" min="0" value="0" required /></label>
       <div class="actions-row" style="align-items:end;">
@@ -121,6 +144,7 @@ function bookingForm(worker) {
   if (!isFarmer) return "";
 
   const filterDate = selectedWorkDate();
+  const filterSlot = selectedWorkSlot() || "full_day";
   const remainingMen = worker.remaining_men_count ?? worker.men_count;
   const remainingWomen = worker.remaining_women_count ?? worker.women_count;
   const liveRemaining = filterDate && worker.remaining_men_count !== null && worker.remaining_women_count !== null;
@@ -134,9 +158,10 @@ function bookingForm(worker) {
         </select>
       </label>
       <div class="full"><strong>Date:</strong> ${filterDate ? formatDate(filterDate) : "Pick date(s) below"}</div>
+      <div class="full"><strong>Default Slot:</strong> ${slotLabel(filterSlot)}</div>
       <div class="full"><strong>Remaining Capacity:</strong> ${remainingMen} men, ${remainingWomen} women${liveRemaining ? " (live for selected date)" : ""}</div>
-      <p class="message">You can add multiple dates and choose different men/women for each date.</p>
-      <div class="full" data-booking-requests>${bookingRequestRow(filterDate)}</div>
+      <p class="message">You can add multiple date + slot rows and choose different men/women per row.</p>
+      <div class="full" data-booking-requests>${bookingRequestRow(filterDate, filterSlot)}</div>
       <div class="actions-row">
         <button class="btn ghost" type="button" data-add-booking-row>Add Another Date</button>
       </div>
@@ -172,6 +197,7 @@ function card(worker) {
         <div><strong>Rate Type:</strong> ${worker.rate_type}</div>
         <div><strong>Overtime:</strong> ${worker.overtime_open ? "Yes" : "No"}</div>
         <div class="full"><strong>Available Dates:</strong> ${dateBadges(worker.available_dates)}</div>
+        <div class="full"><strong>Bookable Windows:</strong> ${slotBadges(worker.availability_windows)}</div>
         <div class="full"><strong>Note:</strong> ${worker.overtime_note || "-"}</div>
       </div>
       ${
@@ -192,6 +218,7 @@ function buildQuery() {
     "village",
     "available",
     "work_date",
+    "work_slot",
     "sort_by",
     "max_distance_km",
     "near_latitude",
@@ -501,13 +528,16 @@ async function fetchWorkers() {
   }
 }
 
-async function fetchDateCapacity(workerId, workDate) {
-  const key = `${workerId}|${workDate}`;
+async function fetchDateCapacity(workerId, workDate, workSlot) {
+  const key = `${workerId}|${workDate}|${workSlot}`;
   if (capacityCache.has(key)) return capacityCache.get(key);
 
-  const response = await fetch(`${API_BASE}/workers?work_date=${encodeURIComponent(workDate)}`, {
+  const response = await fetch(
+    `${API_BASE}/workers?work_date=${encodeURIComponent(workDate)}&work_slot=${encodeURIComponent(workSlot)}`,
+    {
     headers: authHeaders(),
-  });
+    }
+  );
 
   if (response.status === 401 || response.status === 403) {
     clearSession();
@@ -534,9 +564,11 @@ async function fetchDateCapacity(workerId, workDate) {
 async function updateRowCapacity(rowEl, workerId) {
   const capacityEl = rowEl.querySelector("[data-row-capacity]");
   const dateInput = rowEl.querySelector('input[name="work_date"]');
-  if (!capacityEl || !dateInput) return;
+  const slotInput = rowEl.querySelector('select[name="work_slot"]');
+  if (!capacityEl || !dateInput || !slotInput) return;
 
   const workDate = String(dateInput.value || "").trim();
+  const workSlot = String(slotInput.value || "full_day").trim() || "full_day";
   if (!workDate) {
     capacityEl.textContent = "";
     capacityEl.className = "message";
@@ -547,14 +579,14 @@ async function updateRowCapacity(rowEl, workerId) {
   capacityEl.className = "message";
 
   try {
-    const capacity = await fetchDateCapacity(workerId, workDate);
+    const capacity = await fetchDateCapacity(workerId, workDate, workSlot);
     if (!capacity) {
-      capacityEl.textContent = "Not available for this date.";
+      capacityEl.textContent = "Not available for this date and slot.";
       capacityEl.className = "message error";
       return;
     }
 
-    capacityEl.textContent = `Remaining on ${formatDate(workDate)}: ${capacity.men} men, ${capacity.women} women`;
+    capacityEl.textContent = `Remaining on ${formatDate(workDate)} (${slotLabel(workSlot)}): ${capacity.men} men, ${capacity.women} women`;
     capacityEl.className = "message success";
   } catch {
     capacityEl.textContent = "Could not check date capacity.";
@@ -635,6 +667,8 @@ listEl.addEventListener("click", async (event) => {
         if (input.name === "work_date") input.value = "";
         else input.value = "0";
       });
+      const slotInput = row.querySelector('select[name="work_slot"]');
+      if (slotInput) slotInput.value = "full_day";
       const capacityEl = row.querySelector("[data-row-capacity]");
       if (capacityEl) {
         capacityEl.textContent = "";
@@ -677,11 +711,11 @@ listEl.addEventListener("click", async (event) => {
 });
 
 listEl.addEventListener("change", async (event) => {
-  const dateInput = event.target.closest('input[name="work_date"]');
-  if (!dateInput) return;
+  const changedInput = event.target.closest('input[name="work_date"], select[name="work_slot"]');
+  if (!changedInput) return;
 
-  const rowEl = dateInput.closest(".booking-request-row");
-  const bookingFormEl = dateInput.closest("form.booking-form");
+  const rowEl = changedInput.closest(".booking-request-row");
+  const bookingFormEl = changedInput.closest("form.booking-form");
   if (!rowEl || !bookingFormEl) return;
 
   await updateRowCapacity(rowEl, bookingFormEl.dataset.workerId);
@@ -700,10 +734,11 @@ listEl.addEventListener("submit", async (event) => {
 
   const rows = [...bookingFormEl.querySelectorAll(".booking-request-row")];
   const requests = [];
-  const seenDates = new Set();
+  const seenWindows = new Set();
 
   for (const row of rows) {
     const workDate = String(row.querySelector('input[name="work_date"]').value || "").trim();
+    const workSlot = String(row.querySelector('select[name="work_slot"]').value || "full_day").trim() || "full_day";
     const requestedMen = Number(row.querySelector('input[name="requested_men"]').value || 0);
     const requestedWomen = Number(row.querySelector('input[name="requested_women"]').value || 0);
 
@@ -717,15 +752,17 @@ listEl.addEventListener("submit", async (event) => {
       messageEl.className = "message error";
       return;
     }
-    if (seenDates.has(workDate)) {
-      messageEl.textContent = `Duplicate date selected: ${formatDate(workDate)}. Use each date once per request.`;
+    const windowKey = `${workDate}|${workSlot}`;
+    if (seenWindows.has(windowKey)) {
+      messageEl.textContent = `Duplicate date + slot selected: ${formatDate(workDate)} (${slotLabel(workSlot)}).`;
       messageEl.className = "message error";
       return;
     }
-    seenDates.add(workDate);
+    seenWindows.add(windowKey);
 
     requests.push({
       work_date: workDate,
+      work_slot: workSlot,
       requested_men: requestedMen,
       requested_women: requestedWomen,
     });

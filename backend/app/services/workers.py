@@ -1,18 +1,24 @@
-﻿from collections.abc import Sequence
+from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
 import math
 from uuid import UUID
 
 from sqlalchemy import delete, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.booking import Booking
 from app.models.booking_event import BookingEvent
 from app.models.booking_message import BookingMessage
 from app.models.worker import Worker
-from app.schemas.worker import WorkerAvailabilityUpdate, WorkerCreate, WorkerUpdate
-from app.services.capacity import remaining_capacity_for_date, weekday_name
+from app.models.worker_availability_slot import WorkerAvailabilitySlot
+from app.schemas.worker import (
+    WorkSlotType,
+    WorkerAvailabilityUpdate,
+    WorkerCreate,
+    WorkerUpdate,
+)
+from app.services.capacity import remaining_capacity_for_slot, weekday_name
 
 
 def _dates_to_storage(dates: list[date]) -> str:
@@ -34,11 +40,43 @@ def _distance_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return radius_km * c
 
 
+def _normalized_windows(
+    available_dates: list[date],
+    availability_windows: list,
+) -> list[tuple[date, WorkSlotType]]:
+    windows: set[tuple[date, WorkSlotType]] = set()
+    for item in available_dates:
+        windows.add((item, "full_day"))
+    for item in availability_windows:
+        windows.add((item.work_date, item.slot_type))
+    return sorted(windows, key=lambda row: (row[0], row[1]))
+
+
+def _sync_worker_slots(db: Session, worker: Worker, windows: list[tuple[date, WorkSlotType]]) -> None:
+    db.execute(delete(WorkerAvailabilitySlot).where(WorkerAvailabilitySlot.worker_id == worker.id))
+    for work_date, slot_type in windows:
+        db.add(
+            WorkerAvailabilitySlot(
+                worker_id=worker.id,
+                work_date=work_date,
+                slot_type=slot_type,
+            )
+        )
+
+
+def _full_day_dates_from_windows(windows: list[tuple[date, WorkSlotType]]) -> list[date]:
+    return sorted({work_date for work_date, slot in windows if slot == "full_day"})
+
+
 def create_worker(db: Session, payload: WorkerCreate) -> Worker:
-    data = payload.model_dump()
-    data["available_dates"] = _dates_to_storage(payload.available_dates)
+    data = payload.model_dump(exclude={"availability_windows"})
+    windows = _normalized_windows(payload.available_dates, payload.availability_windows)
+    data["available_dates"] = _dates_to_storage(_full_day_dates_from_windows(windows))
+
     worker = Worker(**data)
     db.add(worker)
+    db.flush()
+    _sync_worker_slots(db, worker, windows)
     db.commit()
     db.refresh(worker)
     return worker
@@ -55,12 +93,13 @@ def list_workers(
     max_women_rate: Decimal | None = None,
     phone: str | None = None,
     work_date: date | None = None,
+    work_slot: WorkSlotType | None = None,
     near_latitude: float | None = None,
     near_longitude: float | None = None,
     max_distance_km: float | None = None,
     sort_by: str | None = None,
 ) -> Sequence[Worker]:
-    query = select(Worker)
+    query = select(Worker).options(selectinload(Worker.availability_slots))
 
     if phone:
         query = query.where(Worker.phone == phone)
@@ -87,21 +126,41 @@ def list_workers(
         query = query.where(Worker.women_rate_value.is_not(None), Worker.women_rate_value <= max_women_rate)
 
     if work_date:
-        work_date_token = f"%,{work_date.isoformat()},%"
-        day_token = f"%,{weekday_name(work_date)},%"
-        query = query.where(
-            or_(
-                Worker.available_dates.like(work_date_token),
-                Worker.available_days.like(day_token),
+        requested_slot = work_slot or "full_day"
+        slot_match = (
+            select(WorkerAvailabilitySlot.id)
+            .where(
+                WorkerAvailabilitySlot.worker_id == Worker.id,
+                WorkerAvailabilitySlot.work_date == work_date,
+                WorkerAvailabilitySlot.slot_type == requested_slot,
             )
+            .exists()
         )
+        if requested_slot == "full_day":
+            work_date_token = f"%,{work_date.isoformat()},%"
+            day_token = f"%,{weekday_name(work_date)},%"
+            query = query.where(
+                or_(
+                    slot_match,
+                    Worker.available_dates.like(work_date_token),
+                    Worker.available_days.like(day_token),
+                )
+            )
+        else:
+            query = query.where(slot_match)
 
     query = query.order_by(Worker.created_at.desc())
     workers = db.scalars(query).all()
 
     if work_date:
+        requested_slot = work_slot or "full_day"
         for worker in workers:
-            remaining_men, remaining_women = remaining_capacity_for_date(db, worker, work_date)
+            remaining_men, remaining_women = remaining_capacity_for_slot(
+                db,
+                worker,
+                work_date,
+                requested_slot,
+            )
             worker.remaining_men_count = remaining_men
             worker.remaining_women_count = remaining_women
 
@@ -170,7 +229,6 @@ def delete_worker(
     return True
 
 
-
 def update_worker_profile(
     db: Session,
     worker_id: UUID,
@@ -183,6 +241,8 @@ def update_worker_profile(
 
     if owner_phone and worker.phone != owner_phone:
         return None
+
+    windows = _normalized_windows(payload.available_dates, payload.availability_windows)
 
     worker.name = payload.name
     worker.village = payload.village
@@ -197,7 +257,9 @@ def update_worker_profile(
     worker.overtime_open = payload.overtime_open
     worker.overtime_price = payload.overtime_price
     worker.overtime_note = payload.overtime_note
-    worker.available_dates = _dates_to_storage(payload.available_dates)
+    worker.available_dates = _dates_to_storage(_full_day_dates_from_windows(windows))
+
+    _sync_worker_slots(db, worker, windows)
 
     db.commit()
     db.refresh(worker)

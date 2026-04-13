@@ -431,3 +431,38 @@ def test_worker_can_modify_own_profile() -> None:
     assert body["men_count"] == 3
     assert body["women_count"] == 1
 
+
+def test_booking_supports_full_day_and_extra_time_on_same_date() -> None:
+    _clear_tables()
+
+    worker_phone = "+2127004455"
+    worker_headers = _register_and_login("worker", worker_phone)
+    farmer_headers = _register_and_login("farmer", "+2127004466")
+
+    payload = _worker_payload(worker_phone, name="Slot Team")
+    payload["available_dates"] = ["2030-01-10"]
+    payload["availability_windows"] = [
+        {"work_date": "2030-01-10", "slot_type": "full_day"},
+        {"work_date": "2030-01-10", "slot_type": "extra_time"},
+    ]
+
+    create_worker = client.post("/workers", json=payload, headers=worker_headers)
+    assert create_worker.status_code == 201
+    worker_id = create_worker.json()["id"]
+
+    create_booking = client.post(
+        f"/workers/{worker_id}/bookings",
+        json={
+            "requests": [
+                {"work_date": "2030-01-10", "work_slot": "full_day", "requested_men": 1, "requested_women": 0},
+                {"work_date": "2030-01-10", "work_slot": "extra_time", "requested_men": 1, "requested_women": 0},
+            ],
+            "note": "split slots",
+        },
+        headers=farmer_headers,
+    )
+    assert create_booking.status_code == 201
+    body = create_booking.json()
+    assert len(body) == 2
+    assert sorted(item["work_slot"] for item in body) == ["extra_time", "full_day"]
+

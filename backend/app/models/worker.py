@@ -3,7 +3,7 @@ from decimal import Decimal
 import uuid
 
 from sqlalchemy import Boolean, DateTime, Float, Index, Integer, Numeric, String, Uuid
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -39,3 +39,13 @@ class Worker(Base):
     )
     available: Mapped[bool] = mapped_column(Boolean, index=True, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    availability_slots = relationship(
+        "WorkerAvailabilitySlot",
+        back_populates="worker",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    @property
+    def availability_windows(self):
+        return self.availability_slots

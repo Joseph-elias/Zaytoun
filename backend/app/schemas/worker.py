@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 RateType = Literal["day", "hour"]
+WorkSlotType = Literal["full_day", "extra_time"]
 WeekDay = Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 ALL_WEEK_DAYS: list[WeekDay] = [
     "monday",
@@ -17,6 +18,16 @@ ALL_WEEK_DAYS: list[WeekDay] = [
     "saturday",
     "sunday",
 ]
+
+
+class WorkerAvailabilityWindowIn(BaseModel):
+    work_date: date
+    slot_type: WorkSlotType
+
+
+class WorkerAvailabilityWindowOut(BaseModel):
+    work_date: date
+    slot_type: WorkSlotType
 
 
 class WorkerCreate(BaseModel):
@@ -34,13 +45,22 @@ class WorkerCreate(BaseModel):
     overtime_open: bool = False
     overtime_price: Decimal | None = Field(default=None, gt=0)
     overtime_note: str | None = Field(default=None, max_length=300)
-    available_dates: list[date] = Field(min_length=1, max_length=365)
+    available_dates: list[date] = Field(default_factory=list, max_length=365)
+    availability_windows: list["WorkerAvailabilityWindowIn"] = Field(default_factory=list, max_length=730)
     available: bool = True
 
     @field_validator("available_dates")
     @classmethod
     def normalize_dates(cls, values: list[date]) -> list[date]:
         return sorted(set(values))
+
+    @field_validator("availability_windows")
+    @classmethod
+    def normalize_windows(cls, values: list["WorkerAvailabilityWindowIn"]) -> list["WorkerAvailabilityWindowIn"]:
+        deduped: dict[tuple[date, WorkSlotType], WorkerAvailabilityWindowIn] = {}
+        for item in values:
+            deduped[(item.work_date, item.slot_type)] = item
+        return sorted(deduped.values(), key=lambda row: (row.work_date, row.slot_type))
 
     @field_validator("address")
     @classmethod
@@ -75,6 +95,8 @@ class WorkerCreate(BaseModel):
 
         if (self.latitude is None) != (self.longitude is None):
             raise ValueError("latitude and longitude must be provided together")
+        if not self.available_dates and not self.availability_windows:
+            raise ValueError("Select at least one availability window or available date")
 
         return self
 
@@ -93,12 +115,21 @@ class WorkerUpdate(BaseModel):
     overtime_open: bool = False
     overtime_price: Decimal | None = Field(default=None, gt=0)
     overtime_note: str | None = Field(default=None, max_length=300)
-    available_dates: list[date] = Field(min_length=1, max_length=365)
+    available_dates: list[date] = Field(default_factory=list, max_length=365)
+    availability_windows: list["WorkerAvailabilityWindowIn"] = Field(default_factory=list, max_length=730)
 
     @field_validator("available_dates")
     @classmethod
     def normalize_dates(cls, values: list[date]) -> list[date]:
         return sorted(set(values))
+
+    @field_validator("availability_windows")
+    @classmethod
+    def normalize_windows(cls, values: list["WorkerAvailabilityWindowIn"]) -> list["WorkerAvailabilityWindowIn"]:
+        deduped: dict[tuple[date, WorkSlotType], WorkerAvailabilityWindowIn] = {}
+        for item in values:
+            deduped[(item.work_date, item.slot_type)] = item
+        return sorted(deduped.values(), key=lambda row: (row.work_date, row.slot_type))
 
     @field_validator("address")
     @classmethod
@@ -133,6 +164,8 @@ class WorkerUpdate(BaseModel):
 
         if (self.latitude is None) != (self.longitude is None):
             raise ValueError("latitude and longitude must be provided together")
+        if not self.available_dates and not self.availability_windows:
+            raise ValueError("Select at least one availability window or available date")
 
         return self
 
@@ -158,6 +191,7 @@ class WorkerOut(BaseModel):
     overtime_price: Decimal | None
     overtime_note: str | None
     available_dates: list[date]
+    availability_windows: list["WorkerAvailabilityWindowOut"] = Field(default_factory=list)
     available: bool
     remaining_men_count: int | None = None
     remaining_women_count: int | None = None
@@ -178,6 +212,27 @@ class WorkerOut(BaseModel):
             return sorted(set(parsed))
         if isinstance(value, list):
             return sorted(set(value))
+        return []
+
+    @field_validator("availability_windows", mode="before")
+    @classmethod
+    def parse_availability_windows(cls, value: object) -> list["WorkerAvailabilityWindowOut"]:
+        if isinstance(value, list):
+            normalized: list[WorkerAvailabilityWindowOut] = []
+            for item in value:
+                if isinstance(item, WorkerAvailabilityWindowOut):
+                    normalized.append(item)
+                    continue
+                if isinstance(item, dict):
+                    normalized.append(WorkerAvailabilityWindowOut.model_validate(item))
+                    continue
+                work_date = getattr(item, "work_date", None)
+                slot_type = getattr(item, "slot_type", None)
+                if work_date is None or slot_type is None:
+                    continue
+                normalized.append(WorkerAvailabilityWindowOut(work_date=work_date, slot_type=slot_type))
+            normalized.sort(key=lambda row: (row.work_date, row.slot_type))
+            return normalized
         return []
 
     model_config = ConfigDict(from_attributes=True)

@@ -24,6 +24,7 @@ const clearDatesBtn = document.getElementById("clear-available-dates-btn");
 const todayBtn = document.getElementById("availability-today-btn");
 const prevMonthBtn = document.getElementById("availability-prev-month-btn");
 const nextMonthBtn = document.getElementById("availability-next-month-btn");
+const extraTimeToggle = document.getElementById("availability-extra-time");
 
 const selectedDates = new Set();
 
@@ -181,6 +182,10 @@ form.addEventListener("submit", async (event) => {
   const menCount = Number(data.get("men_count"));
   const womenCount = Number(data.get("women_count"));
   const availableDates = [...selectedDates].sort();
+  const availabilityWindows = [
+    ...availableDates.map((workDate) => ({ work_date: workDate, slot_type: "full_day" })),
+    ...(extraTimeToggle?.checked ? availableDates.map((workDate) => ({ work_date: workDate, slot_type: "extra_time" })) : []),
+  ];
   const location = locationPicker.getValue();
 
   const payload = {
@@ -199,6 +204,7 @@ form.addEventListener("submit", async (event) => {
     overtime_price: data.get("overtime_price") ? Number(data.get("overtime_price")) : null,
     overtime_note: String(data.get("overtime_note") || "").trim() || null,
     available_dates: availableDates,
+    availability_windows: availabilityWindows,
     available: data.get("available") === "on",
   };
 

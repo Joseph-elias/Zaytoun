@@ -24,6 +24,7 @@ from app.models.olive_land_piece import FarmerOliveLandPiece  # noqa: F401,E402
 from app.models.market_item import FarmerMarketItem  # noqa: F401,E402
 from app.models.market_order import MarketOrder  # noqa: F401,E402
 from app.models.market_order_message import MarketOrderMessage  # noqa: F401,E402
+from app.models.worker_availability_slot import WorkerAvailabilitySlot  # noqa: F401,E402
 
 
 def pytest_sessionstart(session):

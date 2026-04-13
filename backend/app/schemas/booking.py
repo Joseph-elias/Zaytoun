@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.schemas.worker import WeekDay
+from app.schemas.worker import WeekDay, WorkSlotType
 
 BookingStatus = Literal[
     "pending_worker",
@@ -18,6 +18,7 @@ BookingStatus = Literal[
 
 class BookingRequestItem(BaseModel):
     work_date: date
+    work_slot: WorkSlotType = "full_day"
     requested_men: int = Field(ge=0, le=100)
     requested_women: int = Field(ge=0, le=100)
 
@@ -59,14 +60,15 @@ class BookingCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_unique_dates(self) -> "BookingCreate":
-        dates = [item.work_date for item in self.requests]
-        if len(set(dates)) != len(dates):
-            raise ValueError("Duplicate dates are not allowed in one booking request")
+        slots = [(item.work_date, item.work_slot) for item in self.requests]
+        if len(set(slots)) != len(slots):
+            raise ValueError("Duplicate date and slot combinations are not allowed in one booking request")
         return self
 
 
 class WorkerBookingResponse(BaseModel):
     action: Literal["accept", "reject", "propose"]
+    work_slot: WorkSlotType | None = None
     requested_men: int | None = Field(default=None, ge=0, le=100)
     requested_women: int | None = Field(default=None, ge=0, le=100)
     note: str | None = Field(default=None, max_length=300)
@@ -78,13 +80,20 @@ class FarmerBookingValidation(BaseModel):
 
 class BookingProposalUpdate(BaseModel):
     work_date: date | None = None
+    work_slot: WorkSlotType | None = None
     requested_men: int | None = Field(default=None, ge=0, le=100)
     requested_women: int | None = Field(default=None, ge=0, le=100)
     note: str | None = Field(default=None, max_length=300)
 
     @model_validator(mode="after")
     def validate_has_change(self) -> "BookingProposalUpdate":
-        if self.work_date is None and self.requested_men is None and self.requested_women is None and self.note is None:
+        if (
+            self.work_date is None
+            and self.work_slot is None
+            and self.requested_men is None
+            and self.requested_women is None
+            and self.note is None
+        ):
             raise ValueError("At least one field must be provided")
         return self
 
@@ -100,6 +109,7 @@ class BookingOut(BaseModel):
     farmer_name: str
     farmer_phone: str
     work_date: date | None
+    work_slot: WorkSlotType
     day: WeekDay | None
     requested_men: int
     requested_women: int

@@ -48,9 +48,58 @@ def _ensure_market_order_review_columns_for_sqlite() -> None:
             conn.execute(text(sql))
 
 
+def _ensure_worker_slot_schema_for_sqlite() -> None:
+    if engine.dialect.name != "sqlite":
+        return
+
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "bookings" in table_names:
+        columns = {col["name"] for col in inspector.get_columns("bookings")}
+        if "work_slot" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN work_slot VARCHAR(20)"))
+                conn.execute(
+                    text(
+                        "UPDATE bookings SET work_slot = 'full_day' "
+                        "WHERE work_slot IS NULL OR work_slot = ''"
+                    )
+                )
+
+    if "worker_availability_slots" not in table_names:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE worker_availability_slots (
+                        id CHAR(32) NOT NULL PRIMARY KEY,
+                        worker_id CHAR(32) NOT NULL,
+                        work_date DATE NOT NULL,
+                        slot_type VARCHAR(20) NOT NULL,
+                        created_at DATETIME NOT NULL,
+                        FOREIGN KEY(worker_id) REFERENCES workers (id) ON DELETE CASCADE
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX ix_worker_availability_slots_worker_date "
+                    "ON worker_availability_slots (worker_id, work_date)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX ux_worker_availability_slots_worker_date_slot "
+                    "ON worker_availability_slots (worker_id, work_date, slot_type)"
+                )
+            )
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     _ensure_market_order_review_columns_for_sqlite()
+    _ensure_worker_slot_schema_for_sqlite()
     yield
 
 

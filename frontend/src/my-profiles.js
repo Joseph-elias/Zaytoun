@@ -97,6 +97,15 @@ function formatDate(value) {
   });
 }
 
+function slotLabel(slot) {
+  return slot === "extra_time" ? "Extra Time" : "Full Day";
+}
+
+function bookingWindowLabel(booking) {
+  const slot = slotLabel(booking.work_slot || "full_day");
+  return `${bookingDateLabel(booking)} (${slot})`;
+}
+
 function bookingDateLabel(booking) {
   if (booking.work_date) {
     return formatDate(booking.work_date);
@@ -114,6 +123,12 @@ function proposalEditor(request, status) {
     <form class="booking-form" data-proposal-form="${request.id}" hidden>
       <h4>Modify Proposal</h4>
       <label>Work Date<input name="work_date" type="date" value="${request.work_date || ""}" required /></label>
+      <label>Work Slot
+        <select name="work_slot" required>
+          <option value="full_day" ${(request.work_slot || "full_day") === "full_day" ? "selected" : ""}>Full Day</option>
+          <option value="extra_time" ${request.work_slot === "extra_time" ? "selected" : ""}>Extra Time</option>
+        </select>
+      </label>
       <label>Men<input name="requested_men" type="number" min="0" value="${request.requested_men}" required /></label>
       <label>Women<input name="requested_women" type="number" min="0" value="${request.requested_women}" required /></label>
       <label class="full">Note<textarea name="note" rows="2" placeholder="Optional note">${request.note || ""}</textarea></label>
@@ -152,7 +167,9 @@ function bookingSortValue(request) {
 }
 
 function editProfileForm(worker) {
-  const datesCsv = (worker.available_dates || []).join(",");
+  const windows = worker.availability_windows || [];
+  const fullDayCsv = windows.filter((w) => w.slot_type === "full_day").map((w) => w.work_date).join(",");
+  const extraTimeCsv = windows.filter((w) => w.slot_type === "extra_time").map((w) => w.work_date).join(",");
   return `
     <form class="booking-form" data-edit-worker-form="${worker.id}" hidden class="booking-form is-hidden">
       <h4>Modify Profile</h4>
@@ -174,8 +191,11 @@ function editProfileForm(worker) {
       <label class="inline-check full"><input name="overtime_open" type="checkbox" ${worker.overtime_open ? "checked" : ""} /> Overtime Open</label>
       <label>Overtime Price<input name="overtime_price" type="number" step="0.01" min="0" value="${worker.overtime_price ?? ""}" /></label>
       <label class="full">Overtime Note<textarea name="overtime_note" rows="2" placeholder="Optional note">${worker.overtime_note || ""}</textarea></label>
-      <label class="full">Available Dates (YYYY-MM-DD comma separated)
-        <textarea name="available_dates" rows="2" required placeholder="2026-04-02,2026-04-03">${datesCsv}</textarea>
+      <label class="full">Full-Day Dates (YYYY-MM-DD comma separated)
+        <textarea name="available_dates" rows="2" required placeholder="2026-04-02,2026-04-03">${fullDayCsv}</textarea>
+      </label>
+      <label class="full">Extra-Time Dates (optional, YYYY-MM-DD comma separated)
+        <textarea name="available_extra_time_dates" rows="2" placeholder="2026-04-02,2026-04-04">${extraTimeCsv}</textarea>
       </label>
       <div class="actions-row">
         <button class="btn" type="submit">Save Profile</button>
@@ -202,6 +222,7 @@ function requestCard(request) {
         <div><strong>Date:</strong> ${bookingDateLabel(request)}</div>
         <div><strong>Requested:</strong> ${request.requested_men} men</div>
         <div><strong>Requested:</strong> ${request.requested_women} women</div>
+        <div><strong>Slot:</strong> ${slotLabel(request.work_slot || "full_day")}</div>
         <div class="full"><strong>Note:</strong> ${request.note || "-"}</div>
         <div class="full"><strong>Flow:</strong> ${waitingWorker ? "Your turn: accept, reject, or propose changes" : waitingFarmer ? "Waiting farmer final validation" : s === "confirmed" ? "Finalized" : "Rejected"}</div>
         <div class="full"><strong>Timeline:</strong> <span data-timeline="${request.id}">Loading timeline...</span></div>
@@ -212,6 +233,12 @@ function requestCard(request) {
               <h4>Worker Response</h4>
               <label>Men<input name="requested_men" type="number" min="0" value="${request.requested_men}" required /></label>
               <label>Women<input name="requested_women" type="number" min="0" value="${request.requested_women}" required /></label>
+              <label>Work Slot
+                <select name="work_slot" required>
+                  <option value="full_day" ${(request.work_slot || "full_day") === "full_day" ? "selected" : ""}>Full Day</option>
+                  <option value="extra_time" ${request.work_slot === "extra_time" ? "selected" : ""}>Extra Time</option>
+                </select>
+              </label>
               <label class="full">Note<textarea name="note" rows="2" placeholder="Optional note">${request.note || ""}</textarea></label>
               <div class="actions-row">
                 <button class="btn" type="button" data-worker-action="accept" data-booking-id="${request.id}">Accept As Is</button>
@@ -298,6 +325,9 @@ function card(worker) {
   const badgeClass = worker.available ? "available" : "busy";
   const badgeText = worker.available ? "Available" : "Busy";
   const dates = (worker.available_dates || []).map((d) => formatDate(d)).join(", ");
+  const windows = (worker.availability_windows || [])
+    .map((item) => `${formatDate(item.work_date)} (${slotLabel(item.slot_type)})`)
+    .join(", ");
   return `
     <article class="worker-card">
       <div class="list-head">
@@ -313,6 +343,7 @@ function card(worker) {
         <div><strong>Rate Type:</strong> ${worker.rate_type}</div>
         <div><strong>Overtime:</strong> ${worker.overtime_open ? "Yes" : "No"}</div>
         <div class="full"><strong>Available Dates:</strong> ${dates || "-"}</div>
+        <div class="full"><strong>Bookable Windows:</strong> ${windows || "-"}</div>
         <div class="full"><strong>Note:</strong> ${worker.overtime_note || "-"}</div>
       </div>
       <div class="actions-row">
@@ -356,6 +387,7 @@ function renderUpcomingSchedule(requests) {
           <div class="worker-grid">
             <div><strong>Farmer:</strong> ${request.farmer_name}</div>
             <div><strong>Team:</strong> ${request.worker_name}</div>
+            <div><strong>Window:</strong> ${bookingWindowLabel(request)}</div>
             <div><strong>Assigned:</strong> ${request.requested_men} men</div>
             <div><strong>Assigned:</strong> ${request.requested_women} women</div>
             <div class="full"><strong>Note:</strong> ${request.note || "-"}</div>
@@ -459,6 +491,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
     const fd = new FormData(form);
     const requestedMen = Number(fd.get("requested_men") || 0);
     const requestedWomen = Number(fd.get("requested_women") || 0);
+    const workSlot = String(fd.get("work_slot") || "full_day");
     const note = String(fd.get("note") || "").trim() || null;
 
     if (action === "propose" && requestedMen + requestedWomen < 1) {
@@ -474,6 +507,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
     try {
       const payload = { action };
       if (action === "propose") {
+        payload.work_slot = workSlot;
         payload.requested_men = requestedMen;
         payload.requested_women = requestedWomen;
         payload.note = note;
@@ -564,6 +598,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
 
       const fd = new FormData(form);
       const workDate = String(fd.get("work_date") || "").trim();
+      const workSlot = String(fd.get("work_slot") || "full_day").trim() || "full_day";
       const requestedMen = Number(fd.get("requested_men") || 0);
       const requestedWomen = Number(fd.get("requested_women") || 0);
       const note = String(fd.get("note") || "").trim();
@@ -589,6 +624,7 @@ bookingRequestsList.addEventListener("click", async (event) => {
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           work_date: workDate,
+          work_slot: workSlot,
           requested_men: requestedMen,
           requested_women: requestedWomen,
           note: note || null,
@@ -766,6 +802,14 @@ listEl.addEventListener("submit", async (event) => {
     .split(",")
     .map((d) => d.trim())
     .filter(Boolean);
+  const extraDates = String(fd.get("available_extra_time_dates") || "")
+    .split(",")
+    .map((d) => d.trim())
+    .filter(Boolean);
+  const availability_windows = [
+    ...dates.map((work_date) => ({ work_date, slot_type: "full_day" })),
+    ...extraDates.map((work_date) => ({ work_date, slot_type: "extra_time" })),
+  ];
 
   const payload = {
     name: String(fd.get("name") || "").trim(),
@@ -782,6 +826,7 @@ listEl.addEventListener("submit", async (event) => {
     overtime_price: fd.get("overtime_price") ? Number(fd.get("overtime_price")) : null,
     overtime_note: String(fd.get("overtime_note") || "").trim() || null,
     available_dates: dates,
+    availability_windows,
   };
 
   msg.textContent = "Saving profile...";

@@ -13,6 +13,7 @@ from app.models.olive_land_piece import FarmerOliveLandPiece
 from app.models.market_item import FarmerMarketItem
 from app.models.market_order import MarketOrder
 from app.models.market_order_message import MarketOrderMessage
+from app.models.worker_availability_slot import WorkerAvailabilitySlot
 
 client = TestClient(app)
 def _clear_tables() -> None:
@@ -27,6 +28,7 @@ def _clear_tables() -> None:
         session.query(FarmerOliveLaborDay).delete()
         session.query(FarmerOlivePieceMetric).delete()
         session.query(FarmerOliveSeason).delete()
+        session.query(WorkerAvailabilitySlot).delete()
         session.query(Worker).delete()
         session.query(User).delete()
         session.commit()

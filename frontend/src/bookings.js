@@ -80,6 +80,10 @@ function bookingDateLabel(booking) {
   return "-";
 }
 
+function slotLabel(slot) {
+  return slot === "extra_time" ? "Extra Time" : "Full Day";
+}
+
 function requestGroupKey(status) {
   const s = normalizeStatus(status);
   if (s === "pending_farmer") return "action";
@@ -127,6 +131,12 @@ function proposalEditor(booking, status) {
     <form class="booking-form" data-proposal-form="${booking.id}" hidden>
       <h4>Edit Proposal</h4>
       <label>Work Date<input name="work_date" type="date" value="${booking.work_date || ""}" required /></label>
+      <label>Work Slot
+        <select name="work_slot" required>
+          <option value="full_day" ${(booking.work_slot || "full_day") === "full_day" ? "selected" : ""}>Full Day</option>
+          <option value="extra_time" ${booking.work_slot === "extra_time" ? "selected" : ""}>Extra Time</option>
+        </select>
+      </label>
       <label>Men<input name="requested_men" type="number" min="0" value="${booking.requested_men}" required /></label>
       <label>Women<input name="requested_women" type="number" min="0" value="${booking.requested_women}" required /></label>
       <label class="full">Note<textarea name="note" rows="2" placeholder="Optional note">${booking.note || ""}</textarea></label>
@@ -154,6 +164,7 @@ function bookingCard(booking) {
       <div class="worker-grid">
         <div><strong>Village:</strong> ${booking.worker_village}</div>
         <div><strong>Date:</strong> ${bookingDateLabel(booking)}</div>
+        <div><strong>Slot:</strong> ${slotLabel(booking.work_slot || "full_day")}</div>
         <div><strong>Requested:</strong> ${booking.requested_men} men</div>
         <div><strong>Requested:</strong> ${booking.requested_women} women</div>
         <div class="full"><strong>Note:</strong> ${booking.note || "-"}</div>
@@ -400,6 +411,7 @@ bookingsList.addEventListener("click", async (event) => {
 
       const fd = new FormData(form);
       const workDate = String(fd.get("work_date") || "").trim();
+      const workSlot = String(fd.get("work_slot") || "full_day").trim() || "full_day";
       const requestedMen = Number(fd.get("requested_men") || 0);
       const requestedWomen = Number(fd.get("requested_women") || 0);
       const note = String(fd.get("note") || "").trim();
@@ -425,6 +437,7 @@ bookingsList.addEventListener("click", async (event) => {
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           work_date: workDate,
+          work_slot: workSlot,
           requested_men: requestedMen,
           requested_women: requestedWomen,
           note: note || null,
