@@ -23,6 +23,14 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+secrets.*
+*.secrets.*
 
 # ML training outputs and local checkpoints
 backend/models/
