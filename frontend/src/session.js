@@ -42,6 +42,18 @@ export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
+export function redirectToLoginWithNotice(notice = "session_expired") {
+  const url = new URL("./index.html", window.location.href);
+  if (notice) {
+    url.searchParams.set("notice", notice);
+  }
+  window.location.href = url.toString();
+}
+
+export function isConsentReacceptRequired(session) {
+  return Boolean(session?.consent_reaccept_required);
+}
+
 export function authHeaders(extra = {}) {
   const session = getSession();
   if (!session?.access_token) return extra;
@@ -55,6 +67,11 @@ export function requireAuth(redirect = "./index.html") {
   const session = getSession();
   if (!session?.access_token || !session?.user?.role) {
     window.location.href = redirect;
+    return null;
+  }
+  const consentPage = String(window.location.pathname || "").endsWith("/consent.html") || String(window.location.pathname || "").endsWith("consent.html");
+  if (isConsentReacceptRequired(session) && !consentPage) {
+    window.location.href = "./consent.html";
     return null;
   }
   return session;
@@ -81,6 +98,10 @@ export function roleHome(role) {
 export function redirectToRoleHome(session) {
   if (!session?.user?.role) {
     window.location.href = "./index.html";
+    return;
+  }
+  if (isConsentReacceptRequired(session)) {
+    window.location.href = "./consent.html";
     return;
   }
   window.location.href = roleHome(session.user.role);
@@ -136,11 +157,11 @@ export function renderAppTabs(container, role, currentPage) {
   `;
 }
 
-export async function login(phone, password) {
+export async function login(phone, password, legalAcknowledged = true) {
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, password, legal_acknowledged: Boolean(legalAcknowledged) }),
   });
 
   if (!response.ok) {

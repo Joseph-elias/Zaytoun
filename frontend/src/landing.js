@@ -15,12 +15,26 @@ function setMessage(text, ok = true) {
   message.className = `message ${ok ? "success" : "error"}`;
 }
 
+const loginNotice = new URLSearchParams(window.location.search).get("notice");
+if (loginNotice === "session_expired") {
+  setMessage("Session expired, please log in again.", false);
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete("notice");
+  window.history.replaceState({}, "", clean.toString());
+}
+
 if (form) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const fd = new FormData(form);
+    const legalAccepted = fd.get("login_legal_ack") === "on";
+    if (!legalAccepted) {
+      setMessage("Please accept Terms & Conditions and Data Consent Policy before logging in.", false);
+      return;
+    }
+
     setMessage("Signing in...");
 
-    const fd = new FormData(form);
     const phone = String(fd.get("phone") || "").trim();
     const password = String(fd.get("password") || "");
 

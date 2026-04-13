@@ -10,18 +10,84 @@
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/design-system.css" />
   </head>
-  <body>
+  <body class="workers-directory-body">
     <div class="backdrop"></div>
-    <main class="page">
-      <header class="hero">
-        <div class="list-head">
-          <p class="eyebrow">Worker Radar</p>
-          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+    <main class="page page-settings workers-directory-page">
+      <header class="hero workers-directory-hero reveal-prep">
+        <div class="workers-hero-top">
+          <a class="workers-brand" href="./workers.html" aria-label="Zaytoun Home">
+            <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
+            <span>Zaytoun</span>
+          </a>
         </div>
         <h1>Settings</h1>
         <p class="sub" id="role-hint">Manage your account security and privacy.</p>
-        <nav id="app-tabs" class="tabs"></nav>
+        <div class="workers-toolbar-row">
+          <nav id="app-tabs" class="tabs workers-app-tabs"></nav>
+          <button class="btn ghost workers-logout-btn" id="logout-btn" type="button">Logout</button>
+        </div>
       </header>
+
+      <section class="card">
+        <h2>Account Profile</h2>
+        <p class="sub">Update your basic account and recovery information.</p>
+        <form id="profile-form" class="form-grid">
+          <label>
+            Full Name
+            <input id="profile-full-name" name="full_name" required minlength="2" />
+          </label>
+          <label>
+            Phone (Login ID)
+            <input id="profile-phone" name="phone" required minlength="4" />
+          </label>
+          <label class="full">
+            Recovery Email
+            <input id="profile-email" name="email" type="email" placeholder="name@example.com" />
+          </label>
+          <label class="full">
+            Current Password (required to change phone or email)
+            <input id="profile-current-password" name="current_password" type="password" minlength="6" />
+          </label>
+          <button class="btn full" id="profile-save-btn" type="submit">Save Profile</button>
+        </form>
+        <p id="profile-message" class="message"></p>
+      </section>
+
+      <section class="card">
+        <h2>Security</h2>
+        <p class="sub">Change your password and send a recovery code to your account email.</p>
+        <form id="password-form" class="form-grid">
+          <label>
+            Current Password
+            <input id="current-password" name="current_password" type="password" required minlength="6" />
+          </label>
+          <label>
+            New Password
+            <input id="new-password" name="new_password" type="password" required minlength="6" />
+          </label>
+          <label class="full">
+            Confirm New Password
+            <input id="confirm-password" name="confirm_password" type="password" required minlength="6" />
+          </label>
+          <button class="btn full" id="password-save-btn" type="submit">Change Password</button>
+        </form>
+        <div class="actions-row">
+          <button class="btn ghost" id="send-reset-code-btn" type="button">Send Recovery Code To Email</button>
+        </div>
+        <p id="security-message" class="message"></p>
+      </section>
+
+      <section class="card">
+        <h2>Legal & Privacy</h2>
+        <p class="sub">
+          Read legal documents and keep consent aligned with current policy requirements.
+        </p>
+        <div class="actions-row">
+          <a class="btn ghost" href="./terms.html" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>
+          <a class="btn ghost" href="./privacy.html" target="_blank" rel="noopener noreferrer">Data Consent Policy</a>
+          <a class="btn ghost" href="./consent.html">Review Consent</a>
+        </div>
+      </section>
 
       <section class="card">
         <h2>Delete Account</h2>

@@ -7,8 +7,8 @@ async function api(path, options={}){ const r=await fetch(`${API}${path}`, optio
 
 const phone = `+2127${String(Date.now()).slice(-8)}`;
 const password='secret123';
-await api('/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({full_name:'QA Bug',phone,role:'farmer',password})});
-const login=await api('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,password})});
+await api('/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({full_name:'QA Bug',phone,role:'farmer',password,terms_accepted:true,data_consent_accepted:true,consent_version:'2026-04-13'})});
+const login=await api('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,password,legal_acknowledged:true})});
 const s=login.body; const auth={Authorization:`Bearer ${s.access_token}`,'Content-Type':'application/json'};
 await api('/olive-land-pieces',{method:'POST',headers:auth,body:JSON.stringify({piece_name:'Bug Piece',season_year:2025})});
 const season=await api('/olive-seasons',{method:'POST',headers:auth,body:JSON.stringify({season_year:2025,land_pieces:1,land_piece_name:'Bug Piece',tanks_20l:9,tanks_taken_home_20l:8,pressing_cost_mode:'oil_tanks',pressing_cost:0})});

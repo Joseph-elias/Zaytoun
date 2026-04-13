@@ -9,11 +9,17 @@ def test_customer_role_can_register_and_login() -> None:
         "phone": "+2127887000",
         "role": "customer",
         "password": "secret123",
+        "terms_accepted": True,
+        "data_consent_accepted": True,
+        "consent_version": "2026-04-13",
     }
     response = client.post("/auth/register", json=payload)
     assert response.status_code == 201
 
-    login = client.post("/auth/login", json={"phone": payload["phone"], "password": payload["password"]})
+    login = client.post(
+        "/auth/login",
+        json={"phone": payload["phone"], "password": payload["password"], "legal_acknowledged": True},
+    )
     assert login.status_code == 200
     assert login.json()["user"]["role"] == "customer"
 

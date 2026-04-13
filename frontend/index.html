@@ -33,7 +33,7 @@
             <h2>Log In</h2>
             <form id="landing-login-form" class="landing-login-form">
               <label>
-                <span>Email</span>
+                <span>Phone</span>
                 <input name="phone" placeholder="Phone number" required minlength="4" />
               </label>
               <label>
@@ -45,8 +45,17 @@
                   <input type="checkbox" name="remember" checked />
                   <span>Remember me</span>
                 </label>
-                <a href="./index.html">Forgot password?</a>
+                <a href="./forgot-password.html">Forgot password?</a>
               </div>
+              <label class="landing-consent-check">
+                <input type="checkbox" name="login_legal_ack" />
+                <span>
+                  I agree to the
+                  <a href="./terms.html" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>
+                  and
+                  <a href="./privacy.html" target="_blank" rel="noopener noreferrer">Data Consent Policy</a>.
+                </span>
+              </label>
               <button class="btn landing-login-btn" type="submit">Log In</button>
             </form>
             <p id="landing-login-message" class="message"></p>
@@ -64,6 +73,23 @@
               digital marketplace, and AI-assisted disease support - built to make farming more
               efficient and productive.
             </p>
+            <section class="landing-role-chooser" aria-label="Choose account type">
+              <h3>Choose Your Account Type</h3>
+              <div class="landing-role-grid">
+                <a class="landing-role-card" href="./signup.html?role=worker">
+                  <strong>Worker</strong>
+                  <span>Create and manage your labor profile.</span>
+                </a>
+                <a class="landing-role-card" href="./signup.html?role=farmer">
+                  <strong>Farmer</strong>
+                  <span>Manage farm operations, teams, and bookings.</span>
+                </a>
+                <a class="landing-role-card" href="./signup.html?role=customer">
+                  <strong>Customer</strong>
+                  <span>Order products and review trusted stores.</span>
+                </a>
+              </div>
+            </section>
           </section>
         </div>
 

@@ -23,6 +23,19 @@ class Settings(BaseSettings):
     # Auth config
     auth_secret_key: str = "change-me-in-production"
     auth_algorithm: str = "HS256"
+    auth_consent_version: str = "2026-04-13"
+    auth_password_reset_dev_mode: bool = False
+    auth_password_reset_code_ttl_minutes: int = 15
+    auth_password_reset_max_attempts: int = 5
+    auth_password_reset_email_enabled: bool = False
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    smtp_from_name: str = "Zaytoun"
+    smtp_use_tls: bool = True
+    smtp_use_ssl: bool = False
     agro_copilot_api_base_url: str | None = None
     agro_copilot_api_key: str | None = None
     agro_copilot_timeout_seconds: int = 120

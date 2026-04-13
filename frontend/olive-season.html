@@ -10,17 +10,22 @@
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/design-system.css" />
   </head>
-  <body>
+  <body class="workers-directory-body">
     <div class="backdrop"></div>
-    <main class="page page-wide olive-app page-olive">
-      <header class="hero olive-hero">
-        <div class="list-head">
-          <p class="eyebrow">Worker Radar</p>
-          <button class="btn ghost" id="logout-btn" type="button">Logout</button>
+    <main class="page page-wide olive-app page-olive workers-directory-page">
+      <header class="hero workers-directory-hero olive-hero reveal-prep">
+        <div class="workers-hero-top">
+          <a class="workers-brand" href="./workers.html" aria-label="Zaytoun Home">
+            <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
+            <span>Zaytoun</span>
+          </a>
         </div>
         <h1>Olive Season Tracker</h1>
         <p class="sub" id="role-hint">Store olive season numbers and full financial performance per piece.</p>
-        <nav id="app-tabs" class="tabs"></nav>
+        <div class="workers-toolbar-row">
+          <nav id="app-tabs" class="tabs workers-app-tabs"></nav>
+          <button class="btn ghost workers-logout-btn" id="logout-btn" type="button">Logout</button>
+        </div>
       </header>
 
       <section class="card olive-mode-tabs">

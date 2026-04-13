@@ -31,16 +31,24 @@ def _clear_tables() -> None:
         session.query(User).delete()
         session.commit()
 def _register_and_login(role: str, phone: str) -> dict[str, str]:
+    digits = "".join(ch for ch in phone if ch.isdigit()) or "user"
     register_payload = {
         "full_name": f"{role.title()} User",
         "phone": phone,
+        "email": f"{role}.{digits}@example.com",
         "role": role,
         "password": "secret123",
+        "terms_accepted": True,
+        "data_consent_accepted": True,
+        "consent_version": "2026-04-13",
     }
     reg = client.post("/auth/register", json=register_payload)
     assert reg.status_code == 201
 
-    login = client.post("/auth/login", json={"phone": phone, "password": "secret123"})
+    login = client.post(
+        "/auth/login",
+        json={"phone": phone, "password": "secret123", "legal_acknowledged": True},
+    )
     assert login.status_code == 200
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

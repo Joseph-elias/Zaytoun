@@ -33,6 +33,8 @@ The platform is intentionally built to be useful now while already prepared for 
 ### 1) Role-driven platform design
 - JWT auth and role-based access controls
 - strict ownership rules for worker/farmer/customer data
+- explicit legal-consent enforcement at authentication boundaries (terms + data consent)
+- production-style auth UX with role-specific signup entry points and password reset flow
 - protected farmer-only AI endpoints via backend authorization
 
 ### 2) End-to-end operational depth
@@ -51,6 +53,21 @@ The platform is intentionally built to be useful now while already prepared for 
 - backend proxy layer (`/agro-copilot/*`) to enforce business access policy
 - internal service key support (`INTERNAL_API_KEY` / `AGRO_COPILOT_API_KEY`)
 - deploy wiring for Render + Docker Compose + CI validation
+
+## Authentication & Security Engineering
+
+This project includes a production-style authentication implementation designed around real operational risk, not demo-only login forms.
+
+- **Identity model:** phone-first login (`phone + password`) with optional recovery email, supporting real user behavior in rural/agri contexts.
+- **Legal compliance controls:** explicit Terms and Data Consent acceptance at registration/login, plus consent-version enforcement and re-acceptance flow when policy versions change.
+- **Session security:** JWT-based authentication with role claims and **token versioning**; password changes and password resets invalidate previous sessions immediately.
+- **Sensitive-action hardening:** changing critical account data (phone/email) requires re-auth via current password challenge.
+- **Recovery flow:** secure forgot-password implementation with one-time reset code hashing, expiry windows, invalid-attempt limits, and SMTP email delivery support.
+- **Account security center:** dedicated settings workflows for profile updates, password rotation, legal access, recovery-code trigger, and controlled account deletion.
+- **Authorization boundaries:** strict role and ownership checks across API surfaces (worker/farmer/customer), enforced server-side.
+- **Tested behavior:** automated backend tests validate auth happy paths, consent re-acceptance, password reset controls, session invalidation, and account settings security rules.
+
+This auth layer was intentionally built as a reusable foundation for scale-up (rate limiting, audit events, device/session management) rather than a one-off MVP patch.
 
 ## Current Stage
 

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zaytoun | Consent Update Required</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/design-system.css" />
+  </head>
+  <body>
+    <main class="page auth-page">
+      <section class="card auth-card">
+        <h1>Consent Update Required</h1>
+        <p class="sub">
+          Before continuing, please re-accept the latest Terms & Conditions and Data Consent Policy.
+        </p>
+
+        <form id="consent-reaccept-form" class="form-grid">
+          <label class="signup-legal-check">
+            <input name="legal_acknowledged" type="checkbox" required />
+            <span>I acknowledge I reviewed the updated legal documents.</span>
+          </label>
+          <label class="signup-legal-check">
+            <input name="terms_accepted" type="checkbox" required />
+            <span>
+              I accept the
+              <a href="./terms.html" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>.
+            </span>
+          </label>
+          <label class="signup-legal-check">
+            <input name="data_consent_accepted" type="checkbox" required />
+            <span>
+              I consent to data processing in the
+              <a href="./privacy.html" target="_blank" rel="noopener noreferrer">Data Consent Policy</a>.
+            </span>
+          </label>
+          <button class="btn" type="submit">Accept and Continue</button>
+        </form>
+
+        <p id="consent-message" class="message"></p>
+        <p class="auth-switch">
+          <a href="./index.html" id="consent-logout-link">Sign out</a>
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="./src/consent.js"></script>
+  </body>
+</html>

@@ -2748,6 +2748,159 @@ body.image-fit-open {
   }
 }
 
+.landing-consent-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: .45rem;
+  margin-top: .2rem;
+  font-size: .8rem;
+  color: #e3ecd1;
+}
+
+.landing-consent-check input {
+  min-height: 1rem;
+  margin-top: .12rem;
+}
+
+.landing-consent-check a {
+  color: #fff1d0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.signup-legal-panel {
+  margin: 0;
+  border: 1px solid rgba(194, 210, 156, .44);
+  border-radius: 12px;
+  padding: .45rem .55rem .5rem;
+  background: rgba(23, 34, 14, .38);
+  display: grid;
+  gap: .45rem;
+}
+
+.signup-legal-panel legend {
+  padding: 0 .2rem;
+  color: #eef5dd;
+  font-weight: 800;
+}
+
+.signup-legal-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: .5rem;
+  color: #edf4de;
+  font-size: .84rem;
+  line-height: 1.4;
+}
+
+.signup-legal-check input {
+  min-height: 1rem;
+  margin-top: .16rem;
+}
+
+.signup-legal-check a {
+  color: #fff5df;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.landing-role-chooser {
+  margin-top: 1rem;
+  width: min(100%, 640px);
+}
+
+.landing-role-chooser h3 {
+  margin: 0 0 .5rem;
+  font-size: 1rem;
+  color: #f7f5e8;
+  letter-spacing: .02em;
+}
+
+.landing-role-grid {
+  display: grid;
+  gap: .55rem;
+  grid-template-columns: 1fr;
+}
+
+.landing-role-card {
+  display: grid;
+  gap: .18rem;
+  text-decoration: none;
+  padding: .6rem .68rem;
+  border-radius: 12px;
+  border: 1px solid rgba(209, 222, 172, .45);
+  background: linear-gradient(180deg, rgba(30, 45, 21, .56), rgba(21, 32, 14, .52));
+  color: #f1f6e3;
+  transition: border-color .14s ease, transform .14s ease;
+}
+
+.landing-role-card strong {
+  font-size: .95rem;
+}
+
+.landing-role-card span {
+  font-size: .82rem;
+  color: #e0e9cc;
+}
+
+.landing-role-card:hover {
+  border-color: rgba(232, 205, 132, .7);
+  transform: translateY(-1px);
+}
+
+.forgot-card {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100% - 2rem));
+  margin: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(208, 223, 173, .42);
+  background: linear-gradient(180deg, rgba(31, 39, 18, .66), rgba(22, 30, 14, .55));
+  backdrop-filter: blur(6px);
+  box-shadow: 0 18px 34px rgba(7, 11, 6, .5);
+  padding: .95rem;
+  align-self: center;
+}
+
+.forgot-form {
+  display: grid;
+  gap: .38rem;
+  margin-bottom: .8rem;
+  border: 1px solid rgba(194, 210, 156, .35);
+  border-radius: 12px;
+  padding: .55rem;
+  background: rgba(20, 29, 12, .36);
+}
+
+.forgot-form h2 {
+  margin: 0 0 .3rem;
+  font-size: .95rem;
+  color: #eef5dc;
+}
+
+.forgot-form label {
+  display: grid;
+  gap: .25rem;
+  color: #ebf2da;
+  font-weight: 700;
+}
+
+.forgot-form input {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(204, 219, 166, .56);
+  background: rgba(243, 248, 232, .16);
+  color: #f5f9ea;
+}
+
+@media (min-width: 980px) {
+  .landing-role-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 
 
 

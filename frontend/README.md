@@ -38,6 +38,7 @@ Vite multi-page frontend for Worker Radar.
 - Worker home: `register.html`
 - Farmer home: `workers.html`
 - Customer home: `market.html`
+- If backend requires policy re-acceptance, authenticated users are redirected to `consent.html`.
 
 Unauthenticated users are redirected to `index.html`.
 

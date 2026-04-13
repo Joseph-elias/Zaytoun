@@ -1,4 +1,5 @@
-﻿import "./ui-feedback.js";
+import "./ui-feedback.js";
+import { AUTH_CONSENT_VERSION } from "./config.js";
 import { initLocationPicker } from "./location-picker.js";
 import { getSession, login, redirectToRoleHome, registerAccount } from "./session.js";
 
@@ -9,6 +10,13 @@ if (existing?.user?.role) {
 
 const registerForm = document.getElementById("register-user-form");
 const registerMessage = document.getElementById("register-message");
+const roleInput = registerForm?.querySelector('select[name="role"]');
+const queryRole = new URLSearchParams(window.location.search).get("role");
+const allowedRoles = new Set(["worker", "farmer", "customer"]);
+
+if (roleInput && queryRole && allowedRoles.has(queryRole)) {
+  roleInput.value = queryRole;
+}
 
 const locationPicker = initLocationPicker({
   mapElementId: "account-location-map",
@@ -25,16 +33,40 @@ function setMessage(node, text, ok = true) {
 
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  setMessage(registerMessage, "Creating account...");
 
   const fd = new FormData(registerForm);
+  const termsAccepted = fd.get("terms_accepted") === "on";
+  const dataConsentAccepted = fd.get("data_consent_accepted") === "on";
+  const password = String(fd.get("password") || "");
+  const confirmPassword = String(fd.get("confirm_password") || "");
+
+  if (!termsAccepted || !dataConsentAccepted) {
+    setMessage(
+      registerMessage,
+      "You must accept Terms & Conditions and Data Consent Policy to create your account.",
+      false,
+    );
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setMessage(registerMessage, "Password and confirm password must match.", false);
+    return;
+  }
+
+  setMessage(registerMessage, "Creating account...");
+
   const location = locationPicker.getValue();
 
   const payload = {
     full_name: String(fd.get("full_name") || "").trim(),
+    email: String(fd.get("email") || "").trim().toLowerCase(),
     phone: String(fd.get("phone") || "").trim(),
     role: String(fd.get("role") || "worker"),
-    password: String(fd.get("password") || ""),
+    password,
+    terms_accepted: termsAccepted,
+    data_consent_accepted: dataConsentAccepted,
+    consent_version: AUTH_CONSENT_VERSION,
     address: location.address,
     latitude: location.latitude,
     longitude: location.longitude,
@@ -49,4 +81,3 @@ registerForm.addEventListener("submit", async (event) => {
     setMessage(registerMessage, error.message || "Registration failed", false);
   }
 });
-

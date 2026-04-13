@@ -18,11 +18,12 @@ def verify_password(password: str, password_hash: str) -> bool:
     return pwd_context.verify(password, password_hash)
 
 
-def create_access_token(subject: str, role: str, expires_minutes: int = 60 * 24) -> str:
+def create_access_token(subject: str, role: str, token_version: int = 0, expires_minutes: int = 60 * 24) -> str:
     now = datetime.now(timezone.utc)
     payload: dict[str, Any] = {
         "sub": subject,
         "role": role,
+        "tv": int(token_version),
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=expires_minutes)).timestamp()),
     }

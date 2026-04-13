@@ -1,4 +1,5 @@
 from tests.helpers import client, _clear_tables, _register_and_login, _create_land_piece, _worker_payload
+from app.core.config import settings
 
 
 def test_auth_register_and_login() -> None:
@@ -9,14 +10,127 @@ def test_auth_register_and_login() -> None:
         "phone": "+2127000000",
         "role": "farmer",
         "password": "secret123",
+        "terms_accepted": True,
+        "data_consent_accepted": True,
+        "consent_version": "2026-04-13",
     }
     response = client.post("/auth/register", json=payload)
     assert response.status_code == 201
 
-    login = client.post("/auth/login", json={"phone": payload["phone"], "password": payload["password"]})
+    login = client.post(
+        "/auth/login",
+        json={"phone": payload["phone"], "password": payload["password"], "legal_acknowledged": True},
+    )
     assert login.status_code == 200
     assert "access_token" in login.json()
     assert login.json()["user"]["role"] == "farmer"
+
+
+def test_auth_requires_registration_and_login_consent_flags() -> None:
+    _clear_tables()
+
+    missing_consent = client.post(
+        "/auth/register",
+        json={
+            "full_name": "Farmer Two",
+            "phone": "+2127000999",
+            "role": "farmer",
+            "password": "secret123",
+        },
+    )
+    assert missing_consent.status_code == 422
+
+    ok_register = client.post(
+        "/auth/register",
+        json={
+            "full_name": "Farmer Two",
+            "phone": "+2127000999",
+            "role": "farmer",
+            "password": "secret123",
+            "terms_accepted": True,
+            "data_consent_accepted": True,
+            "consent_version": "2026-04-13",
+        },
+    )
+    assert ok_register.status_code == 201
+
+    missing_login_ack = client.post(
+        "/auth/login",
+        json={"phone": "+2127000999", "password": "secret123"},
+    )
+    assert missing_login_ack.status_code == 422
+
+    ok_login = client.post(
+        "/auth/login",
+        json={"phone": "+2127000999", "password": "secret123", "legal_acknowledged": True},
+    )
+    assert ok_login.status_code == 200
+
+
+def test_consent_reaccept_flow_blocks_protected_endpoints_until_updated() -> None:
+    _clear_tables()
+
+    reg = client.post(
+        "/auth/register",
+        json={
+            "full_name": "Farmer Consent",
+            "phone": "+2127001888",
+            "role": "farmer",
+            "password": "secret123",
+            "terms_accepted": True,
+            "data_consent_accepted": True,
+            "consent_version": "2026-04-13",
+        },
+    )
+    assert reg.status_code == 201
+
+    previous_version = settings.auth_consent_version
+    settings.auth_consent_version = "2026-05-01"
+    try:
+        login = client.post(
+            "/auth/login",
+            json={"phone": "+2127001888", "password": "secret123", "legal_acknowledged": True},
+        )
+        assert login.status_code == 200
+        assert login.json()["consent_reaccept_required"] is True
+        assert login.json()["required_consent_version"] == "2026-05-01"
+        token = login.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        blocked = client.get("/workers", headers=headers)
+        assert blocked.status_code == 403
+        detail = blocked.json().get("detail", {})
+        assert detail.get("code") == "consent_reaccept_required"
+
+        wrong_version = client.patch(
+            "/auth/consent",
+            headers=headers,
+            json={
+                "legal_acknowledged": True,
+                "terms_accepted": True,
+                "data_consent_accepted": True,
+                "consent_version": "2026-04-13",
+            },
+        )
+        assert wrong_version.status_code == 400
+
+        updated = client.patch(
+            "/auth/consent",
+            headers=headers,
+            json={
+                "legal_acknowledged": True,
+                "terms_accepted": True,
+                "data_consent_accepted": True,
+                "consent_version": "2026-05-01",
+            },
+        )
+        assert updated.status_code == 200
+        assert updated.json()["consent_version"] == "2026-05-01"
+
+        allowed = client.get("/workers", headers=headers)
+        assert allowed.status_code == 200
+    finally:
+        settings.auth_consent_version = previous_version
 
 def test_worker_role_restrictions_and_ownership() -> None:
     _clear_tables()

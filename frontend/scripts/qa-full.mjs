@@ -38,6 +38,9 @@ const register = await api("/auth/register", {
     phone,
     role: "farmer",
     password,
+    terms_accepted: true,
+    data_consent_accepted: true,
+    consent_version: "2026-04-13",
   }),
 });
 assert(register.ok, `register failed: ${register.status}`);
@@ -45,7 +48,7 @@ assert(register.ok, `register failed: ${register.status}`);
 const login = await api("/auth/login", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ phone, password }),
+  body: JSON.stringify({ phone, password, legal_acknowledged: true }),
 });
 assert(login.ok, `login failed: ${login.status}`);
 const session = login.body;

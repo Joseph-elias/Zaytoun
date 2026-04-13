@@ -30,13 +30,16 @@ await api("/auth/register", {
     phone,
     role: "farmer",
     password,
+    terms_accepted: true,
+    data_consent_accepted: true,
+    consent_version: "2026-04-13",
   }),
 });
 
 const session = await api("/auth/login", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ phone, password }),
+  body: JSON.stringify({ phone, password, legal_acknowledged: true }),
 });
 
 const auth = { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" };
