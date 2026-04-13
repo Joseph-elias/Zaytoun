@@ -46,3 +46,17 @@ repo_files.txt
 # Agro-copilot local runtime files
 Agro-copilot/.venv/
 Agro-copilot/.env
+
+# Internal instructions (do not publish)
+AGENTS.md
+
+# Images (do not publish)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tif
+*.tiff
+*.svg
