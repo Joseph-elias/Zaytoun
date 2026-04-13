@@ -60,3 +60,6 @@ AGENTS.md
 *.tif
 *.tiff
 *.svg
+
+# Public recruiter-facing preview image (keep tracked)
+!assets/landing-marketing.jpeg
