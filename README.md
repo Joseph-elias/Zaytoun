@@ -4,7 +4,7 @@ Zaytoun is a production-minded agricultural platform that unifies workforce oper
 
 ## Product Preview
 
-![Zaytoun Landing Page](assets/landing-marketing.jpg)
+![Zaytoun Landing Page](assets/landing-marketing.jpeg)
 
 ## My Why
 
