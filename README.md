@@ -106,7 +106,3 @@ npm.cmd run dev
 ```
 
 Open: `http://127.0.0.1:5173`
-
-## Recruiter Note
-
-This project is intentionally ambitious. The value is not only in features, but in how the system handles cross-domain complexity, role safety, deployment readiness, and practical AI integration in a high-friction real-world context.
