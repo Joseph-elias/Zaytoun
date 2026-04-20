@@ -17,6 +17,7 @@ BookingStatus = Literal[
 
 
 class BookingRequestItem(BaseModel):
+    season_id: UUID | None = None
     work_date: date
     work_slot: WorkSlotType = "full_day"
     requested_men: int = Field(ge=0, le=100)

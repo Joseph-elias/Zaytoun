@@ -135,18 +135,27 @@ def _duplicate_booking_exists(
 
 def create_bookings_for_worker(db: Session, worker: Worker, farmer: User, payload: BookingCreate) -> list[dict]:
     created: list[Booking] = []
-
-    if payload.season_id is not None:
-        season = db.scalar(
-            select(FarmerOliveSeason).where(
-                FarmerOliveSeason.id == payload.season_id,
-                FarmerOliveSeason.farmer_user_id == farmer.id,
-            )
+    requested_season_ids = {
+        season_id
+        for season_id in [payload.season_id, *(item.season_id for item in payload.requests)]
+        if season_id is not None
+    }
+    owned_season_ids: set[UUID] = set()
+    if requested_season_ids:
+        owned_season_ids = set(
+            db.scalars(
+                select(FarmerOliveSeason.id).where(
+                    FarmerOliveSeason.farmer_user_id == farmer.id,
+                    FarmerOliveSeason.id.in_(requested_season_ids),
+                )
+            ).all()
         )
-        if not season:
+        if owned_season_ids != requested_season_ids:
             raise ValueError("Season record not found for booking")
 
     for item in payload.requests:
+        resolved_season_id = item.season_id if item.season_id is not None else payload.season_id
+
         if not worker_available_on_slot(db, worker, item.work_date, item.work_slot):
             raise ValueError(
                 f"Worker is not available on selected date {item.work_date.isoformat()} for slot {item.work_slot}"
@@ -175,7 +184,7 @@ def create_bookings_for_worker(db: Session, worker: Worker, farmer: User, payloa
         booking = Booking(
             worker_id=worker.id,
             farmer_user_id=farmer.id,
-            season_id=payload.season_id,
+            season_id=resolved_season_id,
             work_date=item.work_date,
             work_slot=item.work_slot,
             day=weekday_name(item.work_date),

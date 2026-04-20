@@ -621,6 +621,89 @@ def test_olive_season_uses_confirmed_bookings_for_harvest_days_and_labor_cost() 
     assert by_piece["Booked Piece B"]["harvest_days"] == 0
     assert by_piece["Booked Piece B"]["labor_cost_total"] == "0.00"
 
+
+def test_booking_allows_per_row_season_assignment() -> None:
+    _clear_tables()
+
+    worker_phone = "+2127014991"
+    worker_headers = _register_and_login("worker", worker_phone)
+    farmer_headers = _register_and_login("farmer", "+2127014992")
+
+    _create_land_piece(farmer_headers, "North Plot")
+    _create_land_piece(farmer_headers, "South Plot")
+
+    season_north = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2042,
+            "land_pieces": 1,
+            "land_piece_name": "North Plot",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 5,
+            "pressing_cost": 10,
+        },
+        headers=farmer_headers,
+    )
+    assert season_north.status_code == 201
+
+    season_south = client.post(
+        "/olive-seasons",
+        json={
+            "season_year": 2042,
+            "land_pieces": 1,
+            "land_piece_name": "South Plot",
+            "kg_per_land_piece": 100,
+            "tanks_20l": 5,
+            "pressing_cost": 10,
+        },
+        headers=farmer_headers,
+    )
+    assert season_south.status_code == 201
+
+    north_id = season_north.json()["id"]
+    south_id = season_south.json()["id"]
+
+    create_worker = client.post(
+        "/workers",
+        json={
+            "name": "Split Season Team",
+            "phone": worker_phone,
+            "village": "Lille",
+            "men_count": 2,
+            "women_count": 2,
+            "rate_type": "day",
+            "men_rate_value": 100,
+            "women_rate_value": 80,
+            "overtime_open": False,
+            "overtime_price": None,
+            "overtime_note": None,
+            "available_dates": ["2042-10-11", "2042-10-12"],
+            "available": True,
+        },
+        headers=worker_headers,
+    )
+    assert create_worker.status_code == 201
+    worker_id = create_worker.json()["id"]
+
+    booking = client.post(
+        f"/workers/{worker_id}/bookings",
+        json={
+            "requests": [
+                {"season_id": north_id, "work_date": "2042-10-11", "requested_men": 1, "requested_women": 0},
+                {"season_id": south_id, "work_date": "2042-10-12", "requested_men": 1, "requested_women": 0},
+            ],
+            "note": "split season by day",
+        },
+        headers=farmer_headers,
+    )
+    assert booking.status_code == 201
+    rows = booking.json()
+    assert len(rows) == 2
+    season_by_day = {item["work_date"]: item["season_id"] for item in rows}
+    assert season_by_day["2042-10-11"] == north_id
+    assert season_by_day["2042-10-12"] == south_id
+
+
 def test_olive_season_keeps_booking_labor_when_old_season_link_becomes_orphan() -> None:
     _clear_tables()
 
