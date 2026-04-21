@@ -34,10 +34,10 @@ function normalizeStatus(status) {
 
 function statusLabel(status) {
   const s = normalizeStatus(status);
-  if (s === "pending_worker") return "pending worker";
-  if (s === "pending_farmer") return "pending farmer";
-  if (s === "confirmed") return "accepted";
-  return "rejected";
+  if (s === "pending_worker") return "Pending Worker";
+  if (s === "pending_farmer") return "Pending Farmer";
+  if (s === "confirmed") return "Confirmed";
+  return "Rejected";
 }
 
 function statusBadge(status) {
@@ -65,7 +65,7 @@ function timelineText(events) {
   const tail = events.slice(-3);
   return tail
     .map((event) => `${actionLabel(event.action)} by ${event.actor_name} (${new Date(event.created_at).toLocaleString()})${event.details ? `: ${event.details}` : ""}`)
-    .join(" -> ");
+    .join(" | ");
 }
 
 function dayLabel(day) {
@@ -96,7 +96,7 @@ function requestGroupTitle(group) {
   const titles = {
     action: "Action Needed",
     waiting: "Waiting Worker",
-    accepted: "Accepted",
+    accepted: "Confirmed",
     rejected: "Rejected",
   };
   return titles[group] || "Other";
@@ -181,7 +181,7 @@ function bookingCard(booking) {
       }
       ${proposalEditor(booking, s)}
       <div class="actions-row">
-        <button class="btn danger" type="button" data-delete-booking="${booking.id}">Delete (Test)</button>
+        <button class="btn danger" type="button" data-delete-booking="${booking.id}">Delete Request</button>
         <a class="btn ghost" href="${whatsappLink(booking.worker_phone)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         <button class="btn ghost" type="button" data-chat-toggle="${booking.id}">Open Chat</button>
       </div>
@@ -358,7 +358,7 @@ bookingsList.addEventListener("click", async (event) => {
     const form = bookingsList.querySelector(`form[data-proposal-form="${bookingId}"]`);
     if (!form) return;
     form.hidden = !form.hidden;
-    toggleProposalButton.textContent = form.hidden ? "Modify Proposal" : "Hide Modify Form";
+    toggleProposalButton.textContent = form.hidden ? "Modify Proposal" : "Close Editor";
     return;
   }
 
@@ -467,7 +467,7 @@ bookingsList.addEventListener("click", async (event) => {
   const deleteBookingButton = event.target.closest("button[data-delete-booking]");
   if (deleteBookingButton) {
     const bookingId = deleteBookingButton.dataset.deleteBooking;
-    const ok = window.confirm("Delete this booking? This is for testing only.");
+    const ok = window.confirm("Delete this booking request?");
     if (!ok) return;
 
     deleteBookingButton.disabled = true;

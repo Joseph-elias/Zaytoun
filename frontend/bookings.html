@@ -29,8 +29,11 @@
       </header>
 
       <section class="card">
-        <h2>Filters</h2>
-        <form id="booking-filters-form" class="form-grid compact">
+        <div class="list-head">
+          <h2>Filters</h2>
+          <span class="badge day">Request View</span>
+        </div>
+        <form id="booking-filters-form" class="form-grid compact bookings-filter-form">
           <label>Status
             <select name="status">
               <option value="">All</option>
@@ -44,7 +47,7 @@
         </form>
       </section>
 
-      <section class="card">
+      <section class="card bookings-main-card">
         <div class="list-head">
           <h2>Bookings</h2>
           <button class="btn ghost" id="refresh-btn" type="button">Refresh</button>

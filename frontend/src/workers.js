@@ -23,6 +23,8 @@ const sortByInput = form.querySelector('select[name="sort_by"]');
 const mapHint = document.getElementById("map-hint");
 const mapEl = document.getElementById("workers-map");
 const mapSelectedWorkerEl = document.getElementById("map-selected-worker");
+const advancedFiltersEl = document.getElementById("advanced-filters");
+const advancedFiltersCountEl = document.getElementById("advanced-filters-count");
 const liveWeatherEl = document.getElementById("live-weather");
 const liveWeatherIconEl = document.getElementById("live-weather-icon");
 const liveWeatherTextEl = document.getElementById("live-weather-text");
@@ -31,6 +33,7 @@ const workerDetailPanelEl = document.getElementById("worker-detail-panel");
 const workerDetailTitleEl = document.getElementById("worker-detail-title");
 const workerDetailBodyEl = document.getElementById("worker-detail-body");
 const workerDetailCloseBtn = document.getElementById("worker-detail-close");
+const workersPageMainEl = document.querySelector("main.page-workers");
 
 const isWorker = session?.user?.role === "worker";
 const isFarmer = session?.user?.role === "farmer";
@@ -47,6 +50,18 @@ const markersByWorkerId = new Map();
 let weatherRefreshTimerId = null;
 let weatherLastCoords = null;
 const WEATHER_REFRESH_MS = 15 * 60 * 1000;
+let lastFocusedElement = null;
+const ADVANCED_FILTERS_STORAGE_KEY = "workers_advanced_filters_open_v1";
+const advancedFilterFields = [
+  "work_slot",
+  "sort_by",
+  "max_distance_km",
+  "rate_type",
+  "min_men_rate",
+  "max_men_rate",
+  "min_women_rate",
+  "max_women_rate",
+];
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
@@ -336,14 +351,18 @@ function workerPanelDetails(worker) {
 function closeWorkerPanel() {
   openedWorkerId = null;
   document.body.classList.remove("worker-panel-open");
+  if (workersPageMainEl) workersPageMainEl.removeAttribute("inert");
   if (workerDetailPanelEl) {
     workerDetailPanelEl.classList.remove("is-open");
     workerDetailPanelEl.hidden = true;
+    workerDetailPanelEl.setAttribute("aria-hidden", "true");
   }
   if (workerDetailOverlayEl) {
     workerDetailOverlayEl.classList.remove("is-open");
     workerDetailOverlayEl.hidden = true;
   }
+  if (lastFocusedElement && typeof lastFocusedElement.focus === "function") lastFocusedElement.focus();
+  lastFocusedElement = null;
 }
 
 function openWorkerPanel(workerId, { scrollCard = false } = {}) {
@@ -352,14 +371,18 @@ function openWorkerPanel(workerId, { scrollCard = false } = {}) {
   if (!worker || !workerDetailBodyEl || !workerDetailPanelEl || !workerDetailOverlayEl) return;
 
   openedWorkerId = workerId;
+  lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   if (workerDetailTitleEl) workerDetailTitleEl.textContent = displayName(worker.name);
   workerDetailBodyEl.innerHTML = workerPanelDetails(worker);
 
+  if (workersPageMainEl) workersPageMainEl.setAttribute("inert", "");
   workerDetailPanelEl.hidden = false;
+  workerDetailPanelEl.removeAttribute("aria-hidden");
   workerDetailOverlayEl.hidden = false;
   requestAnimationFrame(() => {
     workerDetailPanelEl.classList.add("is-open");
     workerDetailOverlayEl.classList.add("is-open");
+    (workerDetailCloseBtn || workerDetailPanelEl).focus();
   });
   document.body.classList.add("worker-panel-open");
 
@@ -369,6 +392,56 @@ function openWorkerPanel(workerId, { scrollCard = false } = {}) {
     cardEl.classList.add("worker-card-highlight");
     window.setTimeout(() => cardEl.classList.remove("worker-card-highlight"), 1400);
   }
+}
+
+function panelFocusableElements() {
+  if (!workerDetailPanelEl || workerDetailPanelEl.hidden) return [];
+  const candidates = workerDetailPanelEl.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  return [...candidates].filter((element) => element.getClientRects().length > 0);
+}
+
+function trapWorkerPanelFocus(event) {
+  if (event.key !== "Tab" || workerDetailPanelEl?.hidden) return;
+  const focusable = panelFocusableElements();
+  if (!focusable.length) {
+    event.preventDefault();
+    workerDetailPanelEl?.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const activeElement = document.activeElement;
+
+  if (event.shiftKey) {
+    if (activeElement === first || !workerDetailPanelEl?.contains(activeElement)) {
+      event.preventDefault();
+      last.focus();
+    }
+    return;
+  }
+
+  if (activeElement === last || !workerDetailPanelEl?.contains(activeElement)) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function setWorkerActionMessage(button, text, isError = true) {
+  const cardEl = button.closest("[data-worker-card-id]");
+  if (!cardEl) return;
+
+  let messageEl = cardEl.querySelector(".worker-action-message");
+  if (!messageEl) {
+    messageEl = document.createElement("p");
+    messageEl.className = "message worker-action-message";
+    button.insertAdjacentElement("afterend", messageEl);
+  }
+
+  messageEl.textContent = text || "";
+  messageEl.className = `message worker-action-message ${isError ? "error" : "success"}`;
 }
 
 function buildQuery() {
@@ -395,6 +468,78 @@ function buildQuery() {
   });
 
   return params.toString();
+}
+
+function hasAdvancedFiltersActive() {
+  if (!form) return false;
+  return advancedFilterFields.some((fieldName) => {
+    const value = form.elements[fieldName]?.value;
+    return String(value || "").trim() !== "";
+  });
+}
+
+function activeAdvancedFiltersCount() {
+  if (!form) return 0;
+  return advancedFilterFields.reduce((count, fieldName) => {
+    const value = String(form.elements[fieldName]?.value || "").trim();
+    return value ? count + 1 : count;
+  }, 0);
+}
+
+function updateAdvancedFiltersSummary() {
+  if (!advancedFiltersCountEl) return;
+  const count = activeAdvancedFiltersCount();
+  if (!count) {
+    advancedFiltersCountEl.hidden = true;
+    advancedFiltersCountEl.textContent = "";
+    return;
+  }
+  advancedFiltersCountEl.hidden = false;
+  advancedFiltersCountEl.textContent = `${count} active`;
+}
+
+function readStoredAdvancedFiltersOpen() {
+  try {
+    const raw = window.localStorage.getItem(ADVANCED_FILTERS_STORAGE_KEY);
+    if (raw === "open") return true;
+    if (raw === "closed") return false;
+  } catch {
+    // ignore storage issues
+  }
+  return null;
+}
+
+function writeStoredAdvancedFiltersOpen(isOpen) {
+  try {
+    window.localStorage.setItem(ADVANCED_FILTERS_STORAGE_KEY, isOpen ? "open" : "closed");
+  } catch {
+    // ignore storage issues
+  }
+}
+
+function setAdvancedFiltersOpen(isOpen, { persist = true } = {}) {
+  if (!advancedFiltersEl) return;
+  advancedFiltersEl.open = Boolean(isOpen);
+  if (persist) writeStoredAdvancedFiltersOpen(Boolean(isOpen));
+}
+
+function syncAdvancedFiltersOpenState(forceOpen = false) {
+  if (!advancedFiltersEl) return;
+  if (forceOpen) {
+    setAdvancedFiltersOpen(true);
+    updateAdvancedFiltersSummary();
+    return;
+  }
+
+  const stored = readStoredAdvancedFiltersOpen();
+  if (stored !== null) {
+    setAdvancedFiltersOpen(stored, { persist: false });
+    updateAdvancedFiltersSummary();
+    return;
+  }
+
+  setAdvancedFiltersOpen(hasAdvancedFiltersActive(), { persist: false });
+  updateAdvancedFiltersSummary();
 }
 
 function extractApiErrorMessage(err, fallbackMessage) {
@@ -860,6 +1005,7 @@ useMyLocationBtn?.addEventListener("click", () => {
       nearLatInput.value = String(position.coords.latitude);
       nearLngInput.value = String(position.coords.longitude);
       if (sortByInput) sortByInput.value = "distance";
+      syncAdvancedFiltersOpenState(true);
       refreshLiveWeatherFromCoords(position.coords.latitude, position.coords.longitude);
       fetchFarmerSeasons().then(fetchWorkers);
     },
@@ -874,16 +1020,27 @@ useMyLocationBtn?.addEventListener("click", () => {
 if (session?.user?.latitude !== null && session?.user?.longitude !== null) {
   nearLatInput.value = String(session.user.latitude);
   nearLngInput.value = String(session.user.longitude);
+  syncAdvancedFiltersOpenState(false);
   refreshLiveWeatherFromCoords(session.user.latitude, session.user.longitude);
 } else {
   setLiveWeatherMessage('Live weather: tap "Use My Location".', false, "○");
+  syncAdvancedFiltersOpenState(false);
 }
 
 workerDetailCloseBtn?.addEventListener("click", closeWorkerPanel);
 workerDetailOverlayEl?.addEventListener("click", closeWorkerPanel);
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !workerDetailPanelEl?.hidden) closeWorkerPanel();
+  if (event.key === "Escape" && !workerDetailPanelEl?.hidden) {
+    closeWorkerPanel();
+    return;
+  }
+  trapWorkerPanelFocus(event);
 });
+advancedFiltersEl?.addEventListener("toggle", () => {
+  writeStoredAdvancedFiltersOpen(advancedFiltersEl.open);
+});
+form.addEventListener("input", updateAdvancedFiltersSummary);
+form.addEventListener("change", updateAdvancedFiltersSummary);
 
 function handleBookingRowsClick(event) {
   const addRowButton = event.target.closest("button[data-add-booking-row]");
@@ -1077,6 +1234,7 @@ listEl.addEventListener("click", async (event) => {
   const workerId = button.dataset.id;
   const next = button.dataset.next === "true";
 
+  setWorkerActionMessage(button, "", false);
   button.disabled = true;
   try {
     const response = await fetch(`${API_BASE}/workers/${workerId}/availability`, {
@@ -1095,7 +1253,7 @@ listEl.addEventListener("click", async (event) => {
     await fetchFarmerSeasons().then(fetchWorkers);
   } catch (error) {
     button.disabled = false;
-    alert(error.message);
+    setWorkerActionMessage(button, error.message || "Could not update availability.", true);
   }
 });
 

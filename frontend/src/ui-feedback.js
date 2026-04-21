@@ -92,8 +92,6 @@ function startLoading(button) {
   button.disabled = true;
   button.classList.remove("is-done", "is-error");
   button.classList.add("is-loading");
-  const loadingLabel = button.dataset.loadingLabel || inferLoadingLabel(state.defaultLabel);
-  setLabel(button, loadingLabel);
 }
 
 function finishLoading(button, ok) {
@@ -112,10 +110,8 @@ function finishLoading(button, ok) {
   button.classList.remove("is-loading");
   if (state.failed) {
     button.classList.add("is-error");
-    setLabel(button, "Failed");
   } else {
     button.classList.add("is-done");
-    setLabel(button, "Done ✓");
   }
 
   state.resetTimer = window.setTimeout(() => {

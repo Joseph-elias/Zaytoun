@@ -14,73 +14,101 @@
     <div class="backdrop"></div>
     <main class="page page-market workers-directory-page">
       <header class="hero workers-directory-hero reveal-prep">
-        <div class="workers-hero-top">
-          <a class="workers-brand" href="./workers.html" aria-label="Zaytoun Home">
-            <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
-            <span>Zaytoun</span>
-          </a>
+        <div class="workers-hero-head">
+          <div class="workers-hero-copy">
+            <div class="workers-hero-top">
+              <a class="workers-brand" href="./workers.html" aria-label="Zaytoun Home">
+                <img src="./assets/zaytoun-logo.png" alt="Zaytoun logo" />
+                <span>Zaytoun</span>
+              </a>
+            </div>
+            <h1>Market</h1>
+            <p class="sub">Find and manage available agricultural workers.</p>
+          </div>
         </div>
-        <h1>Market</h1>
-        <p class="sub" id="role-hint">Farmers can build their market. Customers can browse stores and order.</p>
         <div class="workers-toolbar-row">
           <nav id="app-tabs" class="tabs workers-app-tabs"></nav>
           <button class="btn ghost workers-logout-btn" id="logout-btn" type="button">Logout</button>
         </div>
       </header>
 
-      <section class="card market-create-card" id="store-profile-card">
+      <section class="card market-management-quick" id="market-management-quick">
         <div class="list-head">
-          <h2>Store Profile</h2>
-          <div class="actions-row">
-            <span class="badge day">UberEats style</span>
-            <button class="btn ghost market-fold-toggle" id="store-profile-toggle-btn" type="button" aria-expanded="true">Hide</button>
-          </div>
+          <h2>Management</h2>
+          <span class="badge day">Farmer Workspace</span>
         </div>
-        <div id="store-profile-content">
-          <form id="store-profile-form" class="form-grid compact market-create-form">
-            <label>Store Name<input name="store_name" maxlength="120" placeholder="Zaytoun House" /></label>
-            <label>Store Banner (PNG/JPG)<input name="store_banner_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
-            <input name="store_banner_url" type="hidden" />
-            <label class="full">About Store<textarea name="store_about" rows="2" maxlength="600" placeholder="What makes your store special"></textarea></label>
-            <label class="full">Opening Hours<input name="store_opening_hours" maxlength="180" placeholder="Mon-Sat 8:00 - 18:00" /></label>
-            <button class="btn" type="submit">Save Store Profile</button>
-          </form>
-          <p id="store-profile-message" class="message"></p>
+        <p class="sub market-section-intro">Set your store identity once, then add products with only product image and core details.</p>
+        <div class="market-management-grid">
+          <article class="market-mini-window">
+            <h3>Store Setup</h3>
+            <p class="sub">Configure your store profile and branding used across all products.</p>
+            <button class="btn" id="open-store-profile-panel-btn" type="button">Open Store Setup</button>
+          </article>
+          <article class="market-mini-window">
+            <h3>Product Builder</h3>
+            <p class="sub">Add products fast. Store branding is inherited automatically.</p>
+            <button class="btn" id="open-listing-panel-btn" type="button">Open Product Builder</button>
+          </article>
         </div>
       </section>
 
-      <section class="card market-create-card" id="farmer-create-card">
-        <div class="list-head">
-          <h2>Build Your Listing</h2>
-          <div class="actions-row">
-            <span class="badge day">Store Builder</span>
-            <button class="btn ghost market-fold-toggle" id="listing-toggle-btn" type="button" aria-expanded="true">Hide</button>
+      <section class="market-management-panel is-hidden" id="store-profile-card">
+        <div class="card market-create-card market-management-surface">
+          <div class="list-head market-management-head">
+            <h2>Store Profile</h2>
+            <div class="actions-row market-management-toolbar">
+              <span class="badge day">Store Setup</span>
+              <button class="btn ghost" id="store-profile-close-btn" type="button">Close</button>
+            </div>
+          </div>
+          <p id="store-profile-intro" class="sub market-section-intro">Set up your store identity once so every product inherits the same branding.</p>
+          <div id="store-profile-content">
+            <form id="store-profile-form" class="form-grid compact market-create-form">
+              <label>Store Name<input name="store_name" maxlength="120" placeholder="Zaytoun House" /></label>
+              <label>Store Banner (PNG/JPG)<input name="store_banner_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+              <input name="store_banner_url" type="hidden" />
+              <label class="full">About Store<textarea name="store_about" rows="2" maxlength="600" placeholder="What makes your store special"></textarea></label>
+              <label class="full">Opening Hours<input name="store_opening_hours" maxlength="180" placeholder="Mon-Sat 8:00 - 18:00" /></label>
+              <button class="btn" type="submit">Save Store Profile</button>
+            </form>
+            <p id="store-profile-message" class="message"></p>
           </div>
         </div>
-        <div id="listing-content">
-          <form id="market-item-form" class="form-grid compact market-create-form">
-            <label>Product Name<input name="item_name" required maxlength="120" placeholder="Extra Virgin Olive Oil" /></label>
-            <label>Unit (kg, liter, box...)<input name="unit_label" id="market-unit-label-input" required maxlength="50" placeholder="liter" /></label>
-            <label>Link To Inventory Item
-              <select name="linked_inventory_item_id" id="linked-inventory-select">
-                <option value="">None (standalone listing)</option>
-              </select>
-            </label>
-            <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" required /></label>
-            <label class="inline-check">Track Quantity
-              <input name="track_quantity" type="checkbox" checked />
-            </label>
-            <label id="quantity-label">Quantity Available<input name="quantity_available" type="number" step="0.01" min="0" /></label>
-            <label>Brand Logo (PNG/JPG)<input name="brand_logo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
-            <input name="brand_logo_url" type="hidden" />
-            <label>Product Photo (PNG/JPG)<input name="photo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
-            <input name="photo_url" type="hidden" />
-            <label class="full">Pickup Location<input name="pickup_location" maxlength="180" placeholder="Village, district, pickup spot" /></label>
-            <label class="full">Description<textarea name="description" rows="2" maxlength="400" placeholder="Optional details"></textarea></label>
-            <label class="inline-check full"><input name="is_active" type="checkbox" checked /> Active listing</label>
-            <button class="btn" type="submit">Save Listing</button>
-          </form>
-          <p id="market-item-message" class="message"></p>
+      </section>
+
+      <section class="market-management-panel is-hidden" id="farmer-create-card">
+        <div class="card market-create-card market-management-surface">
+          <div class="list-head market-management-head">
+            <h2>Build Your Listing</h2>
+            <div class="actions-row market-management-toolbar">
+              <span class="badge day">Product Builder</span>
+              <button class="btn ghost" id="listing-close-btn" type="button">Close</button>
+            </div>
+          </div>
+          <p id="listing-intro" class="sub market-section-intro">Add products with clear pricing, stock, and pickup details. Store branding is applied automatically.</p>
+          <div id="listing-content">
+            <form id="market-item-form" class="form-grid compact market-create-form">
+              <label>Product Name<input name="item_name" required maxlength="120" placeholder="Extra Virgin Olive Oil" /></label>
+              <label>Unit (kg, liter, box...)<input name="unit_label" id="market-unit-label-input" required maxlength="50" placeholder="liter" /></label>
+              <label>Link To Inventory Item
+                <select name="linked_inventory_item_id" id="linked-inventory-select">
+                  <option value="">None (standalone listing)</option>
+                </select>
+              </label>
+              <label>Price Per Unit<input name="price_per_unit" type="number" step="0.01" min="0.01" required /></label>
+              <label class="inline-check">Track Quantity
+                <input name="track_quantity" type="checkbox" checked />
+              </label>
+              <label id="quantity-label">Quantity Available<input name="quantity_available" type="number" step="0.01" min="0" /></label>
+              <label>Product Photo (PNG/JPG)<input name="photo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
+              <input name="photo_url" type="hidden" />
+              <label class="full">Pickup Location<input name="pickup_location" maxlength="180" placeholder="Village, district, pickup spot" /></label>
+              <label class="full">Description<textarea name="description" rows="2" maxlength="400" placeholder="Optional details"></textarea></label>
+              <label class="inline-check full"><input name="is_active" type="checkbox" checked /> Active listing</label>
+              <button class="btn" type="submit">Save Listing</button>
+            </form>
+            <p id="market-item-message" class="message"></p>
+          </div>
         </div>
       </section>
 
@@ -89,25 +117,27 @@
           <h2 id="market-list-title">Market</h2>
           <button class="btn ghost" id="refresh-market-btn" type="button">Refresh</button>
         </div>
+        <p id="market-main-intro" class="sub market-section-intro">Use search to find stores and products quickly.</p>
         <form id="market-filter-form" class="form-grid compact market-filter-form">
           <label class="full">Search<input name="q" placeholder="Store, product, or location" maxlength="120" /></label>
           <button class="btn" type="submit">Search</button>
         </form>
 
         <section id="customer-stores-view" class="market-customer-view">
-          <div id="market-items-list" class="workers-list market-items-grid"></div>
+          <div id="market-items-list" class="workers-list market-items-grid" role="region" aria-live="polite" aria-label="Market results"></div>
         </section>
 
         <section id="customer-store-detail" class="market-store-detail is-hidden">
           <div class="actions-row market-store-nav">
             <button id="store-back-btn" class="btn ghost" type="button">← Back to Stores</button>
           </div>
+          <p id="store-detail-intro" class="sub market-section-intro">Review store listings, then add what you need to cart.</p>
           <div id="store-header" class="market-store-header"></div>
           <div class="market-store-layout">
-            <div id="store-items-list" class="market-store-items"></div>
+          <div id="store-items-list" class="market-store-items" role="region" aria-live="polite" aria-label="Store listings"></div>
             <aside class="card market-cart-panel" id="market-cart-panel">
               <h3>Cart</h3>
-              <div id="cart-lines" class="market-cart-lines"></div>
+              <div id="cart-lines" class="market-cart-lines" role="region" aria-live="polite" aria-label="Cart items"></div>
               <p id="cart-total" class="market-cart-total">Total: 0.00</p>
               <form id="cart-checkout-form" class="form-grid compact">
                 <label class="full">Order Note<textarea name="note" rows="2" maxlength="400" placeholder="Optional note for farmer"></textarea></label>
@@ -122,11 +152,30 @@
       <section class="card" id="orders-card">
         <div class="list-head">
           <h2 id="orders-title">Orders</h2>
-          <button class="btn ghost" id="refresh-orders-btn" type="button">Refresh</button>
+          <div class="actions-row">
+            <button class="btn ghost" id="refresh-orders-btn" type="button">Refresh</button>
+            <button class="btn" id="open-orders-panel-btn" type="button">Open Latest Order</button>
+          </div>
         </div>
-        <div id="market-orders-list" class="workers-list"></div>
+        <p id="orders-intro" class="sub market-section-intro">Track order status and coordinate clearly from one place.</p>
+        <div id="market-orders-preview-list" class="workers-list market-orders-preview-list" role="region" aria-live="polite" aria-label="Orders preview"></div>
       </section>
     </main>
+
+    <div id="market-orders-panel" class="market-orders-panel is-hidden" role="dialog" aria-modal="true" aria-labelledby="market-orders-panel-title">
+      <div class="market-orders-panel-surface">
+        <div class="list-head market-orders-panel-head">
+          <h3 id="market-orders-panel-title">Full Orders</h3>
+          <div class="actions-row market-orders-nav">
+            <button class="btn ghost" id="orders-panel-prev-btn" type="button">&lt; Prev</button>
+            <button class="btn ghost" id="orders-panel-next-btn" type="button">Next &gt;</button>
+            <button class="btn ghost" id="close-orders-panel-btn" type="button">Close</button>
+          </div>
+        </div>
+        <p class="sub" id="orders-panel-order-label">Full order details, status updates, pickup validation, reviews, and chat.</p>
+        <div id="market-orders-list" class="workers-list market-orders-full-list" role="region" aria-live="polite" aria-label="Orders list"></div>
+      </div>
+    </div>
 
     <div id="image-fit-modal" class="image-fit-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="image-fit-title">
       <div class="image-fit-panel">

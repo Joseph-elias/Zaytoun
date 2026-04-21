@@ -12,25 +12,32 @@ if (session && !["farmer", "customer"].includes(session.user.role)) {
 const isFarmer = session?.user?.role === "farmer";
 const isCustomer = session?.user?.role === "customer";
 
-const roleHint = document.getElementById("role-hint");
 const logoutBtn = document.getElementById("logout-btn");
 const appTabs = document.getElementById("app-tabs");
 
 const farmerCreateCard = document.getElementById("farmer-create-card");
+const managementQuickCard = document.getElementById("market-management-quick");
+const openStoreProfilePanelBtn = document.getElementById("open-store-profile-panel-btn");
+const openListingPanelBtn = document.getElementById("open-listing-panel-btn");
 const storeProfileCard = document.getElementById("store-profile-card");
 const storeProfileToggleBtn = document.getElementById("store-profile-toggle-btn");
+const storeProfileCloseBtn = document.getElementById("store-profile-close-btn");
 const storeProfileContent = document.getElementById("store-profile-content");
 const storeProfileForm = document.getElementById("store-profile-form");
 const storeProfileMessage = document.getElementById("store-profile-message");
+const storeProfileIntro = document.getElementById("store-profile-intro");
 const listingToggleBtn = document.getElementById("listing-toggle-btn");
+const listingCloseBtn = document.getElementById("listing-close-btn");
 const listingContent = document.getElementById("listing-content");
 const marketItemForm = document.getElementById("market-item-form");
 const marketItemMessage = document.getElementById("market-item-message");
+const listingIntro = document.getElementById("listing-intro");
 const quantityLabel = document.getElementById("quantity-label");
 const linkedInventorySelect = document.getElementById("linked-inventory-select");
 const marketUnitLabelInput = document.getElementById("market-unit-label-input");
 
 const marketListTitle = document.getElementById("market-list-title");
+const marketMainIntro = document.getElementById("market-main-intro");
 const marketFilterForm = document.getElementById("market-filter-form");
 const marketItemsList = document.getElementById("market-items-list");
 const refreshMarketBtn = document.getElementById("refresh-market-btn");
@@ -40,6 +47,7 @@ const customerStoreDetail = document.getElementById("customer-store-detail");
 const storeBackBtn = document.getElementById("store-back-btn");
 const storeHeader = document.getElementById("store-header");
 const storeItemsList = document.getElementById("store-items-list");
+const storeDetailIntro = document.getElementById("store-detail-intro");
 
 const cartLines = document.getElementById("cart-lines");
 const cartTotal = document.getElementById("cart-total");
@@ -47,9 +55,17 @@ const cartCheckoutForm = document.getElementById("cart-checkout-form");
 const cartMessage = document.getElementById("cart-message");
 
 const ordersTitle = document.getElementById("orders-title");
+const ordersIntro = document.getElementById("orders-intro");
 const ordersCard = document.getElementById("orders-card");
+const marketOrdersPreviewList = document.getElementById("market-orders-preview-list");
 const marketOrdersList = document.getElementById("market-orders-list");
 const refreshOrdersBtn = document.getElementById("refresh-orders-btn");
+const openOrdersPanelBtn = document.getElementById("open-orders-panel-btn");
+const closeOrdersPanelBtn = document.getElementById("close-orders-panel-btn");
+const ordersPanelPrevBtn = document.getElementById("orders-panel-prev-btn");
+const ordersPanelNextBtn = document.getElementById("orders-panel-next-btn");
+const ordersPanelOrderLabel = document.getElementById("orders-panel-order-label");
+const marketOrdersPanel = document.getElementById("market-orders-panel");
 const imageFitModal = document.getElementById("image-fit-modal");
 const imageFitTitle = document.getElementById("image-fit-title");
 const imageFitSubtitle = document.getElementById("image-fit-subtitle");
@@ -64,16 +80,22 @@ let activeItems = [];
 let currentOrders = [];
 let editingItemId = null;
 let selectedStoreId = null;
+let selectedStoreTriggerId = null;
+let pendingOrderFocusId = null;
+let activePanelOrderId = null;
 let currentStoreProfile = null;
 let farmerInventoryItems = [];
 const cart = new Map();
 let imageFitSession = null;
+const pulseTimers = new WeakMap();
+const panelReturnFocus = new Map();
+let ordersPanelReturnFocus = null;
 
-if (session && roleHint) roleHint.textContent = `Logged in as ${session.user.full_name} (${session.user.role}).`;
 if (session && appTabs) renderAppTabs(appTabs, session.user.role, "market.html");
 
 if (!isFarmer) farmerCreateCard?.classList.add("is-hidden");
 if (!isFarmer) storeProfileCard?.classList.add("is-hidden");
+if (!isFarmer) managementQuickCard?.classList.add("is-hidden");
 if (isFarmer) {
   marketListTitle.textContent = "My Store Listings";
   ordersTitle.textContent = "Incoming Orders";
@@ -82,38 +104,178 @@ if (isCustomer) {
   marketListTitle.textContent = "Stores";
   ordersTitle.textContent = "My Orders";
 }
+setSectionIntros();
 
 installFoldToggle(storeProfileToggleBtn, storeProfileContent);
 installFoldToggle(listingToggleBtn, listingContent);
+if (isFarmer) {
+  storeProfileCard?.classList.add("is-hidden");
+  farmerCreateCard?.classList.add("is-hidden");
+}
 
 logoutBtn.addEventListener("click", () => {
   clearSession();
   window.location.href = "./index.html";
 });
 
+function openManagementPanel(card, focusTarget = null) {
+  if (!card) return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) panelReturnFocus.set(card, active);
+  if (card !== storeProfileCard) closeManagementPanel(storeProfileCard);
+  if (card !== farmerCreateCard) closeManagementPanel(farmerCreateCard);
+  card.classList.remove("is-hidden");
+  card.classList.add("is-open-panel");
+  document.body.classList.add("market-management-open");
+  requestAnimationFrame(() => {
+    const focusNode = focusTarget || card.querySelector("input, textarea, select, button");
+    if (focusNode instanceof HTMLElement) focusNode.focus();
+  });
+}
+
+function closeManagementPanel(card, backButton = null) {
+  if (!card) return;
+  card.classList.add("is-hidden");
+  card.classList.remove("is-open-panel");
+  const anotherOpen = storeProfileCard?.classList.contains("is-open-panel") || farmerCreateCard?.classList.contains("is-open-panel");
+  if (!anotherOpen) document.body.classList.remove("market-management-open");
+  const returnFocus = backButton instanceof HTMLElement ? backButton : panelReturnFocus.get(card);
+  if (returnFocus instanceof HTMLElement) returnFocus.focus();
+}
+
+function trapFocusWithin(container, event) {
+  if (!container || event.key !== "Tab") return false;
+  const nodes = Array.from(container.querySelectorAll("a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+    .filter((el) => !el.hasAttribute("hidden") && el.getAttribute("aria-hidden") !== "true");
+  if (!nodes.length) return false;
+  const first = nodes[0];
+  const last = nodes[nodes.length - 1];
+  const active = document.activeElement;
+  if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+    return true;
+  }
+  if (event.shiftKey && active === first) {
+    event.preventDefault();
+    last.focus();
+    return true;
+  }
+  return false;
+}
+
 function setFormMessage(text, ok = true) {
-  if (!marketItemMessage) return;
-  marketItemMessage.textContent = text;
-  marketItemMessage.className = `message ${ok ? "success" : "error"}`;
+  setAnnouncedMessage(marketItemMessage, text, ok);
 }
 
 function setStoreProfileMessage(text, ok = true) {
-  if (!storeProfileMessage) return;
-  storeProfileMessage.textContent = text;
-  storeProfileMessage.className = `message ${ok ? "success" : "error"}`;
+  setAnnouncedMessage(storeProfileMessage, text, ok);
 }
 
 function setCartMessage(text, ok = true) {
-  if (!cartMessage) return;
-  cartMessage.textContent = text;
-  cartMessage.className = `message ${ok ? "success" : "error"}`;
+  setAnnouncedMessage(cartMessage, text, ok);
+}
+
+function setAnnouncedMessage(element, text, ok = true) {
+  if (!element) return;
+  element.textContent = text;
+  element.className = `message ${ok ? "success" : "error"}`;
+  element.setAttribute("role", ok ? "status" : "alert");
+  element.setAttribute("aria-live", ok ? "polite" : "assertive");
+  element.setAttribute("aria-atomic", "true");
+  if (text) pulseElementClass(element, ok ? "is-message-success-flash" : "is-message-error-flash", 620);
+}
+
+function setSectionIntros() {
+  if (isFarmer) {
+    if (storeProfileIntro) storeProfileIntro.textContent = "Set your store name, banner, and hours so buyers recognize your brand.";
+    if (listingIntro) listingIntro.textContent = "Create and maintain product listings with accurate pricing and quantity.";
+    if (marketMainIntro) marketMainIntro.textContent = "Review and edit your active listings before customers place orders.";
+    if (ordersIntro) ordersIntro.textContent = "Manage incoming orders, set pickup times, and confirm handover.";
+    return;
+  }
+
+  if (isCustomer) {
+    if (marketMainIntro) marketMainIntro.textContent = "Browse trusted stores, compare products, and add items to your cart.";
+    if (storeDetailIntro) storeDetailIntro.textContent = "Check product details and build your order before checkout.";
+    if (ordersIntro) ordersIntro.textContent = "Track your submitted orders, pickup status, and store responses.";
+  }
+}
+
+function emptyStateCard(title, details) {
+  return `
+    <article class="market-empty-state">
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(details)}</p>
+    </article>
+  `;
+}
+
+function resolveSubmitButton(event, form) {
+  const submitter = event?.submitter;
+  if (submitter instanceof HTMLButtonElement) return submitter;
+  return form?.querySelector('button[type="submit"]') || null;
+}
+
+async function runWithButtonBusy(button, busyText, action) {
+  if (!button) return action();
+  if (button.dataset.busy === "1") return null;
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+  button.dataset.busy = "1";
+  button.disabled = true;
+  button.classList.add("is-loading");
+  button.setAttribute("aria-busy", "true");
+  try {
+    const result = await action();
+    pulseElementClass(button, "is-done", 620);
+    return result;
+  } catch (error) {
+    pulseElementClass(button, "is-error", 700);
+    throw error;
+  } finally {
+    button.dataset.busy = "0";
+    button.disabled = false;
+    button.classList.remove("is-loading");
+    button.removeAttribute("aria-busy");
+    button.textContent = button.dataset.originalText || originalText;
+  }
+}
+
+function pulseElementClass(element, className, durationMs = 500) {
+  if (!element || !className) return;
+  const elementTimers = pulseTimers.get(element) || new Map();
+  const previousTimer = elementTimers.get(className);
+  if (previousTimer) window.clearTimeout(previousTimer);
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+  const nextTimer = window.setTimeout(() => {
+    element.classList.remove(className);
+    const currentTimers = pulseTimers.get(element);
+    if (!currentTimers) return;
+    currentTimers.delete(className);
+    if (!currentTimers.size) pulseTimers.delete(element);
+  }, durationMs);
+  elementTimers.set(className, nextTimer);
+  pulseTimers.set(element, elementTimers);
+}
+
+function setAnimatedHtml(container, html) {
+  if (!container) return;
+  container.innerHTML = html;
+  container.classList.remove("market-swap-in");
+  void container.offsetWidth;
+  container.classList.add("market-swap-in");
 }
 
 function setFoldState(button, content, expanded) {
   if (!button || !content) return;
   button.setAttribute("aria-expanded", String(expanded));
+  if (content.id) button.setAttribute("aria-controls", content.id);
   button.textContent = expanded ? "Hide" : "Show";
   content.classList.toggle("is-hidden", !expanded);
+  content.setAttribute("aria-hidden", String(!expanded));
 }
 
 function installFoldToggle(button, content) {
@@ -177,13 +339,13 @@ function quantityText(value, unitLabel) {
 function starsText(value) {
   const rating = Number(value || 0);
   if (!rating || rating < 1) return "No ratings yet";
-  return "?".repeat(rating) + "?".repeat(Math.max(0, 5 - rating));
+  return `${rating}/5 stars`;
 }
 
 function ratingLabel(avg, count) {
   const safeCount = Number(count || 0);
   if (!safeCount || avg === null || avg === undefined) return "No ratings yet";
-  return `${Number(avg).toFixed(1)} ? (${safeCount})`;
+  return `${Number(avg).toFixed(1)} / 5 (${safeCount})`;
 }
 
 function findInventoryItemById(itemId) {
@@ -424,7 +586,6 @@ async function fitAndUploadImage(file, slot, { messageSetter } = {}) {
   const slots = {
     store_banner: { title: "Fit Store Banner", subtitle: "Drag to choose what appears on your store cover.", aspectRatio: 16 / 6, outputWidth: 1800 },
     product_photo: { title: "Fit Product Photo", subtitle: "Drag to center your product in the listing card.", aspectRatio: 16 / 10, outputWidth: 1600 },
-    brand_logo: { title: "Fit Brand Logo", subtitle: "Drag to frame your logo nicely in the badge.", aspectRatio: 1, outputWidth: 1000 },
   };
   const config = slots[slot] || slots.product_photo;
 
@@ -437,7 +598,7 @@ async function fitAndUploadImage(file, slot, { messageSetter } = {}) {
 
 function marketMediaBlock(item, ownerName) {
   const photoUrl = safeUrl(item.photo_url);
-  const logoUrl = safeUrl(item.brand_logo_url);
+  const logoUrl = safeUrl(item.brand_logo_url) || safeUrl(item.farmer_store_banner_url);
   const owner = String(ownerName || item.farmer_name || "Farmer");
   return `
     <div class="market-media">
@@ -496,8 +657,6 @@ function farmerItemCard(item) {
           <label>Pickup Location<input name="pickup_location" maxlength="180" value="${escapeHtml(item.pickup_location || "")}" /></label>
           <label>Product Photo (PNG/JPG)<input name="photo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
           <input name="photo_url" type="hidden" value="${escapeHtml(item.photo_url || "")}" />
-          <label>Brand Logo (PNG/JPG)<input name="brand_logo_file" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" /></label>
-          <input name="brand_logo_url" type="hidden" value="${escapeHtml(item.brand_logo_url || "")}" />
           <label class="full">Description<textarea name="description" rows="2" maxlength="400">${escapeHtml(item.description || "")}</textarea></label>
           <div class="actions-row"><button class="btn" type="submit">Save Changes</button><button class="btn ghost" type="button" data-cancel-edit-item="${item.id}">Cancel</button></div>
           <p class="message booking-submit-message"></p>
@@ -525,7 +684,10 @@ function fillStoreProfileForm(profile) {
 }
 
 function renderFarmerItems() {
-  marketItemsList.innerHTML = farmerItems.length ? farmerItems.map(farmerItemCard).join("") : "No listings yet. Add your first product above.";
+  const html = farmerItems.length
+    ? farmerItems.map(farmerItemCard).join("")
+    : emptyStateCard("No listings yet", "Start by adding your first product in the listing section above.");
+  setAnimatedHtml(marketItemsList, html);
 }
 
 function buildStores(items) {
@@ -540,7 +702,7 @@ function buildStores(items) {
         store_banner_url: item.farmer_store_banner_url || null,
         store_about: item.farmer_store_about || null,
         store_opening_hours: item.farmer_store_opening_hours || null,
-        brand_logo_url: item.brand_logo_url,
+        brand_logo_url: item.farmer_store_banner_url || item.brand_logo_url || null,
         photo_url: item.photo_url,
         pickup_location: item.pickup_location,
         farmer_rating_avg: item.farmer_rating_avg ?? null,
@@ -551,7 +713,9 @@ function buildStores(items) {
     const store = grouped.get(key);
     store.items.push(item);
     if (!store.photo_url && item.photo_url) store.photo_url = item.photo_url;
-    if (!store.brand_logo_url && item.brand_logo_url) store.brand_logo_url = item.brand_logo_url;
+    if (!store.brand_logo_url && (item.farmer_store_banner_url || item.brand_logo_url)) {
+      store.brand_logo_url = item.farmer_store_banner_url || item.brand_logo_url;
+    }
     if (!store.pickup_location && item.pickup_location) store.pickup_location = item.pickup_location;
   }
   return Array.from(grouped.values()).sort((a, b) => a.store_name.localeCompare(b.store_name));
@@ -561,14 +725,16 @@ function storeCard(store) {
   const storeLike = {
     item_name: `${store.store_name} Store`,
     photo_url: store.store_banner_url || store.photo_url,
-    brand_logo_url: store.brand_logo_url,
+    brand_logo_url: store.store_banner_url || store.brand_logo_url,
     farmer_name: store.store_name,
   };
+  const safeStoreName = escapeHtml(store.store_name);
+  const listingCount = `${store.items.length} listing${store.items.length > 1 ? "s" : ""}`;
   return `
-    <article class="worker-card market-card market-store-card" data-open-store="${store.id}">
+    <article class="worker-card market-card market-store-card" data-open-store="${store.id}" data-store-trigger="${store.id}" role="button" tabindex="0" aria-label="Open ${safeStoreName} store, ${listingCount}">
       ${marketMediaBlock(storeLike, store.store_name)}
       <div class="market-main">
-        <div class="list-head market-title-row"><h3>${escapeHtml(store.store_name)}</h3><span class="badge day">${store.items.length} listing${store.items.length > 1 ? "s" : ""}</span></div>
+        <div class="list-head market-title-row"><h3>${safeStoreName}</h3><span class="badge day">${listingCount}</span></div>
         <div class="market-meta-row">${store.pickup_location ? `<span class="badge">${escapeHtml(store.pickup_location)}</span>` : `<span class="badge">Pickup location shared per listing</span>`}</div>
         <p class="market-description"><strong>${escapeHtml(ratingLabel(store.farmer_rating_avg, store.farmer_rating_count))}</strong></p>
         <p class="market-description">${escapeHtml(store.store_about || "Tap to enter this store and order.")}</p>
@@ -579,7 +745,10 @@ function storeCard(store) {
 
 function renderStores() {
   const stores = buildStores(activeItems);
-  marketItemsList.innerHTML = stores.length ? stores.map(storeCard).join("") : "No stores available right now.";
+  const html = stores.length
+    ? stores.map(storeCard).join("")
+    : emptyStateCard("No stores found", "Try another search term or clear filters to see more results.");
+  setAnimatedHtml(marketItemsList, html);
 }
 
 function selectedStore() {
@@ -609,36 +778,44 @@ function renderStoreDetail() {
     selectedStoreId = null;
     customerStoreDetail?.classList.add("is-hidden");
     customerStoresView?.classList.remove("is-hidden");
+    customerStoreDetail?.setAttribute("aria-hidden", "true");
+    customerStoresView?.setAttribute("aria-hidden", "false");
     return;
   }
 
   customerStoresView?.classList.add("is-hidden");
   customerStoreDetail?.classList.remove("is-hidden");
+  customerStoresView?.setAttribute("aria-hidden", "true");
+  customerStoreDetail?.setAttribute("aria-hidden", "false");
 
   const storeLike = {
     item_name: `${store.store_name} Store`,
     photo_url: store.store_banner_url || store.photo_url,
-    brand_logo_url: store.brand_logo_url,
+    brand_logo_url: store.store_banner_url || store.brand_logo_url,
     farmer_name: store.store_name,
     pickup_location: store.pickup_location,
   };
-  storeHeader.innerHTML = `<article class="worker-card market-card">${marketMediaBlock(storeLike, store.store_name)}<div class="market-main"><h3>${escapeHtml(store.store_name)}</h3><p class="market-description">${store.items.length} listing${store.items.length > 1 ? "s" : ""} available.</p><p class="market-description"><strong>${escapeHtml(ratingLabel(store.farmer_rating_avg, store.farmer_rating_count))}</strong></p>${store.store_about ? `<p class="market-description">${escapeHtml(store.store_about)}</p>` : ""}${store.store_opening_hours ? `<p class="market-description"><strong>Hours:</strong> ${escapeHtml(store.store_opening_hours)}</p>` : ""}${store.pickup_location ? `<p class="market-description"><strong>Pickup:</strong> ${escapeHtml(store.pickup_location)}</p>` : ""}</div></article>`;
-  storeItemsList.innerHTML = store.items.map(storeItemCard).join("");
+  setAnimatedHtml(storeHeader, `<article class="worker-card market-card">${marketMediaBlock(storeLike, store.store_name)}<div class="market-main"><h3>${escapeHtml(store.store_name)}</h3><p class="market-description">${store.items.length} listing${store.items.length > 1 ? "s" : ""} available.</p><p class="market-description"><strong>${escapeHtml(ratingLabel(store.farmer_rating_avg, store.farmer_rating_count))}</strong></p>${store.store_about ? `<p class="market-description">${escapeHtml(store.store_about)}</p>` : ""}${store.store_opening_hours ? `<p class="market-description"><strong>Hours:</strong> ${escapeHtml(store.store_opening_hours)}</p>` : ""}${store.pickup_location ? `<p class="market-description"><strong>Pickup:</strong> ${escapeHtml(store.pickup_location)}</p>` : ""}</div></article>`);
+  const html = store.items.length
+    ? store.items.map(storeItemCard).join("")
+    : emptyStateCard("No active listings", "This store has no active products at the moment.");
+  setAnimatedHtml(storeItemsList, html);
   renderCart();
+  requestAnimationFrame(() => storeBackBtn?.focus());
 }
 
 function renderCart() {
   const lines = Array.from(cart.values());
   if (!lines.length) {
-    cartLines.innerHTML = '<p class="sub">Your cart is empty.</p>';
+    setAnimatedHtml(cartLines, emptyStateCard("Your cart is empty", "Add products from this store to prepare your checkout."));
     cartTotal.textContent = "Total: 0.00";
     return;
   }
 
-  cartLines.innerHTML = lines.map((line) => {
+  setAnimatedHtml(cartLines, lines.map((line) => {
     const lineTotal = Number(line.quantity) * Number(line.item.price_per_unit);
     return `<article class="worker-card market-cart-line" data-cart-item="${line.item.id}"><p><strong>${escapeHtml(line.item.item_name)}</strong></p><p>${money(line.item.price_per_unit)} / ${escapeHtml(line.item.unit_label)}</p><p>Line total: ${money(lineTotal)}</p><div class="actions-row"><button class="btn ghost" type="button" data-cart-dec="${line.item.id}">-</button><span>${money(line.quantity)}</span><button class="btn ghost" type="button" data-cart-inc="${line.item.id}">+</button><button class="btn danger" type="button" data-cart-remove="${line.item.id}">Remove</button></div></article>`;
-  }).join("");
+  }).join(""));
 
   const total = lines.reduce((sum, line) => sum + Number(line.quantity) * Number(line.item.price_per_unit), 0);
   cartTotal.textContent = `Total: ${money(total)}`;
@@ -651,6 +828,7 @@ function openStore(storeId) {
     cart.clear();
   }
   selectedStoreId = storeId;
+  selectedStoreTriggerId = storeId;
   setCartMessage("", true);
   renderStoreDetail();
 }
@@ -713,7 +891,7 @@ function orderCard(order) {
     : "";
 
   return `
-    <article class="worker-card" data-order-id="${order.id}">
+    <article class="worker-card market-order-detail-card" data-order-id="${order.id}">
       <div class="list-head"><h3>${escapeHtml(order.item_name_snapshot)}</h3><span class="badge ${badgeClass}">${orderStatusLabel(order.status)}</span></div>
       <div class="worker-grid">
         <div><strong>Quantity:</strong> ${money(order.quantity_ordered)} ${escapeHtml(order.unit_label_snapshot)}</div>
@@ -738,22 +916,22 @@ function orderCard(order) {
                <h4>Rate Product & Store</h4>
                <div class="market-review-block">
                  <p class="sub"><strong>Product Rating</strong></p>
-                 <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="product">
-                   ${[1, 2, 3, 4, 5]
-                     .map((value) => `<button class="star-btn ${Number(order.product_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="product" aria-label="${value} product stars">${Number(order.product_rating || 0) >= value ? "?" : "?"}</button>`)
-                     .join("")}
-                 </div>
+                  <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="product">
+                    ${[1, 2, 3, 4, 5]
+                      .map((value) => `<button class="star-btn ${Number(order.product_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="product" aria-label="${value} product stars" aria-pressed="${Number(order.product_rating || 0) >= value ? "true" : "false"}">${Number(order.product_rating || 0) >= value ? "&#9733;" : "&#9734;"}</button>`)
+                      .join("")}
+                  </div>
                  <input type="hidden" name="product_rating" value="${order.product_rating || ""}" />
                  <p class="market-star-caption" data-star-caption="product">${escapeHtml(order.product_rating ? starsText(order.product_rating) : "Tap stars to rate product")}</p>
                  <label>Product Review<textarea name="product_review" rows="2" maxlength="800" placeholder="Share product quality and taste">${escapeHtml(order.product_review || "")}</textarea></label>
                </div>
                <div class="market-review-block">
                  <p class="sub"><strong>Market/Store Rating</strong></p>
-                 <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="market">
-                   ${[1, 2, 3, 4, 5]
-                     .map((value) => `<button class="star-btn ${Number(order.market_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="market" aria-label="${value} market stars">${Number(order.market_rating || 0) >= value ? "?" : "?"}</button>`)
-                     .join("")}
-                 </div>
+                  <div class="market-star-picker" data-star-picker="${order.id}" data-star-type="market">
+                    ${[1, 2, 3, 4, 5]
+                      .map((value) => `<button class="star-btn ${Number(order.market_rating || 0) >= value ? "is-on" : ""}" type="button" data-star-value="${value}" data-star-order="${order.id}" data-star-type="market" aria-label="${value} market stars" aria-pressed="${Number(order.market_rating || 0) >= value ? "true" : "false"}">${Number(order.market_rating || 0) >= value ? "&#9733;" : "&#9734;"}</button>`)
+                      .join("")}
+                  </div>
                  <input type="hidden" name="market_rating" value="${order.market_rating || ""}" />
                  <p class="market-star-caption" data-star-caption="market">${escapeHtml(order.market_rating ? starsText(order.market_rating) : "Tap stars to rate market")}</p>
                  <label>Market Review<textarea name="market_review" rows="2" maxlength="800" placeholder="Share delivery and store experience">${escapeHtml(order.market_review || "")}</textarea></label>
@@ -783,7 +961,138 @@ async function loadOrderMessages(orderId) {
   const messages = (await requestJson(`${API_BASE}/market/orders/${orderId}/messages`)) || [];
   const container = marketOrdersList.querySelector(`[data-chat-list="${orderId}"]`);
   if (!container) return;
-  container.innerHTML = messages.length ? messages.map(chatMessageCard).join("") : '<p class="sub">No messages yet.</p>';
+  container.setAttribute("role", "log");
+  container.setAttribute("aria-live", "polite");
+  container.setAttribute("aria-relevant", "additions");
+  const html = messages.length
+    ? messages.map(chatMessageCard).join("")
+    : '<p class="sub market-chat-empty">No messages yet. Send the first update to start coordination.</p>';
+  setAnimatedHtml(container, html);
+}
+
+function orderPreviewCard(order) {
+  const badgeClass = statusBadgeClass(order.status);
+  const ariaLabel = `Open order ${order.item_name_snapshot}, status ${orderStatusLabel(order.status)}, total ${money(order.total_price)}`;
+  return `
+    <article class="worker-card market-order-preview-card" data-open-order-full="${order.id}" role="button" tabindex="0" aria-label="${escapeHtml(ariaLabel)}">
+      <div class="list-head">
+        <h3>${escapeHtml(order.item_name_snapshot)}</h3>
+        <span class="badge ${badgeClass}">${orderStatusLabel(order.status)}</span>
+      </div>
+      <div class="worker-grid">
+        <div><strong>Quantity:</strong> ${money(order.quantity_ordered)} ${escapeHtml(order.unit_label_snapshot)}</div>
+        <div><strong>Total:</strong> ${money(order.total_price)}</div>
+        <div><strong>Date:</strong> ${formatDateTime(order.created_at)}</div>
+      </div>
+      <div class="actions-row"><button class="btn ghost" type="button" data-open-order-full="${order.id}">Open Full</button></div>
+    </article>
+  `;
+}
+
+function orderSortNewest(a, b) {
+  return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+}
+
+function renderOrdersPreview() {
+  if (!marketOrdersPreviewList) return;
+  const sorted = [...currentOrders].sort(orderSortNewest);
+  const top = sorted.slice(0, 3);
+  const html = top.length
+    ? top.map(orderPreviewCard).join("")
+    : (isFarmer
+      ? emptyStateCard("No incoming orders", "When customers place orders, a preview appears here.")
+      : emptyStateCard("No orders yet", "Your latest orders preview will appear here."));
+  setAnimatedHtml(marketOrdersPreviewList, html);
+}
+
+function sortedOrders() {
+  return [...currentOrders].sort(orderSortNewest);
+}
+
+function resolvePanelOrder(orderId = null) {
+  const sorted = sortedOrders();
+  if (!sorted.length) return null;
+  if (orderId) {
+    const picked = sorted.find((order) => order.id === orderId);
+    if (picked) return picked;
+  }
+  if (activePanelOrderId) {
+    const existing = sorted.find((order) => order.id === activePanelOrderId);
+    if (existing) return existing;
+  }
+  return sorted[0];
+}
+
+function renderOrdersPanelSingle() {
+  if (!marketOrdersList) return;
+  const current = resolvePanelOrder();
+  if (!current) {
+    activePanelOrderId = null;
+    setAnimatedHtml(marketOrdersList, isFarmer
+      ? emptyStateCard("No incoming orders", "When customers place orders, full details appear here.")
+      : emptyStateCard("No orders yet", "Your selected order details will appear here."));
+    if (ordersPanelOrderLabel) ordersPanelOrderLabel.textContent = "No order selected.";
+    if (ordersPanelPrevBtn) ordersPanelPrevBtn.disabled = true;
+    if (ordersPanelNextBtn) ordersPanelNextBtn.disabled = true;
+    return;
+  }
+
+  activePanelOrderId = current.id;
+  const sorted = sortedOrders();
+  const index = sorted.findIndex((order) => order.id === current.id);
+  if (ordersPanelOrderLabel) {
+    ordersPanelOrderLabel.textContent = `Order ${index + 1} of ${sorted.length} | ${orderStatusLabel(current.status)} | #${current.id.slice(0, 8)}`;
+  }
+  if (ordersPanelPrevBtn) ordersPanelPrevBtn.disabled = sorted.length <= 1;
+  if (ordersPanelNextBtn) ordersPanelNextBtn.disabled = sorted.length <= 1;
+  setAnimatedHtml(marketOrdersList, orderCard(current));
+  void loadOrderMessages(current.id);
+}
+
+function stepPanelOrder(delta) {
+  const sorted = sortedOrders();
+  if (!sorted.length) return;
+  const index = sorted.findIndex((order) => order.id === activePanelOrderId);
+  const safeIndex = index >= 0 ? index : 0;
+  const next = (safeIndex + delta + sorted.length) % sorted.length;
+  activePanelOrderId = sorted[next].id;
+  renderOrdersPanelSingle();
+}
+
+function openOrdersPanel(orderId = null) {
+  if (!marketOrdersPanel) return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) ordersPanelReturnFocus = active;
+  const selected = resolvePanelOrder(orderId);
+  activePanelOrderId = selected?.id || null;
+  pendingOrderFocusId = activePanelOrderId;
+  renderOrdersPanelSingle();
+  marketOrdersPanel.classList.remove("is-hidden");
+  document.body.classList.add("market-orders-open");
+  requestAnimationFrame(() => {
+    if (!pendingOrderFocusId) {
+      closeOrdersPanelBtn?.focus();
+      return;
+    }
+    const target = marketOrdersList?.querySelector(`[data-order-id="${pendingOrderFocusId}"]`);
+    if (!target) {
+      closeOrdersPanelBtn?.focus();
+      return;
+    }
+    target.scrollIntoView({ block: "start", behavior: "smooth" });
+    pulseElementClass(target, "market-order-focus", 900);
+    const targetButton = target.querySelector("button, a, input, textarea, select");
+    if (targetButton instanceof HTMLElement) targetButton.focus();
+    else closeOrdersPanelBtn?.focus();
+    pendingOrderFocusId = null;
+  });
+}
+
+function closeOrdersPanel() {
+  marketOrdersPanel?.classList.add("is-hidden");
+  document.body.classList.remove("market-orders-open");
+  if (ordersPanelReturnFocus instanceof HTMLElement) ordersPanelReturnFocus.focus();
+  else openOrdersPanelBtn?.focus();
 }
 
 async function loadAllOrderMessages() {
@@ -815,15 +1124,15 @@ async function loadMarketItems() {
 async function loadOrders() {
   if (isFarmer) {
     currentOrders = (await requestJson(`${API_BASE}/market/orders/incoming`)) || [];
-    marketOrdersList.innerHTML = currentOrders.length ? currentOrders.map(orderCard).join("") : "No incoming orders yet.";
-    await loadAllOrderMessages();
+    renderOrdersPreview();
+    if (marketOrdersPanel && !marketOrdersPanel.classList.contains("is-hidden")) renderOrdersPanelSingle();
     return;
   }
 
   if (isCustomer) {
     currentOrders = (await requestJson(`${API_BASE}/market/orders/mine`)) || [];
-    marketOrdersList.innerHTML = currentOrders.length ? currentOrders.map(orderCard).join("") : "No orders yet.";
-    await loadAllOrderMessages();
+    renderOrdersPreview();
+    if (marketOrdersPanel && !marketOrdersPanel.classList.contains("is-hidden")) renderOrdersPanelSingle();
     return;
   }
 
@@ -900,6 +1209,28 @@ imageFitSaveBtn?.addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Tab") {
+    if (marketOrdersPanel && !marketOrdersPanel.classList.contains("is-hidden") && trapFocusWithin(marketOrdersPanel, event)) return;
+    if (storeProfileCard && storeProfileCard.classList.contains("is-open-panel") && trapFocusWithin(storeProfileCard, event)) return;
+    if (farmerCreateCard && farmerCreateCard.classList.contains("is-open-panel") && trapFocusWithin(farmerCreateCard, event)) return;
+  }
+  if (event.key === "Escape") {
+    if (storeProfileCard && storeProfileCard.classList.contains("is-open-panel")) {
+      event.preventDefault();
+      closeManagementPanel(storeProfileCard, openStoreProfilePanelBtn);
+      return;
+    }
+    if (farmerCreateCard && farmerCreateCard.classList.contains("is-open-panel")) {
+      event.preventDefault();
+      closeManagementPanel(farmerCreateCard, openListingPanelBtn);
+      return;
+    }
+  }
+  if (event.key === "Escape" && marketOrdersPanel && !marketOrdersPanel.classList.contains("is-hidden")) {
+    event.preventDefault();
+    closeOrdersPanel();
+    return;
+  }
   if (!imageFitSession) return;
   if (event.key === "Escape") {
     event.preventDefault();
@@ -909,6 +1240,9 @@ document.addEventListener("keydown", (event) => {
 
 storeProfileForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (storeProfileForm.dataset.submitting === "1") return;
+  storeProfileForm.dataset.submitting = "1";
+  const submitBtn = resolveSubmitButton(event, storeProfileForm);
   const payload = {
     store_name: String(storeProfileForm.elements.store_name.value || "").trim() || null,
     store_banner_url: String(storeProfileForm.elements.store_banner_url.value || "").trim() || null,
@@ -918,32 +1252,40 @@ storeProfileForm?.addEventListener("submit", async (event) => {
 
   setStoreProfileMessage("Saving store profile...", true);
   try {
-    const bannerFile = storeProfileForm.elements.store_banner_file?.files?.[0] || null;
-    if (bannerFile) {
-      payload.store_banner_url = await fitAndUploadImage(bannerFile, "store_banner", { messageSetter: setStoreProfileMessage });
-      storeProfileForm.elements.store_banner_url.value = payload.store_banner_url || "";
-    }
+    await runWithButtonBusy(submitBtn, "Saving...", async () => {
+      const bannerFile = storeProfileForm.elements.store_banner_file?.files?.[0] || null;
+      if (bannerFile) {
+        payload.store_banner_url = await fitAndUploadImage(bannerFile, "store_banner", { messageSetter: setStoreProfileMessage });
+        storeProfileForm.elements.store_banner_url.value = payload.store_banner_url || "";
+      }
 
-    currentStoreProfile = await requestJson(`${API_BASE}/market/store-profile/mine`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
+      currentStoreProfile = await requestJson(`${API_BASE}/market/store-profile/mine`, {
+        method: "PATCH",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      setStoreProfileMessage("Store profile saved.", true);
+      await loadMarketItems();
     });
-    setStoreProfileMessage("Store profile saved.", true);
-    await loadMarketItems();
   } catch (error) {
     setStoreProfileMessage(error.message || "Could not save store profile", false);
+  } finally {
+    storeProfileForm.dataset.submitting = "0";
   }
 });
 
 marketItemForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (marketItemForm.dataset.submitting === "1") return;
+  marketItemForm.dataset.submitting = "1";
+  const submitBtn = resolveSubmitButton(event, marketItemForm);
   const fd = new FormData(marketItemForm);
   const trackQuantity = fd.get("track_quantity") !== null;
   const qtyRaw = String(fd.get("quantity_available") || "").trim();
 
   if (trackQuantity && !qtyRaw) {
     setFormMessage("Quantity is required when stock tracking is enabled.", false);
+    marketItemForm.dataset.submitting = "0";
     return;
   }
 
@@ -951,7 +1293,7 @@ marketItemForm?.addEventListener("submit", async (event) => {
   const payload = {
     item_name: String(fd.get("item_name") || "").trim(),
     description: String(fd.get("description") || "").trim() || null,
-    brand_logo_url: String(fd.get("brand_logo_url") || "").trim() || null,
+    brand_logo_url: currentStoreProfile?.store_banner_url || null,
     photo_url: String(fd.get("photo_url") || "").trim() || null,
     pickup_location: String(fd.get("pickup_location") || "").trim() || null,
     unit_label: String(fd.get("unit_label") || "").trim(),
@@ -963,24 +1305,25 @@ marketItemForm?.addEventListener("submit", async (event) => {
 
   setFormMessage("Saving listing...", true);
   try {
-    const brandFile = marketItemForm.elements.brand_logo_file?.files?.[0] || null;
-    const photoFile = marketItemForm.elements.photo_file?.files?.[0] || null;
-    if (brandFile) payload.brand_logo_url = await fitAndUploadImage(brandFile, "brand_logo", { messageSetter: setFormMessage });
-    if (photoFile) payload.photo_url = await fitAndUploadImage(photoFile, "product_photo", { messageSetter: setFormMessage });
+    await runWithButtonBusy(submitBtn, "Saving...", async () => {
+      const photoFile = marketItemForm.elements.photo_file?.files?.[0] || null;
+      if (photoFile) payload.photo_url = await fitAndUploadImage(photoFile, "product_photo", { messageSetter: setFormMessage });
 
-    await requestJson(`${API_BASE}/market/items`, { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
-    marketItemForm.reset();
-    marketItemForm.elements.is_active.checked = true;
-    marketItemForm.elements.track_quantity.checked = true;
-    marketItemForm.elements.photo_url.value = "";
-    marketItemForm.elements.brand_logo_url.value = "";
-    if (linkedInventorySelect) linkedInventorySelect.value = "";
-    applyCreateLinkedInventorySelection();
-    setCreateQuantityMode();
-    setFormMessage("Listing saved.", true);
-    await Promise.all([loadMarketItems(), loadOrders()]);
+      await requestJson(`${API_BASE}/market/items`, { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
+      marketItemForm.reset();
+      marketItemForm.elements.is_active.checked = true;
+      marketItemForm.elements.track_quantity.checked = true;
+      marketItemForm.elements.photo_url.value = "";
+      if (linkedInventorySelect) linkedInventorySelect.value = "";
+      applyCreateLinkedInventorySelection();
+      setCreateQuantityMode();
+      setFormMessage("Listing saved.", true);
+      await Promise.all([loadMarketItems(), loadOrders()]);
+    });
   } catch (error) {
     setFormMessage(error.message || "Could not save listing", false);
+  } finally {
+    marketItemForm.dataset.submitting = "0";
   }
 });
 marketItemsList.addEventListener("change", (event) => {
@@ -1038,8 +1381,10 @@ marketItemsList.addEventListener("click", async (event) => {
     const item = farmerItems.find((row) => row.id === toggleBtn.dataset.toggleItem);
     if (!item) return;
     try {
-      await requestJson(`${API_BASE}/market/items/${item.id}`, { method: "PATCH", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ is_active: !item.is_active }) });
-      await loadMarketItems();
+      await runWithButtonBusy(toggleBtn, item.is_active ? "Pausing..." : "Activating...", async () => {
+        await requestJson(`${API_BASE}/market/items/${item.id}`, { method: "PATCH", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ is_active: !item.is_active }) });
+        await loadMarketItems();
+      });
     } catch (error) {
       setFormMessage(error.message || "Could not update listing", false);
     }
@@ -1053,18 +1398,31 @@ marketItemsList.addEventListener("click", async (event) => {
     if (!window.confirm("Delete this listing?")) return;
 
     try {
-      await requestJson(`${API_BASE}/market/items/${item.id}`, { method: "DELETE", headers: authHeaders() });
-      await loadMarketItems();
+      await runWithButtonBusy(deleteBtn, "Deleting...", async () => {
+        await requestJson(`${API_BASE}/market/items/${item.id}`, { method: "DELETE", headers: authHeaders() });
+        await loadMarketItems();
+      });
     } catch (error) {
       setFormMessage(error.message || "Could not delete listing", false);
     }
   }
 });
 
+marketItemsList.addEventListener("keydown", (event) => {
+  const storeCard = event.target.closest("[data-open-store]");
+  if (!storeCard || !isCustomer) return;
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  openStore(storeCard.dataset.openStore);
+});
+
 marketItemsList.addEventListener("submit", async (event) => {
   const editForm = event.target.closest("form[data-edit-item-form]");
   if (!editForm) return;
   event.preventDefault();
+  if (editForm.dataset.submitting === "1") return;
+  editForm.dataset.submitting = "1";
+  const submitBtn = resolveSubmitButton(event, editForm);
 
   const messageEl = editForm.querySelector(".booking-submit-message");
   const trackQuantity = editForm.elements.track_quantity.checked;
@@ -1073,6 +1431,7 @@ marketItemsList.addEventListener("submit", async (event) => {
   if (trackQuantity && !qtyRaw) {
     messageEl.textContent = "Quantity is required when stock tracking is enabled.";
     messageEl.className = "message error";
+    editForm.dataset.submitting = "0";
     return;
   }
 
@@ -1085,31 +1444,30 @@ marketItemsList.addEventListener("submit", async (event) => {
     quantity_available: trackQuantity ? Number(qtyRaw) : null,
     pickup_location: String(editForm.elements.pickup_location.value || "").trim() || null,
     photo_url: String(editForm.elements.photo_url.value || "").trim() || null,
-    brand_logo_url: String(editForm.elements.brand_logo_url.value || "").trim() || null,
+    brand_logo_url: currentStoreProfile?.store_banner_url || null,
   };
 
   messageEl.textContent = "Saving changes...";
   messageEl.className = "message success";
 
   try {
-    const editBrandFile = editForm.elements.brand_logo_file?.files?.[0] || null;
-    const editPhotoFile = editForm.elements.photo_file?.files?.[0] || null;
-    if (editBrandFile) payload.brand_logo_url = await fitAndUploadImage(editBrandFile, "brand_logo", { messageSetter: (text, ok) => {
-      messageEl.textContent = text;
-      messageEl.className = `message ${ok ? "success" : "error"}`;
-    } });
-    if (editPhotoFile) payload.photo_url = await fitAndUploadImage(editPhotoFile, "product_photo", { messageSetter: (text, ok) => {
-      messageEl.textContent = text;
-      messageEl.className = `message ${ok ? "success" : "error"}`;
-    } });
+    await runWithButtonBusy(submitBtn, "Saving...", async () => {
+      const editPhotoFile = editForm.elements.photo_file?.files?.[0] || null;
+      if (editPhotoFile) payload.photo_url = await fitAndUploadImage(editPhotoFile, "product_photo", { messageSetter: (text, ok) => {
+        messageEl.textContent = text;
+        messageEl.className = `message ${ok ? "success" : "error"}`;
+      } });
 
-    await requestJson(`${API_BASE}/market/items/${editForm.dataset.editItemForm}`, { method: "PATCH", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
-    editingItemId = null;
-    setFormMessage("Listing updated.", true);
-    await loadMarketItems();
+      await requestJson(`${API_BASE}/market/items/${editForm.dataset.editItemForm}`, { method: "PATCH", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
+      editingItemId = null;
+      setFormMessage("Listing updated.", true);
+      await loadMarketItems();
+    });
   } catch (error) {
     messageEl.textContent = error.message || "Could not update listing";
     messageEl.className = "message error";
+  } finally {
+    editForm.dataset.submitting = "0";
   }
 });
 
@@ -1117,6 +1475,37 @@ storeBackBtn?.addEventListener("click", () => {
   selectedStoreId = null;
   customerStoreDetail?.classList.add("is-hidden");
   customerStoresView?.classList.remove("is-hidden");
+  customerStoreDetail?.setAttribute("aria-hidden", "true");
+  customerStoresView?.setAttribute("aria-hidden", "false");
+  const focusTarget = selectedStoreTriggerId
+    ? marketItemsList?.querySelector(`[data-store-trigger="${selectedStoreTriggerId}"]`)
+    : null;
+  if (focusTarget) requestAnimationFrame(() => focusTarget.focus());
+});
+
+openStoreProfilePanelBtn?.addEventListener("click", () => openManagementPanel(storeProfileCard, storeProfileForm?.elements?.store_name));
+openListingPanelBtn?.addEventListener("click", () => openManagementPanel(farmerCreateCard, marketItemForm?.elements?.item_name));
+storeProfileCloseBtn?.addEventListener("click", () => closeManagementPanel(storeProfileCard, openStoreProfilePanelBtn));
+listingCloseBtn?.addEventListener("click", () => closeManagementPanel(farmerCreateCard, openListingPanelBtn));
+
+openOrdersPanelBtn?.addEventListener("click", () => openOrdersPanel());
+closeOrdersPanelBtn?.addEventListener("click", closeOrdersPanel);
+ordersPanelPrevBtn?.addEventListener("click", () => stepPanelOrder(-1));
+ordersPanelNextBtn?.addEventListener("click", () => stepPanelOrder(1));
+marketOrdersPanel?.addEventListener("click", (event) => {
+  if (event.target === marketOrdersPanel) closeOrdersPanel();
+});
+marketOrdersPreviewList?.addEventListener("click", (event) => {
+  const openBtn = event.target.closest("[data-open-order-full]");
+  if (!openBtn) return;
+  openOrdersPanel(openBtn.dataset.openOrderFull);
+});
+marketOrdersPreviewList?.addEventListener("keydown", (event) => {
+  const target = event.target.closest("[data-open-order-full]");
+  if (!target) return;
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  openOrdersPanel(target.dataset.openOrderFull);
 });
 
 storeItemsList?.addEventListener("click", (event) => {
@@ -1182,9 +1571,13 @@ cartLines?.addEventListener("click", (event) => {
 });
 cartCheckoutForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (cartCheckoutForm.dataset.submitting === "1") return;
+  cartCheckoutForm.dataset.submitting = "1";
+  const submitBtn = resolveSubmitButton(event, cartCheckoutForm);
   const lines = Array.from(cart.values());
   if (!lines.length) {
     setCartMessage("Your cart is empty.", false);
+    cartCheckoutForm.dataset.submitting = "0";
     return;
   }
 
@@ -1192,20 +1585,24 @@ cartCheckoutForm?.addEventListener("submit", async (event) => {
   setCartMessage("Placing cart orders...", true);
 
   try {
-    for (const line of lines) {
-      await requestJson(`${API_BASE}/market/orders`, {
-        method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ market_item_id: line.item.id, quantity_ordered: Number(line.quantity), note: note || null }),
-      });
-    }
+    await runWithButtonBusy(submitBtn, "Placing...", async () => {
+      for (const line of lines) {
+        await requestJson(`${API_BASE}/market/orders`, {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ market_item_id: line.item.id, quantity_ordered: Number(line.quantity), note: note || null }),
+        });
+      }
 
-    cart.clear();
-    cartCheckoutForm.reset();
-    setCartMessage("Order placed successfully.", true);
-    await Promise.all([loadMarketItems(), loadOrders()]);
+      cart.clear();
+      cartCheckoutForm.reset();
+      setCartMessage("Order placed successfully.", true);
+      await Promise.all([loadMarketItems(), loadOrders()]);
+    });
   } catch (error) {
     setCartMessage(error.message || "Could not checkout cart", false);
+  } finally {
+    cartCheckoutForm.dataset.submitting = "0";
   }
 });
 
@@ -1213,6 +1610,9 @@ marketOrdersList.addEventListener("submit", async (event) => {
   const reviewForm = event.target.closest("form[data-review-order-id]");
   if (reviewForm) {
     event.preventDefault();
+    if (reviewForm.dataset.submitting === "1") return;
+    reviewForm.dataset.submitting = "1";
+    const submitBtn = resolveSubmitButton(event, reviewForm);
     const messageEl = reviewForm.querySelector(".booking-submit-message");
     const target = event.submitter?.value === "market" ? "market" : "product";
     const productRating = Number(reviewForm.elements.product_rating.value || 0);
@@ -1229,36 +1629,35 @@ marketOrdersList.addEventListener("submit", async (event) => {
 
     if (target === "product") {
       if (!Number.isFinite(productRating) || productRating < 1 || productRating > 5) {
-        messageEl.textContent = "Please select a product star rating.";
-        messageEl.className = "message error";
+        setAnnouncedMessage(messageEl, "Please select a product star rating.", false);
         return;
       }
       payload.product_rating = productRating;
       payload.product_review = productReview || null;
     } else {
       if (!Number.isFinite(marketRating) || marketRating < 1 || marketRating > 5) {
-        messageEl.textContent = "Please select a store star rating.";
-        messageEl.className = "message error";
+        setAnnouncedMessage(messageEl, "Please select a store star rating.", false);
         return;
       }
       payload.market_rating = marketRating;
       payload.market_review = marketReview || null;
     }
 
-    messageEl.textContent = target === "product" ? "Saving product rating..." : "Saving store rating...";
-    messageEl.className = "message success";
+    setAnnouncedMessage(messageEl, target === "product" ? "Saving product rating..." : "Saving store rating...", true);
     try {
-      await requestJson(`${API_BASE}/market/orders/${reviewForm.dataset.reviewOrderId}/customer-review`, {
-        method: "PATCH",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(payload),
+      await runWithButtonBusy(submitBtn, "Saving...", async () => {
+        await requestJson(`${API_BASE}/market/orders/${reviewForm.dataset.reviewOrderId}/customer-review`, {
+          method: "PATCH",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(payload),
+        });
+        setAnnouncedMessage(messageEl, target === "product" ? "Product rating saved." : "Store rating saved.", true);
+        await Promise.all([loadOrders(), loadMarketItems()]);
       });
-      messageEl.textContent = target === "product" ? "Product rating saved." : "Store rating saved.";
-      messageEl.className = "message success";
-      await Promise.all([loadOrders(), loadMarketItems()]);
     } catch (error) {
-      messageEl.textContent = error.message || "Could not save review";
-      messageEl.className = "message error";
+      setAnnouncedMessage(messageEl, error.message || "Could not save review", false);
+    } finally {
+      reviewForm.dataset.submitting = "0";
     }
     return;
   }
@@ -1266,24 +1665,28 @@ marketOrdersList.addEventListener("submit", async (event) => {
   const pickupForm = event.target.closest("form[data-pickup-order-id]");
   if (pickupForm) {
     event.preventDefault();
+    if (pickupForm.dataset.submitting === "1") return;
+    pickupForm.dataset.submitting = "1";
+    const submitBtn = resolveSubmitButton(event, pickupForm);
     const messageEl = pickupForm.querySelector(".booking-submit-message");
     const pickupCode = String(pickupForm.elements.pickup_code.value || "").trim();
 
-    messageEl.textContent = "Validating pickup code...";
-    messageEl.className = "message success";
+    setAnnouncedMessage(messageEl, "Validating pickup code...", true);
 
     try {
-      await requestJson(`${API_BASE}/market/orders/${pickupForm.dataset.pickupOrderId}/pickup-confirmation`, {
-        method: "PATCH",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ pickup_code: pickupCode }),
+      await runWithButtonBusy(submitBtn, "Validating...", async () => {
+        await requestJson(`${API_BASE}/market/orders/${pickupForm.dataset.pickupOrderId}/pickup-confirmation`, {
+          method: "PATCH",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ pickup_code: pickupCode }),
+        });
+        setAnnouncedMessage(messageEl, "Order marked as picked up.", true);
+        await loadOrders();
       });
-      messageEl.textContent = "Order marked as picked up.";
-      messageEl.className = "message success";
-      await loadOrders();
     } catch (error) {
-      messageEl.textContent = error.message || "Could not confirm pickup";
-      messageEl.className = "message error";
+      setAnnouncedMessage(messageEl, error.message || "Could not confirm pickup", false);
+    } finally {
+      pickupForm.dataset.submitting = "0";
     }
     return;
   }
@@ -1291,30 +1694,33 @@ marketOrdersList.addEventListener("submit", async (event) => {
   const validateForm = event.target.closest("form[data-validate-order-id]");
   if (validateForm) {
     event.preventDefault();
+    if (validateForm.dataset.submitting === "1") return;
+    validateForm.dataset.submitting = "1";
+    const submitBtn = resolveSubmitButton(event, validateForm);
     const messageEl = validateForm.querySelector(".booking-submit-message");
     const pickupLocal = String(validateForm.elements.pickup_at.value || "").trim();
     const payload = { action: "validate", pickup_at: pickupLocal ? new Date(pickupLocal).toISOString() : null, note: String(validateForm.elements.note.value || "").trim() || null };
 
-    messageEl.textContent = "Validating order...";
-    messageEl.className = "message success";
+    setAnnouncedMessage(messageEl, "Validating order...", true);
 
     try {
-      const updated = await requestJson(`${API_BASE}/market/orders/${validateForm.dataset.validateOrderId}/farmer-validation`, {
-        method: "PATCH",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(payload),
+      await runWithButtonBusy(submitBtn, "Validating...", async () => {
+        const updated = await requestJson(`${API_BASE}/market/orders/${validateForm.dataset.validateOrderId}/farmer-validation`, {
+          method: "PATCH",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(payload),
+        });
+        if (updated?.inventory_shortage_alert) {
+          setAnnouncedMessage(messageEl, updated.inventory_shortage_note || "Validated with inventory shortage alert.", false);
+        } else {
+          setAnnouncedMessage(messageEl, "Order validated with pickup time.", true);
+        }
+        await loadOrders();
       });
-      if (updated?.inventory_shortage_alert) {
-        messageEl.textContent = updated.inventory_shortage_note || "Validated with inventory shortage alert.";
-        messageEl.className = "message error";
-      } else {
-        messageEl.textContent = "Order validated with pickup time.";
-        messageEl.className = "message success";
-      }
-      await loadOrders();
     } catch (error) {
-      messageEl.textContent = error.message || "Could not validate order";
-      messageEl.className = "message error";
+      setAnnouncedMessage(messageEl, error.message || "Could not validate order", false);
+    } finally {
+      validateForm.dataset.submitting = "0";
     }
     return;
   }
@@ -1322,27 +1728,34 @@ marketOrdersList.addEventListener("submit", async (event) => {
   const chatForm = event.target.closest("form[data-chat-form]");
   if (!chatForm) return;
   event.preventDefault();
+  if (chatForm.dataset.submitting === "1") return;
+  chatForm.dataset.submitting = "1";
+  const submitBtn = resolveSubmitButton(event, chatForm);
 
   const messageEl = chatForm.querySelector(".booking-submit-message");
   const content = String(chatForm.elements.content.value || "").trim();
-  if (!content) return;
+  if (!content) {
+    chatForm.dataset.submitting = "0";
+    return;
+  }
 
-  messageEl.textContent = "Sending message...";
-  messageEl.className = "message success";
+  setAnnouncedMessage(messageEl, "Sending message...", true);
 
   try {
-    await requestJson(`${API_BASE}/market/orders/${chatForm.dataset.chatForm}/messages`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ content }),
+    await runWithButtonBusy(submitBtn, "Sending...", async () => {
+      await requestJson(`${API_BASE}/market/orders/${chatForm.dataset.chatForm}/messages`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ content }),
+      });
+      chatForm.reset();
+      setAnnouncedMessage(messageEl, "Message sent.", true);
+      await loadOrderMessages(chatForm.dataset.chatForm);
     });
-    chatForm.reset();
-    messageEl.textContent = "Message sent.";
-    messageEl.className = "message success";
-    await loadOrderMessages(chatForm.dataset.chatForm);
   } catch (error) {
-    messageEl.textContent = error.message || "Could not send message";
-    messageEl.className = "message error";
+    setAnnouncedMessage(messageEl, error.message || "Could not send message", false);
+  } finally {
+    chatForm.dataset.submitting = "0";
   }
 });
 
@@ -1367,7 +1780,8 @@ marketOrdersList.addEventListener("click", async (event) => {
     stars.forEach((btn) => {
       const val = Number(btn.dataset.starValue || 0);
       btn.classList.toggle("is-on", val <= rating);
-      btn.textContent = val <= rating ? "?" : "?";
+      btn.innerHTML = val <= rating ? "&#9733;" : "&#9734;";
+      btn.setAttribute("aria-pressed", String(val <= rating));
     });
     return;
   }
@@ -1376,12 +1790,14 @@ marketOrdersList.addEventListener("click", async (event) => {
   if (cancelBtn) {
     const note = window.prompt("Reason for canceling this validated order (optional)", "") ?? "";
     try {
-      await requestJson(`${API_BASE}/market/orders/${cancelBtn.dataset.cancelOrder}/farmer-validation`, {
-        method: "PATCH",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ action: "cancel", note: note.trim() || null }),
+      await runWithButtonBusy(cancelBtn, "Canceling...", async () => {
+        await requestJson(`${API_BASE}/market/orders/${cancelBtn.dataset.cancelOrder}/farmer-validation`, {
+          method: "PATCH",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ action: "cancel", note: note.trim() || null }),
+        });
+        await loadOrders();
       });
-      await loadOrders();
     } catch (error) {
       window.alert(error.message || "Could not cancel order");
     }
@@ -1393,27 +1809,30 @@ marketOrdersList.addEventListener("click", async (event) => {
 
   const note = window.prompt("Optional rejection note", "") ?? "";
   try {
-    await requestJson(`${API_BASE}/market/orders/${rejectBtn.dataset.rejectOrder}/farmer-validation`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ action: "reject", note: note.trim() || null }),
+    await runWithButtonBusy(rejectBtn, "Rejecting...", async () => {
+      await requestJson(`${API_BASE}/market/orders/${rejectBtn.dataset.rejectOrder}/farmer-validation`, {
+        method: "PATCH",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ action: "reject", note: note.trim() || null }),
+      });
+      await loadOrders();
     });
-    await loadOrders();
   } catch (error) {
     window.alert(error.message || "Could not reject order");
   }
 });
 
-marketFilterForm?.addEventListener("submit", (event) => {
+marketFilterForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  loadMarketItems();
+  const submitBtn = resolveSubmitButton(event, marketFilterForm);
+  await runWithButtonBusy(submitBtn, "Searching...", () => loadMarketItems());
 });
 
-refreshMarketBtn?.addEventListener("click", loadMarketItems);
-refreshOrdersBtn?.addEventListener("click", loadOrders);
+refreshMarketBtn?.addEventListener("click", () => runWithButtonBusy(refreshMarketBtn, "Refreshing...", () => loadMarketItems()));
+refreshOrdersBtn?.addEventListener("click", () => runWithButtonBusy(refreshOrdersBtn, "Refreshing...", () => loadOrders()));
 
 Promise.all([loadMarketItems(), loadOrders(), isFarmer ? loadStoreProfile() : Promise.resolve()]).catch((error) => {
-  marketItemsList.innerHTML = `<p class="message error">${escapeHtml(error.message || "Could not load market")}</p>`;
+  setAnimatedHtml(marketItemsList, `<p class="message error">${escapeHtml(error.message || "Could not load market")}</p>`);
 });
 
 

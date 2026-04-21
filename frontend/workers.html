@@ -51,34 +51,45 @@
               <label>Work Date
                 <input name="work_date" type="date" />
               </label>
-              <label>Work Slot
-                <select name="work_slot">
-                  <option value="">Any Slot</option>
-                  <option value="full_day">Full Day</option>
-                  <option value="extra_time">Extra Time</option>
-                </select>
-              </label>
-              <label>Sort
-                <select name="sort_by">
-                  <option value="">Newest First</option>
-                  <option value="distance">Distance</option>
-                </select>
-              </label>
-              <label>Max Distance (km)<input name="max_distance_km" type="number" step="0.1" min="0" placeholder="e.g., 25" /></label>
-              <div class="actions-row">
-                <button class="btn ghost" id="use-my-location-btn" type="button">Use My Location</button>
-              </div>
-              <label>Rate Type
-                <select name="rate_type">
-                  <option value="">Any</option>
-                  <option value="day">Per Day</option>
-                  <option value="hour">Per Hour</option>
-                </select>
-              </label>
-              <label>Min Men Rate<input name="min_men_rate" type="number" step="0.01" min="0" placeholder="e.g., 15" /></label>
-              <label>Max Men Rate<input name="max_men_rate" type="number" step="0.01" min="0" placeholder="e.g., 50" /></label>
-              <label>Min Women Rate<input name="min_women_rate" type="number" step="0.01" min="0" placeholder="e.g., 10" /></label>
-              <label>Max Women Rate<input name="max_women_rate" type="number" step="0.01" min="0" placeholder="e.g., 35" /></label>
+              <details id="advanced-filters" class="workers-advanced-filters">
+                <summary>
+                  <span class="advanced-summary-main">
+                    <span class="advanced-summary-title">Advanced Filters</span>
+                    <span id="advanced-filters-count" class="advanced-summary-count" hidden></span>
+                  </span>
+                  <span class="advanced-summary-state" aria-hidden="true"></span>
+                </summary>
+                <div class="workers-advanced-grid">
+                  <label>Work Slot
+                    <select name="work_slot">
+                      <option value="">Any Slot</option>
+                      <option value="full_day">Full Day</option>
+                      <option value="extra_time">Extra Time</option>
+                    </select>
+                  </label>
+                  <label>Sort
+                    <select name="sort_by">
+                      <option value="">Newest First</option>
+                      <option value="distance">Distance</option>
+                    </select>
+                  </label>
+                  <label>Max Distance (km)<input name="max_distance_km" type="number" step="0.1" min="0" placeholder="e.g., 25" /></label>
+                  <div class="actions-row">
+                    <button class="btn ghost" id="use-my-location-btn" type="button">Use My Location</button>
+                  </div>
+                  <label>Rate Type
+                    <select name="rate_type">
+                      <option value="">Any</option>
+                      <option value="day">Per Day</option>
+                      <option value="hour">Per Hour</option>
+                    </select>
+                  </label>
+                  <label>Min Men Rate<input name="min_men_rate" type="number" step="0.01" min="0" placeholder="e.g., 15" /></label>
+                  <label>Max Men Rate<input name="max_men_rate" type="number" step="0.01" min="0" placeholder="e.g., 50" /></label>
+                  <label>Min Women Rate<input name="min_women_rate" type="number" step="0.01" min="0" placeholder="e.g., 10" /></label>
+                  <label>Max Women Rate<input name="max_women_rate" type="number" step="0.01" min="0" placeholder="e.g., 35" /></label>
+                </div>
+              </details>
               <input type="hidden" name="near_latitude" />
               <input type="hidden" name="near_longitude" />
               <button class="btn" type="submit">Apply Filters</button>
@@ -110,7 +121,15 @@
     </main>
 
     <div id="worker-detail-overlay" class="worker-detail-overlay" hidden></div>
-    <aside id="worker-detail-panel" class="worker-detail-panel" hidden>
+    <aside
+      id="worker-detail-panel"
+      class="worker-detail-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="worker-detail-title"
+      tabindex="-1"
+      hidden
+    >
       <header class="worker-detail-panel-head">
         <div>
           <p class="eyebrow">Worker Profile</p>
