@@ -8,6 +8,7 @@ const logoutBtn = document.getElementById("logout-btn");
 const appTabs = document.getElementById("app-tabs");
 const refreshHealthBtn = document.getElementById("refresh-health-btn");
 const healthMessage = document.getElementById("agro-health-message");
+const healthPill = document.getElementById("agro-health-pill");
 
 if (session && roleHint) {
   roleHint.textContent = `Logged in as ${session.user.full_name} (farmer).`;
@@ -24,10 +25,17 @@ logoutBtn?.addEventListener("click", () => {
 function setMessage(text, ok = true) {
   if (!healthMessage) return;
   healthMessage.textContent = text;
-  healthMessage.className = `message ${ok ? "success" : "error"}`;
+  healthMessage.className = `message ${ok ? "success" : "error"}${text ? "" : " is-hidden"}`;
+}
+
+function setHealthPill(text, tone = "idle") {
+  if (!healthPill) return;
+  healthPill.textContent = text;
+  healthPill.className = `agro-health-pill is-${tone}`;
 }
 
 async function checkAgroHealth() {
+  setHealthPill("Checking service...", "checking");
   try {
     const response = await fetch(`${API_BASE}/agro-copilot/health`, {
       headers: authHeaders(),
@@ -41,8 +49,10 @@ async function checkAgroHealth() {
     if (!response.ok) {
       throw new Error(data?.detail || `Health check failed (${response.status})`);
     }
-    setMessage("Agro Copilot service is online.");
+    setHealthPill("Service online", "ok");
+    setMessage("");
   } catch (error) {
+    setHealthPill("Service issue", "error");
     setMessage(String(error?.message || error), false);
   }
 }

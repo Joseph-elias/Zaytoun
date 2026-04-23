@@ -28,30 +28,12 @@
         </div>
       </header>
 
-      <section class="card">
-        <div class="list-head">
-          <h2>Filters</h2>
-          <span class="badge day">Request View</span>
-        </div>
-        <form id="booking-filters-form" class="form-grid compact bookings-filter-form">
-          <label>Status
-            <select name="status">
-              <option value="">All</option>
-              <option value="pending_worker">Pending Worker</option>
-              <option value="pending_farmer">Pending Farmer Validation</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </label>
-          <button class="btn" type="submit">Apply</button>
-        </form>
-      </section>
-
       <section class="card bookings-main-card">
         <div class="list-head">
           <h2>Bookings</h2>
           <button class="btn ghost" id="refresh-btn" type="button">Refresh</button>
         </div>
+        <div id="booking-quick-stats" class="booking-quick-stats" aria-label="Booking status summary"></div>
         <div id="bookings-list" class="workers-list"></div>
       </section>
     </main>

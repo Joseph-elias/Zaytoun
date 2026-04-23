@@ -62,27 +62,49 @@
               <h2>Season Entry</h2>
               <button class="btn ghost" id="reset-form-btn" type="button">New Record</button>
             </div>
-            <form id="olive-season-form" class="form-grid">
+            <form id="olive-season-form" class="form-grid season-entry-form">
               <input type="hidden" name="season_id" />
               <input type="hidden" name="land_pieces" value="1" />
               <input type="hidden" name="pressing_cost_oil_tank_unit_price" value="" />
-              <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
-              <label>Land Piece Name<select name="land_piece_name" id="season-land-piece-select" required></select></label>
-              <label>Estimated Chonbol<input name="estimated_chonbol" type="number" min="0" step="0.01" /></label>
-              <label>Actual Chonbol<input name="actual_chonbol" type="number" min="0" step="0.01" /></label>
-              <label>KG per Land Piece<input name="kg_per_land_piece" type="number" min="0" step="0.01" /></label>
-              <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
-              <label>Tanks Taken Home (20L)<input name="tanks_taken_home_20l" type="number" min="0" step="0.01" placeholder="Tanks that enter inventory" /></label>
-              <label>Pressing Cost Type
-                <select name="pressing_cost_mode" id="pressing-cost-mode-select">
-                  <option value="money">Money</option>
-                  <option value="oil_tanks">Oil Tanks</option>
-                </select>
-              </label>
-              <label data-pressing-mode="money">Pressing Cost (Money)<input name="pressing_cost" type="number" min="0" step="0.01" placeholder="Total pressing fees" /></label>
-              <label data-pressing-mode="oil_tanks" class="is-hidden">Pressing Cost (Oil Tanks 20L)<input name="pressing_cost_oil_tanks_20l" type="number" min="0" step="0.01" placeholder="Example: 2" /></label>
-              <label class="full">Calculated KG Needed per Tank<input id="kg-needed-per-tank" type="text" readonly /></label>
-              <label class="full">Notes<textarea name="notes" rows="2" placeholder="Optional notes"></textarea></label>
+              <section class="season-form-block full">
+                <h3 class="season-form-block-title">Basics</h3>
+                <div class="season-form-grid">
+                  <label>Season Year<input name="season_year" type="number" min="2000" max="2100" required /></label>
+                  <label>Land Piece Name<select name="land_piece_name" id="season-land-piece-select" required></select></label>
+                  <label>Estimated Chonbol<input name="estimated_chonbol" type="number" min="0" step="0.01" /></label>
+                  <label>Actual Chonbol<input name="actual_chonbol" type="number" min="0" step="0.01" /></label>
+                </div>
+              </section>
+
+              <section class="season-form-block full">
+                <h3 class="season-form-block-title">Production</h3>
+                <div class="season-form-grid">
+                  <label>KG per Land Piece<input name="kg_per_land_piece" type="number" min="0" step="0.01" /></label>
+                  <label>Tanks Produced (20L)<input name="tanks_20l" type="number" min="0" /></label>
+                  <label>Tanks Taken Home (20L)<input name="tanks_taken_home_20l" type="number" min="0" step="0.01" placeholder="Tanks that enter inventory" /></label>
+                  <label class="season-computed-field">Calculated KG Needed per Tank<input id="kg-needed-per-tank" type="text" readonly /></label>
+                </div>
+              </section>
+
+              <section class="season-form-block full">
+                <h3 class="season-form-block-title">Pressing Cost</h3>
+                <div class="season-form-grid">
+                  <label>Pressing Cost Type
+                    <select name="pressing_cost_mode" id="pressing-cost-mode-select">
+                      <option value="money">Money</option>
+                      <option value="oil_tanks">Oil Tanks</option>
+                    </select>
+                  </label>
+                  <label data-pressing-mode="money">Pressing Cost (Money)<input name="pressing_cost" type="number" min="0" step="0.01" placeholder="Total pressing fees" /></label>
+                  <label data-pressing-mode="oil_tanks" class="is-hidden">Pressing Cost (Oil Tanks 20L)<input name="pressing_cost_oil_tanks_20l" type="number" min="0" step="0.01" placeholder="Example: 2" /></label>
+                </div>
+              </section>
+
+              <section class="season-form-block full">
+                <h3 class="season-form-block-title">Notes</h3>
+                <label class="full">Optional Notes<textarea name="notes" rows="2" placeholder="Any extra context for this season"></textarea></label>
+              </section>
+
               <div class="actions-row full">
                 <button class="btn" type="submit">Save Season</button>
                 <button class="btn danger" id="delete-season-btn" type="button" hidden>Delete</button>
@@ -127,7 +149,7 @@
             <label>Oil Tank Price (20L)
               <input id="budget-oil-tank-price" type="number" min="0" step="0.01" placeholder="e.g. 35" />
             </label>
-            <div class="actions-row" style="align-items:end; gap:0.5rem; flex-wrap:wrap;">
+            <div class="actions-row budget-price-actions">
               <button class="btn ghost" id="save-oil-tank-price-btn" type="button">Save Tank Price</button>
               <button class="btn ghost" id="delete-oil-tank-price-btn" type="button">Delete This Price</button>
               <button class="btn danger" id="clear-all-oil-tank-prices-btn" type="button">Clear All Prices</button>
@@ -160,7 +182,7 @@
           </section>
 
           <div class="olive-finance-columns">
-            <article style="display:none;">
+            <article class="olive-hidden-block">
               <h3>Harvest Labor</h3>
               <form id="labor-day-form" class="form-grid compact">
                 <label>Work Date<input name="work_date" type="date" required /></label>
@@ -227,14 +249,14 @@
             <h2>Usage / Consumption</h2>
             <button class="btn ghost" id="refresh-usage-btn" type="button">Refresh</button>
           </div>
-          <form id="usage-target-form" class="form-grid compact">
+          <form id="usage-target-form" class="form-grid compact usage-target-form">
             <label class="full">Target Piece / Season
               <select id="usage-season-id"></select>
             </label>
           </form>
 
-          <article>
-            <form id="usage-form" class="form-grid compact">
+          <article class="usage-workspace">
+            <form id="usage-form" class="form-grid compact usage-form-card">
               <label>Inventory Item
                 <select name="usage_inventory_item_id" id="usage-inventory-item-id"></select>
               </label>
@@ -246,10 +268,10 @@
               </div>
               <p id="usage-message" class="message full"></p>
             </form>
-            <div id="usage-list" class="workers-list"></div>
+            <div id="usage-list" class="workers-list usage-current-list"></div>
 
             <section class="usage-history-wrap">
-              <div class="list-head" style="margin-top:.8rem;">
+              <div class="list-head usage-history-head">
                 <h3>Usage History</h3>
               </div>
               <p class="season-progress">Track all usages and correct mistakes anytime.</p>
@@ -265,12 +287,15 @@
             <h2>Inventory</h2>
             <button class="btn ghost" id="refresh-inventory-embed-btn" type="button">Refresh</button>
           </div>
-          <iframe
-            id="olive-inventory-frame"
-            class="insight-embed-frame"
-            src="./inventory.html?embedded=1"
-            title="Olive inventory"
-          ></iframe>
+          <p class="season-progress inventory-embed-hint">Open inventory directly in this embedded workspace and keep context on the Olive page.</p>
+          <div class="inventory-embed-shell">
+            <iframe
+              id="olive-inventory-frame"
+              class="insight-embed-frame"
+              src="./inventory.html?embedded=1"
+              title="Olive inventory"
+            ></iframe>
+          </div>
         </section>
       </section>
     </main>

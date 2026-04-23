@@ -32,9 +32,12 @@
       <section class="card">
         <div class="list-head">
           <h2>Olive Disease Assistant</h2>
-          <button class="btn ghost" id="refresh-health-btn" type="button">Check Service</button>
+          <div class="agro-health-actions">
+            <span id="agro-health-pill" class="agro-health-pill is-idle" aria-live="polite">Service unknown</span>
+            <button class="btn ghost" id="refresh-health-btn" type="button">Refresh</button>
+          </div>
         </div>
-        <p id="agro-health-message" class="message"></p>
+        <p id="agro-health-message" class="message is-hidden"></p>
         <div id="agro-chat-root"></div>
       </section>
     </main>

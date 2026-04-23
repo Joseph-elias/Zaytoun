@@ -33,12 +33,44 @@ const currentPasswordInput = document.getElementById("current-password");
 const newPasswordInput = document.getElementById("new-password");
 const confirmPasswordInput = document.getElementById("confirm-password");
 const sendResetCodeBtn = document.getElementById("send-reset-code-btn");
+const openResetFormLink = document.getElementById("open-reset-form-link");
 const securityMessage = document.getElementById("security-message");
+const passwordMatchHint = document.getElementById("password-match-hint");
+const passwordToggleButtons = [...document.querySelectorAll("[data-password-toggle]")];
 
 const deleteForm = document.getElementById("delete-account-form");
 const deleteInput = document.getElementById("delete-confirm-input");
+const deleteAckCheckbox = document.getElementById("delete-ack-checkbox");
 const deleteButton = document.getElementById("delete-account-btn");
+const deleteReadyHint = document.getElementById("delete-ready-hint");
 const message = document.getElementById("settings-message");
+
+function extractApiErrorMessage(detail) {
+  if (!detail) return "";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    for (const item of detail) {
+      const nested = extractApiErrorMessage(item);
+      if (nested) return nested;
+    }
+    return "";
+  }
+  if (typeof detail === "object") {
+    if (typeof detail.msg === "string" && detail.msg.trim()) return detail.msg;
+    if (typeof detail.message === "string" && detail.message.trim()) return detail.message;
+    if (typeof detail.detail === "string" && detail.detail.trim()) return detail.detail;
+    if (detail.detail) {
+      const nested = extractApiErrorMessage(detail.detail);
+      if (nested) return nested;
+    }
+  }
+  return "";
+}
+
+function apiErrorText(body, fallback) {
+  const messageText = extractApiErrorMessage(body?.detail ?? body);
+  return messageText || fallback;
+}
 
 function setMessage(node, text, ok = true) {
   if (!node) return;
@@ -59,6 +91,54 @@ function populateProfileForm() {
   if (profileNameInput) profileNameInput.value = current.user.full_name || "";
   if (profilePhoneInput) profilePhoneInput.value = current.user.phone || "";
   if (profileEmailInput) profileEmailInput.value = current.user.email || "";
+}
+
+function updatePasswordMatchHint() {
+  if (!passwordMatchHint || !newPasswordInput || !confirmPasswordInput) return;
+  const newValue = String(newPasswordInput.value || "");
+  const confirmValue = String(confirmPasswordInput.value || "");
+  if (!newValue && !confirmValue) {
+    passwordMatchHint.textContent = "";
+    passwordMatchHint.className = "field-hint";
+    return;
+  }
+  if (!confirmValue) {
+    passwordMatchHint.textContent = "Please confirm your new password.";
+    passwordMatchHint.className = "field-hint";
+    return;
+  }
+  if (newValue === confirmValue) {
+    passwordMatchHint.textContent = "Passwords match.";
+    passwordMatchHint.className = "field-hint success";
+    return;
+  }
+  passwordMatchHint.textContent = "Passwords do not match yet.";
+  passwordMatchHint.className = "field-hint error";
+}
+
+function updateDeleteAccountReadiness() {
+  const token = String(deleteInput?.value || "").trim();
+  const acknowledged = Boolean(deleteAckCheckbox?.checked);
+  const ready = token === "DELETE" && acknowledged;
+  if (deleteButton) deleteButton.disabled = !ready;
+  if (!deleteReadyHint) return;
+  if (ready) {
+    deleteReadyHint.textContent = "Ready to delete account.";
+    deleteReadyHint.className = "field-hint error";
+    return;
+  }
+  if (token !== "DELETE" && !acknowledged) {
+    deleteReadyHint.textContent = "Type DELETE and confirm the checkbox to enable deletion.";
+    deleteReadyHint.className = "field-hint";
+    return;
+  }
+  if (token !== "DELETE") {
+    deleteReadyHint.textContent = "Type DELETE exactly.";
+    deleteReadyHint.className = "field-hint";
+    return;
+  }
+  deleteReadyHint.textContent = "Please confirm the permanent action checkbox.";
+  deleteReadyHint.className = "field-hint";
 }
 
 async function refreshCurrentUser() {
@@ -86,6 +166,32 @@ if (session && appTabs) {
 updateRoleHint();
 populateProfileForm();
 refreshCurrentUser();
+updatePasswordMatchHint();
+updateDeleteAccountReadiness();
+
+if (openResetFormLink) {
+  const phone = String(getSession()?.user?.phone || "").trim();
+  const base = "./forgot-password.html?allow_logged_in=1";
+  const nextHref = phone ? `${base}&phone=${encodeURIComponent(phone)}` : base;
+  openResetFormLink.setAttribute("href", nextHref);
+}
+
+newPasswordInput?.addEventListener("input", updatePasswordMatchHint);
+confirmPasswordInput?.addEventListener("input", updatePasswordMatchHint);
+deleteInput?.addEventListener("input", updateDeleteAccountReadiness);
+deleteAckCheckbox?.addEventListener("change", updateDeleteAccountReadiness);
+
+for (const button of passwordToggleButtons) {
+  button.addEventListener("click", () => {
+    const targetId = String(button.getAttribute("data-password-toggle") || "");
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (!target) return;
+    const show = target.type === "password";
+    target.type = show ? "text" : "password";
+    button.textContent = show ? "Hide" : "Show";
+    button.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+}
 
 logoutBtn?.addEventListener("click", () => {
   clearSession();
@@ -136,7 +242,7 @@ profileForm?.addEventListener("submit", async (event) => {
 
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(body?.detail || "Could not save profile");
+      throw new Error(apiErrorText(body, "Could not save profile"));
     }
 
     const current = getSession();
@@ -189,10 +295,11 @@ passwordForm?.addEventListener("submit", async (event) => {
 
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(body?.detail || "Could not change password");
+      throw new Error(apiErrorText(body, "Could not change password"));
     }
 
     passwordForm.reset();
+    updatePasswordMatchHint();
     setMessage(securityMessage, "Password changed. Redirecting to login...");
     clearSession();
     redirectToLoginWithNotice("session_expired");
@@ -206,8 +313,17 @@ passwordForm?.addEventListener("submit", async (event) => {
 sendResetCodeBtn?.addEventListener("click", async () => {
   const current = getSession();
   const phone = String(current?.user?.phone || "").trim();
+  const email = String(current?.user?.email || "").trim();
   if (!phone) {
     setMessage(securityMessage, "No phone found on your account.", false);
+    return;
+  }
+  if (!email) {
+    setMessage(
+      securityMessage,
+      "No recovery email is saved yet. Add Recovery Email in Account Profile first.",
+      false
+    );
     return;
   }
 
@@ -222,7 +338,7 @@ sendResetCodeBtn?.addEventListener("click", async () => {
     });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(body?.detail || "Could not send recovery code");
+      throw new Error(apiErrorText(body, "Could not send recovery code"));
     }
     setMessage(securityMessage, body?.message || "Recovery code requested.");
   } catch (error) {
@@ -238,11 +354,14 @@ deleteForm?.addEventListener("submit", async (event) => {
   const token = String(deleteInput?.value || "").trim();
   if (token !== "DELETE") {
     setMessage(message, "Please type DELETE exactly to confirm.", false);
+    updateDeleteAccountReadiness();
     return;
   }
-
-  const sure = window.confirm("Are you absolutely sure? This cannot be undone.");
-  if (!sure) return;
+  if (!deleteAckCheckbox?.checked) {
+    setMessage(message, "Please confirm the permanent action checkbox first.", false);
+    updateDeleteAccountReadiness();
+    return;
+  }
 
   deleteButton.disabled = true;
   setMessage(message, "Deleting account...");
@@ -261,13 +380,13 @@ deleteForm?.addEventListener("submit", async (event) => {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err?.detail || "Could not delete account");
+      throw new Error(apiErrorText(err, "Could not delete account"));
     }
 
     clearSession();
     window.location.href = "./signup.html";
   } catch (error) {
-    deleteButton.disabled = false;
+    updateDeleteAccountReadiness();
     setMessage(message, error.message || "Could not delete account", false);
   }
 });

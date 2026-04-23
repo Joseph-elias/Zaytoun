@@ -2,14 +2,17 @@ import "./ui-feedback.js";
 import { API_BASE } from "./config.js";
 import { getSession, redirectToRoleHome } from "./session.js";
 
-const existing = getSession();
-if (existing?.user?.role) {
-  redirectToRoleHome(existing);
-}
-
 const requestForm = document.getElementById("forgot-request-form");
 const confirmForm = document.getElementById("forgot-confirm-form");
 const messageNode = document.getElementById("forgot-message");
+const params = new URLSearchParams(window.location.search);
+const prefillPhone = String(params.get("phone") || "").trim();
+const allowLoggedIn = params.get("allow_logged_in") === "1";
+
+const existing = getSession();
+if (!allowLoggedIn && existing?.user?.role) {
+  redirectToRoleHome(existing);
+}
 
 function setMessage(text, ok = true) {
   if (!messageNode) return;
@@ -50,6 +53,10 @@ async function confirmPasswordReset(phone, resetCode, newPassword) {
 }
 
 if (requestForm) {
+  if (prefillPhone) {
+    const requestPhone = requestForm.querySelector('input[name="phone"]');
+    if (requestPhone) requestPhone.value = prefillPhone;
+  }
   requestForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const fd = new FormData(requestForm);
@@ -73,6 +80,10 @@ if (requestForm) {
 }
 
 if (confirmForm) {
+  if (prefillPhone) {
+    const confirmPhone = confirmForm.querySelector('input[name="phone"]');
+    if (confirmPhone) confirmPhone.value = prefillPhone;
+  }
   confirmForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const fd = new FormData(confirmForm);

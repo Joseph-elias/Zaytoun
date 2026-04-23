@@ -16,13 +16,51 @@
   margin-top: 0.8rem;
 }
 
+.page-agro-copilot .agro-health-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.page-agro-copilot .agro-health-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.32rem 0.68rem;
+  border-radius: 999px;
+  border: 1px solid #bccba4;
+  background: #eff4e4;
+  color: #2f4a2f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.page-agro-copilot .agro-health-pill.is-checking {
+  background: #f4f1df;
+  border-color: #d3c99e;
+  color: #5d5128;
+}
+
+.page-agro-copilot .agro-health-pill.is-ok {
+  background: #e7f3e1;
+  border-color: #acc79a;
+  color: #2d5b2d;
+}
+
+.page-agro-copilot .agro-health-pill.is-error {
+  background: #f9e9e6;
+  border-color: #e0b4ad;
+  color: #7d2e24;
+}
+
 .page-agro-copilot .olive-chat-shell {
   width: 100%;
   min-height: 720px;
   border: 1px solid var(--olive-border);
-  border-radius: 18px;
+  border-radius: 20px;
   background: var(--olive-surface);
-  box-shadow: 0 18px 40px rgba(20, 34, 24, 0.12);
+  box-shadow: 0 10px 20px rgba(20, 34, 24, 0.08);
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   overflow: hidden;
@@ -30,11 +68,11 @@
 
 .olive-chat-sidebar {
   border-right: 1px solid var(--olive-border);
-  background: linear-gradient(180deg, #f8f5ec 0%, #f2eee2 100%);
-  padding: 12px;
+  background: #f7f3e9;
+  padding: 14px;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .olive-sidebar-head {
@@ -44,19 +82,20 @@
 
 .olive-sidebar-head h2 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   color: #3c4f31;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
 }
 
 .olive-new-chat-btn {
   width: 100%;
+  min-height: 38px;
 }
 
 .olive-session-list {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   align-content: start;
   overflow: auto;
 }
@@ -74,15 +113,24 @@
   border-radius: 10px;
   background: #fff;
   color: var(--olive-text);
-  padding: 8px 10px;
+  padding: 9px 10px;
   font-weight: 600;
+  font-size: 0.88rem;
+  line-height: 1.35;
   cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.olive-session-item:hover {
+  border-color: #c8d5b8;
+  background: #fefefb;
 }
 
 .olive-session-item.is-active {
   border-color: #2f5e3b;
-  background: linear-gradient(180deg, #436f4d 0%, #2f5e3b 100%);
+  background: #2f5e3b;
   color: #fff;
+  box-shadow: 0 4px 9px rgba(39, 76, 47, 0.14);
 }
 
 .olive-session-delete {
@@ -91,10 +139,17 @@
   background: #fffaf6;
   color: #a23b30;
   font-weight: 800;
-  width: 30px;
-  min-width: 30px;
-  height: 34px;
+  width: 32px;
+  min-width: 32px;
+  height: 36px;
   cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.olive-session-delete:hover {
+  border-color: #d4aba3;
+  box-shadow: 0 4px 10px rgba(123, 52, 43, 0.13);
+  transform: translateY(-1px);
 }
 
 .olive-session-row.is-active .olive-session-delete {
@@ -109,50 +164,62 @@
 
 .olive-chat-header {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--olive-border);
-  background: linear-gradient(180deg, #fcfaf3 0%, #f6f2e8 100%);
+  background: #f8f4ea;
 }
 
 .olive-chat-header h1 {
   margin: 0;
   font-family: "DM Serif Display", Georgia, serif;
-  font-size: 1.1rem;
+  font-size: 1.24rem;
+  line-height: 1.15;
 }
 
 .olive-chat-header p {
-  margin: 5px 0 0;
-  font-size: 0.9rem;
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  max-width: 52ch;
   color: var(--olive-muted);
 }
 
 .olive-lang-wrap {
   display: grid;
   gap: 4px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--olive-muted);
 }
 
 .olive-lang-wrap select {
   border: 1px solid var(--olive-border);
-  border-radius: 10px;
+  border-radius: 11px;
   background: #fff;
-  padding: 7px 10px;
+  padding: 7px 11px;
+  min-height: 38px;
   min-width: 140px;
 }
 
 .olive-chat-messages {
-  padding: 16px;
+  padding: 18px;
   overflow: auto;
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  align-content: start;
+  background: #faf8f1;
 }
 
 .olive-msg {
   display: flex;
+  width: 100%;
+  max-width: 980px;
+  margin-inline: auto;
 }
 
 .olive-msg-user {
@@ -164,16 +231,19 @@
 }
 
 .olive-msg-bubble {
-  max-width: min(78%, 720px);
+  max-width: min(78%, 700px);
   border-radius: 14px;
   padding: 11px 13px;
-  line-height: 1.42;
+  line-height: 1.48;
+  font-size: 0.92rem;
 }
 
 .olive-msg-user .olive-msg-bubble {
   background: var(--olive-user);
   color: var(--olive-user-text);
   border-bottom-right-radius: 6px;
+  box-shadow: 0 4px 10px rgba(39, 76, 47, 0.14);
+  min-width: 124px;
 }
 
 .olive-msg-assistant .olive-msg-bubble {
@@ -181,6 +251,14 @@
   color: var(--olive-assistant-text);
   border: 1px solid var(--olive-border);
   border-bottom-left-radius: 6px;
+  box-shadow: 0 2px 6px rgba(44, 60, 35, 0.06);
+}
+
+.olive-msg-assistant.is-error-msg .olive-msg-bubble {
+  background: #fff4f2;
+  border-color: #e6c0b8;
+  border-left: 4px solid #c85b49;
+  box-shadow: 0 2px 8px rgba(129, 54, 38, 0.08);
 }
 
 .olive-msg-bubble p {
@@ -196,6 +274,7 @@
 .olive-msg-title {
   font-weight: 700;
   margin-bottom: 8px;
+  color: #5f2219;
 }
 
 .olive-msg-meta {
@@ -255,10 +334,10 @@
 
 .olive-chat-composer {
   border-top: 1px solid var(--olive-border);
-  padding: 12px;
-  background: #fbf8f0;
+  padding: 13px 14px;
+  background: #f8f4ea;
   display: grid;
-  gap: 8px;
+  gap: 9px;
 }
 
 .olive-attach-state {
@@ -273,16 +352,17 @@
   border-radius: 12px;
   background: #fff;
   color: var(--olive-text);
-  padding: 10px 12px;
+  padding: 11px 12px;
   resize: vertical;
-  min-height: 60px;
+  min-height: 64px;
   max-height: 180px;
+  line-height: 1.45;
 }
 
 .olive-composer-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
   justify-content: flex-end;
 }
 
@@ -299,9 +379,15 @@
 }
 
 .olive-send-btn {
-  background: var(--olive-accent);
-  border-color: var(--olive-accent);
+  background: #2f5e3b;
+  border-color: #2f5e3b;
   color: #fff;
+}
+
+.olive-attach-btn:hover,
+.olive-secondary-btn:hover {
+  border-color: #bfcfa9;
+  background: #fcfcf8;
 }
 
 .olive-send-btn:disabled {
@@ -320,6 +406,11 @@
 }
 
 @media (max-width: 760px) {
+  .page-agro-copilot .agro-health-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .page-agro-copilot .olive-chat-shell {
     grid-template-columns: 1fr;
     min-height: 82vh;
@@ -341,5 +432,14 @@
   .olive-chat-header {
     align-items: start;
     flex-direction: column;
+    padding: 16px;
+  }
+
+  .olive-chat-messages {
+    padding: 14px;
+  }
+
+  .olive-chat-composer {
+    padding: 11px;
   }
 }

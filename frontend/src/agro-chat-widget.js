@@ -52,8 +52,41 @@ function renderTextSection(title, text) {
   `;
 }
 
+function formatErrorForUi(rawMessage) {
+  const message = String(rawMessage || "").trim();
+  const lowered = message.toLowerCase();
+  if (
+    lowered.includes("http 502") ||
+    lowered.includes("unreachable") ||
+    lowered.includes("connection attempts failed")
+  ) {
+    return {
+      summary: "Agro Copilot is temporarily unavailable.",
+      detail: "The service is currently unreachable. Please retry in a moment.",
+    };
+  }
+  if (lowered.includes("timed out") || lowered.includes("timeout")) {
+    return {
+      summary: "The request timed out.",
+      detail: "Please retry with a shorter message or try again in a moment.",
+    };
+  }
+  return {
+    summary: "Request could not be completed.",
+    detail: message || "An unexpected error occurred.",
+  };
+}
+
+function buildErrorHtml(summary, detail) {
+  return `
+    <div class="olive-msg-title">Service Notice</div>
+    <p>${escapeHtml(summary)}</p>
+    ${detail ? `<details class="olive-msg-details"><summary>Details</summary><div class="olive-trace">${escapeHtml(detail)}</div></details>` : ""}
+  `;
+}
+
 function buildAssistantHtml(data) {
-  const mainReply = String(data?.probable_issue || "").trim() || "I’m not sure yet. Could you share more details?";
+  const mainReply = String(data?.probable_issue || "").trim() || "I'm not sure yet. Could you share more details?";
   const trace = String(data?.model_trace_summary || "").trim();
   const source = String(data?.response_source || "fallback").trim() || "fallback";
   return `
@@ -126,6 +159,7 @@ export class OliveChatWidget {
     this.imageBase64 = null;
     this.imageName = "";
     this.sessions = [];
+    this.statusTimer = null;
 
     this.render();
     this.bindEvents();
@@ -395,8 +429,20 @@ export class OliveChatWidget {
   }
 
   setStatus(message, isError = false) {
-    this.statusEl.textContent = message;
+    if (this.statusTimer) {
+      window.clearTimeout(this.statusTimer);
+      this.statusTimer = null;
+    }
+    const text = String(message || "").trim();
+    this.statusEl.textContent = text;
     this.statusEl.classList.toggle("error", Boolean(isError));
+    this.statusEl.classList.toggle("is-hidden", !text);
+    if (text && !isError) {
+      this.statusTimer = window.setTimeout(() => {
+        this.statusEl.textContent = "";
+        this.statusEl.classList.add("is-hidden");
+      }, 1800);
+    }
   }
 
   scrollToBottom() {
@@ -416,9 +462,9 @@ export class OliveChatWidget {
     this.scrollToBottom();
   }
 
-  addAssistantMessage(html) {
+  addAssistantMessage(html, variant = "default") {
     const block = document.createElement("article");
-    block.className = "olive-msg olive-msg-assistant";
+    block.className = `olive-msg olive-msg-assistant${variant === "error" ? " is-error-msg" : ""}`;
     block.innerHTML = `<div class="olive-msg-bubble">${html}</div>`;
     this.messagesEl.appendChild(block);
     this.scrollToBottom();
@@ -466,7 +512,7 @@ export class OliveChatWidget {
     this.addUserMessage(message, this.imageName);
     this.sendEl.disabled = true;
     this.setTyping(true);
-    this.setStatus("Sending...");
+    this.setStatus("");
 
     try {
       const data = await requestJsonWithTimeout(
@@ -483,7 +529,7 @@ export class OliveChatWidget {
       );
       this.setTyping(false);
       this.addAssistantMessage(buildAssistantHtml(data));
-      this.setStatus("Done.");
+      this.setStatus("");
       this.clearImage();
       if (data?.session_id) {
         this.config.sessionId = String(data.session_id);
@@ -496,8 +542,9 @@ export class OliveChatWidget {
     } catch (error) {
       this.setTyping(false);
       const messageText = String(error?.message || error);
-      this.addAssistantMessage(`<p>${escapeHtml(messageText)}</p>`);
-      this.setStatus(messageText, true);
+      const uiError = formatErrorForUi(messageText);
+      this.addAssistantMessage(buildErrorHtml(uiError.summary, uiError.detail), "error");
+      this.setStatus(uiError.summary, true);
       if (this.config.onError) {
         this.config.onError(error);
       }

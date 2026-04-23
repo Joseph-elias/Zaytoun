@@ -39,15 +39,23 @@
           <label>
             Phone (Login ID)
             <input id="profile-phone" name="phone" required minlength="4" />
+            <span class="field-hint">Used to log in and receive account notifications.</span>
           </label>
           <label class="full">
             Recovery Email
             <input id="profile-email" name="email" type="email" placeholder="name@example.com" />
+            <span class="field-hint">Required for password recovery code delivery.</span>
           </label>
-          <label class="full">
-            Current Password (required to change phone or email)
-            <input id="profile-current-password" name="current_password" type="password" minlength="6" />
-          </label>
+          <fieldset class="full settings-sensitive-group">
+            <legend>Verification</legend>
+            <label class="full">
+              Current Password (required to change phone or email)
+              <span class="password-field">
+                <input id="profile-current-password" name="current_password" type="password" minlength="6" />
+                <button class="btn ghost password-toggle-btn" type="button" data-password-toggle="profile-current-password" aria-label="Show password">Show</button>
+              </span>
+            </label>
+          </fieldset>
           <button class="btn full" id="profile-save-btn" type="submit">Save Profile</button>
         </form>
         <p id="profile-message" class="message"></p>
@@ -55,51 +63,89 @@
 
       <section class="card">
         <h2>Security</h2>
-        <p class="sub">Change your password and send a recovery code to your account email.</p>
+        <p class="sub">Change your password. If you forget it later, recovery codes are sent to the Recovery Email saved in Account Profile.</p>
         <form id="password-form" class="form-grid">
-          <label>
+          <label class="full">
             Current Password
-            <input id="current-password" name="current_password" type="password" required minlength="6" />
+            <span class="password-field">
+              <input id="current-password" name="current_password" type="password" required minlength="6" />
+              <button class="btn ghost password-toggle-btn" type="button" data-password-toggle="current-password" aria-label="Show password">Show</button>
+            </span>
           </label>
-          <label>
+          <label class="full">
             New Password
-            <input id="new-password" name="new_password" type="password" required minlength="6" />
+            <span class="password-field">
+              <input id="new-password" name="new_password" type="password" required minlength="6" />
+              <button class="btn ghost password-toggle-btn" type="button" data-password-toggle="new-password" aria-label="Show password">Show</button>
+            </span>
+            <span class="field-hint">Use at least 6 characters. Longer passwords are safer.</span>
           </label>
           <label class="full">
             Confirm New Password
-            <input id="confirm-password" name="confirm_password" type="password" required minlength="6" />
+            <span class="password-field">
+              <input id="confirm-password" name="confirm_password" type="password" required minlength="6" />
+              <button class="btn ghost password-toggle-btn" type="button" data-password-toggle="confirm-password" aria-label="Show password">Show</button>
+            </span>
+            <span id="password-match-hint" class="field-hint"></span>
           </label>
           <button class="btn full" id="password-save-btn" type="submit">Change Password</button>
         </form>
         <div class="actions-row">
-          <button class="btn ghost" id="send-reset-code-btn" type="button">Send Recovery Code To Email</button>
+          <button class="btn ghost" id="send-reset-code-btn" type="button">Send Recovery Code (Forgot Password)</button>
+          <a class="btn ghost" id="open-reset-form-link" href="./forgot-password.html">Open Reset Form</a>
         </div>
         <p id="security-message" class="message"></p>
       </section>
 
-      <section class="card">
-        <h2>Legal & Privacy</h2>
-        <p class="sub">
-          Read legal documents and keep consent aligned with current policy requirements.
-        </p>
-        <div class="actions-row">
-          <a class="btn ghost" href="./terms.html" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>
-          <a class="btn ghost" href="./privacy.html" target="_blank" rel="noopener noreferrer">Data Consent Policy</a>
-          <a class="btn ghost" href="./consent.html">Review Consent</a>
-        </div>
+      <section class="card settings-fold-card">
+        <details class="settings-fold">
+          <summary>
+            <span class="settings-fold-title-wrap">
+              <span class="settings-fold-title">Legal & Privacy</span>
+              <span class="settings-fold-sub">Terms, privacy policy, and consent review.</span>
+            </span>
+            <span class="settings-fold-state" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-fold-body">
+            <div class="actions-row">
+              <a class="btn ghost" href="./terms.html" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>
+              <a class="btn ghost" href="./privacy.html" target="_blank" rel="noopener noreferrer">Data Consent Policy</a>
+              <a class="btn ghost" href="./consent.html">Review Consent</a>
+            </div>
+          </div>
+        </details>
       </section>
 
-      <section class="card">
-        <h2>Delete Account</h2>
-        <p class="message error">This action is permanent. Your account and related data will be removed.</p>
-        <form id="delete-account-form" class="form-grid">
-          <label class="full">
-            Type <strong>DELETE</strong> to confirm
-            <input id="delete-confirm-input" name="confirm" placeholder="DELETE" required />
-          </label>
-          <button class="btn danger full" id="delete-account-btn" type="submit">Delete My Account</button>
-        </form>
-        <p id="settings-message" class="message"></p>
+      <section class="card settings-fold-card settings-danger-fold-card">
+        <details class="settings-fold settings-danger-fold">
+          <summary>
+            <span class="settings-fold-title-wrap">
+              <span class="settings-fold-title">Delete Account</span>
+              <span class="settings-fold-sub">Permanent action. This cannot be undone.</span>
+            </span>
+            <span class="settings-fold-state" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-fold-body">
+            <ul class="settings-danger-list">
+              <li>Your account will be permanently deleted.</li>
+              <li>All associated data and history will be removed.</li>
+              <li>This action cannot be undone.</li>
+            </ul>
+            <form id="delete-account-form" class="form-grid">
+              <label class="full">
+                Type <strong>DELETE</strong> to confirm
+                <input id="delete-confirm-input" name="confirm" placeholder="DELETE" required />
+              </label>
+              <label class="full settings-danger-check">
+                <input id="delete-ack-checkbox" name="delete_acknowledged" type="checkbox" required />
+                <span>I understand this is permanent and cannot be reversed.</span>
+              </label>
+              <p id="delete-ready-hint" class="field-hint">Type DELETE and confirm the checkbox to enable deletion.</p>
+              <button class="btn danger full" id="delete-account-btn" type="submit" disabled>Delete My Account</button>
+            </form>
+            <p id="settings-message" class="message"></p>
+          </div>
+        </details>
       </section>
     </main>
     <script type="module" src="./src/settings.js"></script>
