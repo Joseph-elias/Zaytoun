@@ -63,7 +63,7 @@ This project includes a production-style authentication implementation designed 
 - **Session security:** JWT-based authentication with role claims and **token versioning**; password changes and password resets invalidate previous sessions immediately.
 - **Sensitive-action hardening:** changing critical account data (phone/email) requires re-auth via current password challenge.
 - **Recovery flow:** secure forgot-password implementation with one-time reset code hashing, expiry windows, invalid-attempt limits, and SMTP email delivery support.
-- **Account security center:** dedicated settings workflows for profile updates, password rotation, legal access, recovery-code trigger, and controlled account deletion.
+- **Account security center:** dedicated settings workflows for profile updates, password rotation, legal access, recovery-code request, direct reset-form navigation, and controlled account deletion.
 - **Authorization boundaries:** strict role and ownership checks across API surfaces (worker/farmer/customer), enforced server-side.
 - **Tested behavior:** automated backend tests validate auth happy paths, consent re-acceptance, password reset controls, session invalidation, and account settings security rules.
 
@@ -123,3 +123,50 @@ npm.cmd run dev
 ```
 
 Open: `http://127.0.0.1:5173`
+
+## Frontend Page Map
+
+- `index.html` -> landing + login
+- `signup.html` -> role-aware account creation
+- `forgot-password.html` -> reset flow (`request code` + `confirm new password`)
+- `consent.html` -> mandatory consent re-acceptance
+- `workers.html` -> worker directory, filtering, and booking launch
+- `register.html` -> worker/team registration
+- `bookings.html` -> booking management and status workflow
+- `market.html` -> storefront, listings, cart/orders
+- `olive-season.html` -> season operations, labor/sales/usage/inventory views
+- `settings.html` -> profile/security/legal/delete controls
+- `agro-copilot.html` -> farmer-only AI assistant UI
+
+## Password & Recovery Workflow (Current UX)
+
+### While logged in (Settings)
+- Change password directly from **Settings -> Security** using current password.
+- Request a recovery code from **Settings -> Security -> Send Recovery Code (Forgot Password)**.
+- Jump to reset page via **Open Reset Form** (phone is prefilled).
+
+### Forgot-password flow (public page)
+- Go to `forgot-password.html`.
+- Step 1: request code with phone.
+- Step 2: submit phone + reset code + new password.
+- Reset code is delivered to the **Recovery Email** saved in profile.
+
+### Important behavior
+- Password change and password reset both rotate token version and invalidate old sessions.
+- Recovery-code request requires phone, and meaningful API error text is surfaced in UI.
+
+## Local Testing
+
+### Frontend build check
+```powershell
+cd frontend
+npm.cmd run build
+```
+
+### Backend auth tests (examples)
+```powershell
+$env:PYTHONPATH="backend"
+backend\.venv\Scripts\pytest -q backend/tests/test_auth_settings.py backend/tests/test_auth_password_reset.py
+```
+
+If tests fail with `sqlite3.OperationalError: unable to open database file`, verify local DB path/env setup before rerunning.
