@@ -75,7 +75,7 @@ jobs:
         run: pip-audit -r backend/requirements.txt
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
 
