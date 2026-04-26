@@ -3,7 +3,7 @@ gunicorn==23.0.0
 uvicorn==0.35.0
 pydantic==2.11.7
 numpy>=1.26
-pillow>=10.0
+pillow>=12.2.0
 torch>=2.2
 torchvision>=0.17
 transformers>=4.45
