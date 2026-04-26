@@ -5,7 +5,7 @@ pydantic==2.11.7
 numpy>=1.26
 pillow>=10.0
 torch>=2.2
-torchvision>=0.17
+torchvision>=0.26.0
 transformers>=4.45
 huggingface_hub>=0.24
 safetensors>=0.4
