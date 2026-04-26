@@ -1,4 +1,4 @@
-﻿name: CI/CD
+name: CI/CD
 
 on:
   pull_request:
@@ -116,7 +116,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build backend image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           file: ./backend/Dockerfile
@@ -124,7 +124,7 @@ jobs:
           tags: zaytoun-backend:ci
 
       - name: Build frontend image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
@@ -134,7 +134,7 @@ jobs:
           tags: zaytoun-frontend:ci
 
       - name: Build agro-copilot image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./Agro-copilot
           file: ./Agro-copilot/Dockerfile
