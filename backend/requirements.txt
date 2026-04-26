@@ -1,8 +1,8 @@
-﻿fastapi==0.118.0
+fastapi==0.118.0
 gunicorn==23.0.0
 uvicorn[standard]==0.37.0
 sqlalchemy==2.0.43
-alembic==1.14.0
+alembic==1.18.4
 pydantic-settings==2.11.0
 psycopg[binary]==3.2.10
 python-jose==3.5.0
