@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.time_utils import utcnow_naive
 from app.models.market_item import FarmerMarketItem
 from app.models.market_order import MarketOrder
 from app.models.market_order_message import MarketOrderMessage
@@ -471,7 +472,7 @@ def customer_review_market_order(
     if product_rating is None and market_rating is None:
         raise ValueError("At least one rating is required")
 
-    now = datetime.utcnow()
+    now = utcnow_naive()
 
     if product_rating is not None:
         order.customer_rating = product_rating
@@ -597,7 +598,7 @@ def farmer_confirm_market_order_pickup(
 
     _finalize_inventory_pickup(db, order)
     order.status = "picked_up"
-    order.picked_up_at = datetime.utcnow()
+    order.picked_up_at = utcnow_naive()
 
     db.commit()
     db.refresh(order)

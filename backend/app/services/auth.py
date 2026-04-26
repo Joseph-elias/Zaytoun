@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
 from app.core.config import settings
+from app.core.mfa_totp import generate_base32_secret, provisioning_uri, verify_totp
+from app.core.time_utils import utcnow_naive
 from app.models.booking import Booking
 from app.models.booking_event import BookingEvent
 from app.models.booking_message import BookingMessage
@@ -25,6 +27,9 @@ from app.services.email import send_password_reset_code_email
 
 PASSWORD_RESET_GENERIC_MESSAGE = "If the account exists, a password reset code has been generated."
 PASSWORD_RESET_SUCCESS_MESSAGE = "Your password has been updated. You can now log in."
+LOGIN_LOCKED_MESSAGE = "Account temporarily locked due to repeated failed login attempts."
+MFA_REQUIRED_MESSAGE = "MFA code required."
+MFA_INVALID_MESSAGE = "Invalid MFA code."
 
 
 def register_user(db: Session, payload: UserRegister) -> User:
@@ -56,15 +61,28 @@ def register_user(db: Session, payload: UserRegister) -> User:
     return user
 
 
-def authenticate_user(db: Session, payload: UserLogin) -> User | None:
+def authenticate_user(db: Session, payload: UserLogin) -> tuple[User | None, str | None]:
     user = db.scalar(select(User).where(User.phone == payload.phone))
     if not user:
-        return None
+        return None, "invalid_credentials"
+
+    if settings.auth_login_lockout_enabled and user.login_locked_until and user.login_locked_until > utcnow_naive():
+        return None, "locked"
 
     if not verify_password(payload.password, user.password_hash):
-        return None
+        if settings.auth_login_lockout_enabled:
+            user.login_failed_attempts = int(user.login_failed_attempts or 0) + 1
+            if user.login_failed_attempts >= max(1, int(settings.auth_login_max_attempts)):
+                user.login_locked_until = utcnow_naive() + timedelta(minutes=max(1, int(settings.auth_login_lockout_minutes)))
+            db.commit()
+        return None, "invalid_credentials"
 
-    return user
+    if int(user.login_failed_attempts or 0) > 0 or user.login_locked_until is not None:
+        user.login_failed_attempts = 0
+        user.login_locked_until = None
+        db.commit()
+
+    return user, None
 
 
 def is_user_consent_current(user: User) -> bool:
@@ -144,7 +162,7 @@ def request_password_reset(db: Session, payload: PasswordResetRequest) -> str | 
     if not user:
         return None
 
-    now = datetime.utcnow()
+    now = utcnow_naive()
     expires_at = now + timedelta(minutes=settings.auth_password_reset_code_ttl_minutes)
     code = f"{secrets.randbelow(1_000_000):06d}"
 
@@ -168,7 +186,7 @@ def confirm_password_reset(db: Session, payload: PasswordResetConfirm) -> bool:
     if not user:
         return False
 
-    now = datetime.utcnow()
+    now = utcnow_naive()
 
     if not user.password_reset_code_hash or not user.password_reset_expires_at:
         return False
@@ -192,3 +210,74 @@ def confirm_password_reset(db: Session, payload: PasswordResetConfirm) -> bool:
     user.password_reset_attempts = 0
     db.commit()
     return True
+
+
+def begin_mfa_setup(db: Session, user: User, current_password: str) -> tuple[str, str]:
+    if not verify_password(current_password, user.password_hash):
+        raise ValueError("Current password is incorrect")
+    secret = generate_base32_secret()
+    user.mfa_totp_pending_secret = secret
+    db.commit()
+    account_name = user.email or user.phone
+    uri = provisioning_uri(
+        secret=secret,
+        account_name=account_name,
+        issuer=settings.auth_mfa_totp_issuer,
+        period_seconds=settings.auth_mfa_totp_period_seconds,
+        digits=settings.auth_mfa_totp_digits,
+    )
+    return secret, uri
+
+
+def enable_mfa(db: Session, user: User, otp_code: str) -> bool:
+    pending = str(user.mfa_totp_pending_secret or "").strip()
+    if not pending:
+        return False
+    ok = verify_totp(
+        pending,
+        otp_code,
+        period_seconds=settings.auth_mfa_totp_period_seconds,
+        digits=settings.auth_mfa_totp_digits,
+        valid_window=settings.auth_mfa_totp_valid_window,
+    )
+    if not ok:
+        return False
+    user.mfa_totp_secret = pending
+    user.mfa_totp_pending_secret = None
+    user.mfa_enabled = True
+    user.mfa_enabled_at = utcnow_naive()
+    user.token_version = int(user.token_version or 0) + 1
+    db.commit()
+    return True
+
+
+def is_mfa_code_valid(user: User, otp_code: str | None) -> bool:
+    if not user.mfa_enabled:
+        return True
+    secret = str(user.mfa_totp_secret or "").strip()
+    if not secret:
+        return False
+    if not otp_code:
+        return False
+    return verify_totp(
+        secret,
+        otp_code,
+        period_seconds=settings.auth_mfa_totp_period_seconds,
+        digits=settings.auth_mfa_totp_digits,
+        valid_window=settings.auth_mfa_totp_valid_window,
+    )
+
+
+def disable_mfa(db: Session, user: User, current_password: str, otp_code: str) -> None:
+    if not verify_password(current_password, user.password_hash):
+        raise ValueError("Current password is incorrect")
+    if not user.mfa_enabled:
+        raise ValueError("MFA is not enabled")
+    if not is_mfa_code_valid(user, otp_code):
+        raise ValueError("Invalid MFA code")
+    user.mfa_enabled = False
+    user.mfa_enabled_at = None
+    user.mfa_totp_secret = None
+    user.mfa_totp_pending_secret = None
+    user.token_version = int(user.token_version or 0) + 1
+    db.commit()

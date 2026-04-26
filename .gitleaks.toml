@@ -1,0 +1,17 @@
+title = "Zaytoun gitleaks config"
+
+[allowlist]
+description = "Allow placeholder/example values and non-secret demo strings."
+paths = [
+  '''(^|/)README\.md$''',
+  '''(^|/)\.env\.example$''',
+  '''(^|/)frontend/README\.md$''',
+  '''(^|/)Agro-copilot/README\.md$'''
+]
+
+regexes = [
+  '''change-me-in-production''',
+  '''example\.com''',
+  '''127\.0\.0\.1''',
+  '''localhost'''
+]

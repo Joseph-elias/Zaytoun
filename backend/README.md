@@ -15,6 +15,9 @@ FastAPI backend for Worker Radar, covering auth, workers, bookings, olive operat
 ### Auth
 - `POST /auth/register`
 - `POST /auth/login`
+- `POST /auth/mfa/setup`
+- `POST /auth/mfa/enable`
+- `POST /auth/mfa/disable`
 - `GET /auth/me`
 - `PATCH /auth/me/profile`
 - `PATCH /auth/me/password`
@@ -115,8 +118,11 @@ Test modules:
 Loaded from `app/core/config.py`.
 
 Important env vars:
+- `APP_ENV` (`development`, `staging`, `production`)
 - `DATABASE_URL`
 - `DB_FALLBACK_URL`
+- `CORS_ALLOWED_ORIGINS` (comma-separated)
+- `STARTUP_FAIL_FAST_VALIDATION`
 - `AUTH_SECRET_KEY`
 - `AUTH_ALGORITHM`
 - `AUTH_CONSENT_VERSION`
@@ -124,6 +130,13 @@ Important env vars:
 - `AUTH_PASSWORD_RESET_CODE_TTL_MINUTES`
 - `AUTH_PASSWORD_RESET_MAX_ATTEMPTS`
 - `AUTH_PASSWORD_RESET_EMAIL_ENABLED`
+- `AUTH_LOGIN_LOCKOUT_ENABLED`
+- `AUTH_LOGIN_MAX_ATTEMPTS`
+- `AUTH_LOGIN_LOCKOUT_MINUTES`
+- `AUTH_MFA_TOTP_ISSUER`
+- `AUTH_MFA_TOTP_DIGITS`
+- `AUTH_MFA_TOTP_PERIOD_SECONDS`
+- `AUTH_MFA_TOTP_VALID_WINDOW`
 - `SMTP_HOST`
 - `SMTP_PORT`
 - `SMTP_USERNAME`
@@ -137,6 +150,67 @@ Important env vars:
 - `AGRO_COPILOT_TIMEOUT_SECONDS`
 - `AGRO_COPILOT_MAX_RETRIES`
 - `AGRO_COPILOT_RETRY_BACKOFF_MS`
+- `SECURITY_HSTS_ENABLED`
+- `SECURITY_HSTS_MAX_AGE_SECONDS`
+- `SECURITY_HSTS_INCLUDE_SUBDOMAINS`
+- `SECURITY_HSTS_PRELOAD`
+- `SECURITY_TRUSTED_HOSTS`
+- `SECURITY_CONTENT_SECURITY_POLICY`
+- `SECURITY_CONTENT_SECURITY_POLICY_REPORT_ONLY`
+- `SECURITY_CONTENT_SECURITY_POLICY_REPORT_URI`
+- `SECURITY_CSP_REPORT_ENDPOINT_ENABLED`
+- `SECURITY_CROSS_ORIGIN_OPENER_POLICY`
+- `SECURITY_CROSS_ORIGIN_RESOURCE_POLICY`
+- `SECURITY_CROSS_ORIGIN_EMBEDDER_POLICY`
+- `SECURITY_X_DNS_PREFETCH_CONTROL`
+- `REQUEST_ID_HEADER_NAME`
+- `RATE_LIMIT_ENABLED`
+- `RATE_LIMIT_TRUST_X_FORWARDED_FOR`
+- `RATE_LIMIT_TRUSTED_PROXY_CIDRS`
+- `RATE_LIMIT_GLOBAL_REQUESTS`
+- `RATE_LIMIT_GLOBAL_WINDOW_SECONDS`
+- `RATE_LIMIT_AUTH_REQUESTS`
+- `RATE_LIMIT_AUTH_WINDOW_SECONDS`
+- `RATE_LIMIT_AUTH_LOGIN_REQUESTS`
+- `RATE_LIMIT_AUTH_LOGIN_WINDOW_SECONDS`
+- `RATE_LIMIT_PASSWORD_RESET_REQUESTS`
+- `RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS`
+- `RATE_LIMIT_AGRO_GENERAL_REQUESTS`
+- `RATE_LIMIT_AGRO_GENERAL_WINDOW_SECONDS`
+- `RATE_LIMIT_AGRO_AI_REQUESTS`
+- `RATE_LIMIT_AGRO_AI_WINDOW_SECONDS`
+- `RATE_LIMIT_STORAGE` (`memory` or `redis`)
+- `RATE_LIMIT_REDIS_URL`
+- `RATE_LIMIT_REDIS_PREFIX`
+- `RATE_LIMIT_REDIS_CONNECT_TIMEOUT_SECONDS`
+- `RATE_LIMIT_REDIS_SOCKET_TIMEOUT_SECONDS`
+- `RATE_LIMIT_REDIS_REQUIRED`
+- `METRICS_ENABLED`
+- `METRICS_PATH`
+- `METRICS_BEARER_TOKEN`
+- `AUDIT_ALERT_ENABLED`
+- `AUDIT_ALERT_WINDOW_SECONDS`
+- `AUDIT_ALERT_AUTH_LOGIN_FAILED_THRESHOLD`
+- `AUDIT_ALERT_PASSWORD_RESET_FAILED_THRESHOLD`
+- `AUDIT_ALERT_AGRO_ABUSE_THRESHOLD`
+
+Operational endpoints:
+- `GET /health` for liveness.
+- `GET /ready` for readiness (database + rate-limiter backend checks).
+
+Startup validation:
+- In `APP_ENV=production`, startup fails fast if security-critical settings are unsafe (for example default auth secret, empty CORS allowlist, wildcard CORS, disabled rate limiter, missing trusted hosts).
+- If `SECURITY_CONTENT_SECURITY_POLICY_REPORT_ONLY=true` in production, you must configure either `SECURITY_CONTENT_SECURITY_POLICY_REPORT_URI` or `SECURITY_CSP_REPORT_ENDPOINT_ENABLED=true`.
+
+Audit events:
+- Structured JSON audit logs are emitted for auth/register/login, password reset request/confirm, consent re-acceptance, account deletion, and agro upstream/rate-limit abuse decisions.
+- Audit logger name: `app.audit` (forward to your SIEM/log platform).
+- Burst alerts are emitted as `audit_alert=...` when thresholds are reached within `AUDIT_ALERT_WINDOW_SECONDS`.
+
+CSP rollout:
+- Start with `SECURITY_CONTENT_SECURITY_POLICY_REPORT_ONLY=true`.
+- Configure either `SECURITY_CONTENT_SECURITY_POLICY_REPORT_URI` (external collector) or `SECURITY_CSP_REPORT_ENDPOINT_ENABLED=true` (local `/csp-report` collector).
+- After violations are resolved, switch to `SECURITY_CONTENT_SECURITY_POLICY_REPORT_ONLY=false` to enforce.
 
 Auth payload requirements:
 - `POST /auth/register` requires:
@@ -145,6 +219,7 @@ Auth payload requirements:
   - `consent_version` (for example `2026-04-13`)
 - `POST /auth/login` requires:
   - `legal_acknowledged=true`
+  - `otp_code` when MFA is enabled for the account
 - Re-consent flow:
   - If a user signed with an older consent version, `/auth/login` returns
     `consent_reaccept_required=true` and `required_consent_version`.
@@ -164,9 +239,14 @@ Auth payload requirements:
   - Reset codes expire based on `AUTH_PASSWORD_RESET_CODE_TTL_MINUTES` and are blocked after `AUTH_PASSWORD_RESET_MAX_ATTEMPTS` invalid tries.
   - When `AUTH_PASSWORD_RESET_EMAIL_ENABLED=true`, reset codes are sent by SMTP to the user's registered `email`.
   - Keep `AUTH_PASSWORD_RESET_DEV_MODE=false` in production.
-- Enterprise security controls:
-  - Changing `phone` or `email` through `PATCH /auth/me/profile` requires `current_password`.
-  - Any password update (`PATCH /auth/me/password` or reset confirm) invalidates previous sessions immediately.
+ - Enterprise security controls:
+   - Changing `phone` or `email` through `PATCH /auth/me/profile` requires `current_password`.
+   - Any password update (`PATCH /auth/me/password` or reset confirm) invalidates previous sessions immediately.
+ - MFA controls (TOTP):
+   - `POST /auth/mfa/setup` (requires `current_password`) returns provisioning secret/URI.
+   - `POST /auth/mfa/enable` verifies first OTP and enables MFA.
+   - `POST /auth/mfa/disable` requires `current_password` + valid OTP.
+   - When MFA is enabled for a user, `/auth/login` requires `otp_code`.
 
 ## Security Highlights
 

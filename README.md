@@ -35,7 +35,9 @@ The platform is intentionally built to be useful now while already prepared for 
 - strict ownership rules for worker/farmer/customer data
 - explicit legal-consent enforcement at authentication boundaries (terms + data consent)
 - production-style auth UX with role-specific signup entry points and password reset flow
+- optional TOTP MFA with setup/enable/disable flow and OTP-required login when enabled
 - protected farmer-only AI endpoints via backend authorization
+
 
 ### 2) End-to-end operational depth
 - worker profiles, filtering, map/location-aware discovery
@@ -84,6 +86,22 @@ What is next for full production scale:
 - rate limiting and abuse protection policies
 - load testing and performance tuning under concurrency
 - stronger reliability controls (queueing/circuit breaker where needed)
+
+## Security Hardening Status
+
+Recent hardening added in this repository:
+- strict startup validation for production-critical security settings,
+- layered rate-limiting with Redis-ready backend and agro-specific abuse controls,
+- structured audit events for auth, consent, reset, and agro abuse decisions,
+- readiness checks (`/ready`) including DB and limiter backend health,
+- security CI workflows (CodeQL, gitleaks, dependency audits, config scanning),
+- edge security guidance for Nginx/Cloudflare rate rules.
+
+Operational references:
+- `deploy/security/SECURITY_OPERATIONS_RUNBOOK.md`
+- `deploy/security/EDGE_RATE_LIMIT_GUIDE.md`
+- `deploy/security/nginx-rate-limit.conf`
+- `deploy/security/cloudflare-rules.md`
 
 ## Architecture
 

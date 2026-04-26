@@ -16,6 +16,8 @@ This repo deploys to Render with 3 services:
 
 Workflow file:
 - `.github/workflows/ci-cd.yml`
+- Deploy is blocked unless CI security gates pass (gitleaks, pip-audit, npm audit, trivy config).
+- In GitHub branch protection for `main`, require status checks from CI/CD (including `Security Gates`) before merge.
 
 ## Setup steps
 
@@ -27,10 +29,17 @@ Workflow file:
 3. Set backend env vars:
    - `DATABASE_URL`
    - `DB_FALLBACK_URL` (can be same as `DATABASE_URL`)
-   - `AUTH_SECRET_KEY`
-   - `AGRO_COPILOT_API_BASE_URL` (public URL of `zaytoun-agro-copilot`)
-   - `AGRO_COPILOT_API_KEY` (must match agro `INTERNAL_API_KEY`)
+    - `AUTH_SECRET_KEY`
+    - Optional MFA tuning: `AUTH_MFA_TOTP_ISSUER`, `AUTH_MFA_TOTP_DIGITS`, `AUTH_MFA_TOTP_PERIOD_SECONDS`, `AUTH_MFA_TOTP_VALID_WINDOW`
+    - `APP_ENV=production`
+   - `CORS_ALLOWED_ORIGINS` (explicit comma-separated allowlist)
+    - `SECURITY_TRUSTED_HOSTS` (comma-separated)
+    - `SECURITY_CONTENT_SECURITY_POLICY_REPORT_ONLY` (`true` during CSP rollout, then `false` to enforce)
+    - Either `SECURITY_CONTENT_SECURITY_POLICY_REPORT_URI` or `SECURITY_CSP_REPORT_ENDPOINT_ENABLED=true`
+    - `AGRO_COPILOT_API_BASE_URL` (public URL of `zaytoun-agro-copilot`)
+    - `AGRO_COPILOT_API_KEY` (must match agro `INTERNAL_API_KEY`)
    - Optional: `AGRO_COPILOT_TIMEOUT_SECONDS`, `AGRO_COPILOT_MAX_RETRIES`, `AGRO_COPILOT_RETRY_BACKOFF_MS`
+   - Recommended: `RATE_LIMIT_STORAGE=redis`, `RATE_LIMIT_REDIS_URL`, `RATE_LIMIT_REDIS_REQUIRED=true`
 4. Set frontend env var:
    - `VITE_API_BASE_URL` = backend public URL (for example `https://zaytoun-backend.onrender.com`)
 5. In Render, copy deploy hook URLs for all services.
@@ -44,3 +53,12 @@ Workflow file:
 - Backend proxies farmer-only requests to agro-copilot via `/agro-copilot/*`.
 - Agro-copilot `/api/v1/*` endpoints can be protected with `INTERNAL_API_KEY`.
 - Backend retries transient upstream errors for GET requests only.
+- In production, backend startup validation can fail fast on insecure config (`STARTUP_FAIL_FAST_VALIDATION=true`).
+
+## Edge Security Artifacts
+
+- `deploy/security/EDGE_RATE_LIMIT_GUIDE.md`
+- `deploy/security/nginx-rate-limit.conf`
+- `deploy/security/cloudflare-rules.md`
+- `deploy/security/SECURITY_OPERATIONS_RUNBOOK.md`
+- `deploy/security/SECRET_ROTATION_RUNBOOK.md`

@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import DateTime, Float, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.time_utils import utcnow_naive
 from app.db.base import Base
 
 
@@ -29,6 +30,12 @@ class User(Base):
     password_reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     password_reset_requested_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     password_reset_attempts: Mapped[int] = mapped_column(nullable=False, default=0)
+    login_failed_attempts: Mapped[int] = mapped_column(nullable=False, default=0)
+    login_locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    mfa_enabled: Mapped[bool] = mapped_column(nullable=False, default=False)
+    mfa_enabled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    mfa_totp_secret: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    mfa_totp_pending_secret: Mapped[str | None] = mapped_column(String(128), nullable=True)
     token_version: Mapped[int] = mapped_column(nullable=False, default=0)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, nullable=False)

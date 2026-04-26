@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import DateTime, ForeignKey, Index, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.time_utils import utcnow_naive
 from app.db.base import Base
 
 
@@ -18,4 +19,4 @@ class MarketOrderMessage(Base):
     market_order_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("market_orders.id", ondelete="CASCADE"), nullable=False)
     sender_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content: Mapped[str] = mapped_column(String(1200), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, nullable=False)

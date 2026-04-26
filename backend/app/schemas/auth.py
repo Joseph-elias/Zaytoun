@@ -56,6 +56,7 @@ class UserLogin(BaseModel):
     phone: str = Field(min_length=4, max_length=50)
     password: str = Field(min_length=6, max_length=128)
     legal_acknowledged: bool
+    otp_code: str | None = Field(default=None, min_length=6, max_length=8)
 
     @model_validator(mode="after")
     def validate_legal_acknowledged(self) -> "UserLogin":
@@ -76,6 +77,7 @@ class UserOut(BaseModel):
     terms_accepted_at: datetime | None
     data_consent_accepted_at: datetime | None
     consent_version: str | None
+    mfa_enabled: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -87,6 +89,26 @@ class AuthToken(BaseModel):
     user: UserOut
     consent_reaccept_required: bool = False
     required_consent_version: str | None = None
+
+
+class MfaSetupPayload(BaseModel):
+    current_password: str = Field(min_length=6, max_length=128)
+
+
+class MfaSetupOut(BaseModel):
+    secret: str
+    otpauth_uri: str
+    issuer: str
+    account_name: str
+
+
+class MfaEnablePayload(BaseModel):
+    otp_code: str = Field(min_length=6, max_length=8)
+
+
+class MfaDisablePayload(BaseModel):
+    current_password: str = Field(min_length=6, max_length=128)
+    otp_code: str = Field(min_length=6, max_length=8)
 
 
 class ConsentReacceptPayload(BaseModel):

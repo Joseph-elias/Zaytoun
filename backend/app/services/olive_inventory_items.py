@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.time_utils import utcnow_naive
 from app.models.olive_inventory_item import FarmerOliveInventoryItem
 from app.models.olive_sale import FarmerOliveSale
 from app.models.olive_season import FarmerOliveSeason
@@ -22,7 +23,7 @@ def _round2(value: Decimal) -> Decimal:
 
 
 def _current_year() -> int:
-    return datetime.utcnow().year
+    return utcnow_naive().year
 
 
 def _to_out(item: FarmerOliveInventoryItem) -> dict:

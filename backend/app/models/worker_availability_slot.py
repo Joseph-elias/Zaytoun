@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.time_utils import utcnow_naive
 from app.db.base import Base
 
 
@@ -24,6 +25,6 @@ class WorkerAvailabilitySlot(Base):
     worker_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("workers.id", ondelete="CASCADE"), nullable=False)
     work_date: Mapped[date] = mapped_column(Date, nullable=False)
     slot_type: Mapped[str] = mapped_column(String(20), nullable=False)  # full_day | extra_time
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, nullable=False)
 
     worker = relationship("Worker", back_populates="availability_slots")

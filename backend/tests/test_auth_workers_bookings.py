@@ -67,6 +67,53 @@ def test_auth_requires_registration_and_login_consent_flags() -> None:
     assert ok_login.status_code == 200
 
 
+def test_login_lockout_after_repeated_failed_attempts() -> None:
+    _clear_tables()
+
+    reg = client.post(
+        "/auth/register",
+        json={
+            "full_name": "Farmer Lockout",
+            "phone": "+2127001777",
+            "role": "farmer",
+            "password": "secret123",
+            "terms_accepted": True,
+            "data_consent_accepted": True,
+            "consent_version": "2026-04-13",
+        },
+    )
+    assert reg.status_code == 201
+
+    previous_enabled = settings.auth_login_lockout_enabled
+    previous_attempts = settings.auth_login_max_attempts
+    previous_minutes = settings.auth_login_lockout_minutes
+    settings.auth_login_lockout_enabled = True
+    settings.auth_login_max_attempts = 2
+    settings.auth_login_lockout_minutes = 10
+    try:
+        wrong_1 = client.post(
+            "/auth/login",
+            json={"phone": "+2127001777", "password": "bad-pass", "legal_acknowledged": True},
+        )
+        assert wrong_1.status_code == 401
+
+        wrong_2 = client.post(
+            "/auth/login",
+            json={"phone": "+2127001777", "password": "bad-pass", "legal_acknowledged": True},
+        )
+        assert wrong_2.status_code == 401
+
+        locked = client.post(
+            "/auth/login",
+            json={"phone": "+2127001777", "password": "secret123", "legal_acknowledged": True},
+        )
+        assert locked.status_code == 429
+    finally:
+        settings.auth_login_lockout_enabled = previous_enabled
+        settings.auth_login_max_attempts = previous_attempts
+        settings.auth_login_lockout_minutes = previous_minutes
+
+
 def test_consent_reaccept_flow_blocks_protected_endpoints_until_updated() -> None:
     _clear_tables()
 

@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, Numeric, String, Uuid, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.time_utils import utcnow_naive
 from app.db.base import Base
 
 
@@ -30,5 +31,5 @@ class FarmerOliveSeason(Base):
     pressing_cost_oil_tanks_20l: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     pressing_cost_oil_tank_unit_price: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, onupdate=utcnow_naive, nullable=False)

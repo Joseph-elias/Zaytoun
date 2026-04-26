@@ -33,14 +33,14 @@ frontend/test-results/
 # Env files and secrets
 .env
 .env.*
+**/.env
+**/.env.*
 *.env
 *.env.*
 *.env.local
-frontend/.env
-backend/.env
-Agro-copilot/.env
 !.env.example
 !*.env.example
+!**/.env.example
 
 # Private keys / certificates / secret bundles
 *.pem

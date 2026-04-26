@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy import Boolean, DateTime, Float, Index, Integer, Numeric, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.time_utils import utcnow_naive
 from app.db.base import Base
 
 
@@ -38,7 +39,7 @@ class Worker(Base):
         default=",monday,tuesday,wednesday,thursday,friday,saturday,sunday,",
     )
     available: Mapped[bool] = mapped_column(Boolean, index=True, default=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, nullable=False)
     availability_slots = relationship(
         "WorkerAvailabilitySlot",
         back_populates="worker",

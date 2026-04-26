@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Uuid, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.time_utils import utcnow_naive
 from app.db.base import Base
 
 
@@ -25,5 +26,5 @@ class FarmerOliveLaborDay(Base):
     men_rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     women_rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     notes: Mapped[str | None] = mapped_column(String(400), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow_naive, onupdate=utcnow_naive, nullable=False)

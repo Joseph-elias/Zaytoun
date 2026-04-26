@@ -3,9 +3,10 @@ import logging
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.api.dependencies import require_roles
+from app.core.audit import AGRO_UPSTREAM_ERROR, emit_audit
 from app.core.config import settings
 from app.models.user import User
 from app.schemas.agro_copilot import (
@@ -30,7 +31,13 @@ def _agro_base_url() -> str:
     return value
 
 
-async def _proxy_json(path: str, method: str = "GET", payload: dict[str, Any] | None = None) -> Any:
+async def _proxy_json(
+    path: str,
+    method: str = "GET",
+    payload: dict[str, Any] | None = None,
+    request: Request | None = None,
+    actor_user_id: str | None = None,
+) -> Any:
     base_url = _agro_base_url()
     url = f"{base_url}/{path.lstrip('/')}"
     timeout = max(5, int(settings.agro_copilot_timeout_seconds))
@@ -62,6 +69,12 @@ async def _proxy_json(path: str, method: str = "GET", payload: dict[str, Any] | 
             if attempt < attempts:
                 await asyncio.sleep((backoff_ms * attempt) / 1000)
                 continue
+            emit_audit(
+                AGRO_UPSTREAM_ERROR,
+                request=request,
+                actor_user_id=actor_user_id,
+                metadata={"path": path, "method": method, "error_type": exc.__class__.__name__},
+            )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"Agro Copilot service is unreachable: {exc}",
@@ -91,6 +104,12 @@ async def _proxy_json(path: str, method: str = "GET", payload: dict[str, Any] | 
         data = {"detail": response.text or "Invalid response from Agro Copilot service"}
 
     if response.status_code >= 400:
+        emit_audit(
+            AGRO_UPSTREAM_ERROR,
+            request=request,
+            actor_user_id=actor_user_id,
+            metadata={"path": path, "method": method, "status_code": response.status_code},
+        )
         detail = data.get("detail", data) if isinstance(data, dict) else data
         raise HTTPException(status_code=response.status_code, detail=detail)
 
@@ -98,60 +117,73 @@ async def _proxy_json(path: str, method: str = "GET", payload: dict[str, Any] | 
 
 
 @router.get("/health", response_model=dict[str, str])
-async def agro_copilot_health(current_user: User = Depends(require_roles("farmer"))) -> Any:
-    _ = current_user
-    return await _proxy_json("/health")
+async def agro_copilot_health(request: Request, current_user: User = Depends(require_roles("farmer"))) -> Any:
+    return await _proxy_json("/health", request=request, actor_user_id=str(current_user.id))
 
 
 @router.get("/knowledge/sources", response_model=list[AgroCopilotKnowledgeSource])
-async def agro_copilot_sources(current_user: User = Depends(require_roles("farmer"))) -> list[AgroCopilotKnowledgeSource]:
-    _ = current_user
-    return await _proxy_json("/api/v1/knowledge/sources")
+async def agro_copilot_sources(request: Request, current_user: User = Depends(require_roles("farmer"))) -> list[AgroCopilotKnowledgeSource]:
+    return await _proxy_json("/api/v1/knowledge/sources", request=request, actor_user_id=str(current_user.id))
 
 
 @router.post("/chat", response_model=AgroCopilotDiagnosisResponse)
 async def agro_copilot_chat(
     payload: AgroCopilotChatRequest,
+    request: Request,
     current_user: User = Depends(require_roles("farmer")),
 ) -> AgroCopilotDiagnosisResponse:
-    _ = current_user
-    return await _proxy_json("/api/v1/chat", method="POST", payload=payload.model_dump())
+    return await _proxy_json(
+        "/api/v1/chat",
+        method="POST",
+        payload=payload.model_dump(),
+        request=request,
+        actor_user_id=str(current_user.id),
+    )
 
 
 @router.post("/chat/sessions")
-async def agro_copilot_create_chat_session(current_user: User = Depends(require_roles("farmer"))) -> Any:
-    _ = current_user
-    return await _proxy_json("/api/v1/chat/sessions", method="POST")
+async def agro_copilot_create_chat_session(request: Request, current_user: User = Depends(require_roles("farmer"))) -> Any:
+    return await _proxy_json("/api/v1/chat/sessions", method="POST", request=request, actor_user_id=str(current_user.id))
 
 
 @router.get("/chat/sessions")
-async def agro_copilot_list_chat_sessions(current_user: User = Depends(require_roles("farmer"))) -> Any:
-    _ = current_user
-    return await _proxy_json("/api/v1/chat/sessions")
+async def agro_copilot_list_chat_sessions(request: Request, current_user: User = Depends(require_roles("farmer"))) -> Any:
+    return await _proxy_json("/api/v1/chat/sessions", request=request, actor_user_id=str(current_user.id))
 
 
 @router.get("/chat/sessions/{session_id}/history")
 async def agro_copilot_chat_session_history(
     session_id: str,
+    request: Request,
     current_user: User = Depends(require_roles("farmer")),
 ) -> Any:
-    _ = current_user
-    return await _proxy_json(f"/api/v1/chat/sessions/{session_id}/history")
+    return await _proxy_json(f"/api/v1/chat/sessions/{session_id}/history", request=request, actor_user_id=str(current_user.id))
 
 
 @router.delete("/chat/sessions/{session_id}")
 async def agro_copilot_delete_chat_session(
     session_id: str,
+    request: Request,
     current_user: User = Depends(require_roles("farmer")),
 ) -> Any:
-    _ = current_user
-    return await _proxy_json(f"/api/v1/chat/sessions/{session_id}", method="DELETE")
+    return await _proxy_json(
+        f"/api/v1/chat/sessions/{session_id}",
+        method="DELETE",
+        request=request,
+        actor_user_id=str(current_user.id),
+    )
 
 
 @router.post("/diagnose", response_model=AgroCopilotDiagnosisResponse)
 async def agro_copilot_diagnose(
     payload: AgroCopilotDiagnosisRequest,
+    request: Request,
     current_user: User = Depends(require_roles("farmer")),
 ) -> AgroCopilotDiagnosisResponse:
-    _ = current_user
-    return await _proxy_json("/api/v1/diagnose", method="POST", payload=payload.model_dump())
+    return await _proxy_json(
+        "/api/v1/diagnose",
+        method="POST",
+        payload=payload.model_dump(),
+        request=request,
+        actor_user_id=str(current_user.id),
+    )
