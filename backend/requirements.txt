@@ -1,4 +1,4 @@
-﻿fastapi==0.118.0
+fastapi==0.118.0
 gunicorn==23.0.0
 uvicorn[standard]==0.37.0
 sqlalchemy==2.0.43
@@ -10,7 +10,7 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 pytest==8.4.2
 httpx==0.28.1
-python-multipart==0.0.20
+python-multipart==0.0.27
 redis==5.2.1
 prometheus-client==0.21.1
 make==0.1.6.post2
