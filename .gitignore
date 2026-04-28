@@ -80,6 +80,7 @@ Agro-copilot/.env
 
 # Internal instructions (do not publish)
 AGENTS.md
+AGENT_NOTES_PRIVATE.md
 
 # Images (do not publish)
 *.png
