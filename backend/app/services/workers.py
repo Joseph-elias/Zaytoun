@@ -1,12 +1,16 @@
+from collections import OrderedDict
 from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
 import math
+from threading import Lock
+import time
 from uuid import UUID
 
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import settings
 from app.models.booking import Booking
 from app.models.booking_event import BookingEvent
 from app.models.booking_message import BookingMessage
@@ -19,6 +23,56 @@ from app.schemas.worker import (
     WorkerUpdate,
 )
 from app.services.capacity import remaining_capacity_for_slot, weekday_name
+
+
+_WORKER_LIST_CACHE_LOCK = Lock()
+_WORKER_LIST_CACHE: "OrderedDict[tuple, tuple[float, list[UUID]]]" = OrderedDict()
+
+
+def _workers_cache_enabled() -> bool:
+    return bool(getattr(settings, "workers_list_cache_enabled", True))
+
+
+def _workers_cache_ttl_seconds() -> int:
+    return max(1, int(getattr(settings, "workers_list_cache_ttl_seconds", 20)))
+
+
+def _workers_cache_max_entries() -> int:
+    return max(16, int(getattr(settings, "workers_list_cache_max_entries", 500)))
+
+
+def _worker_list_cache_get(key: tuple) -> list[UUID] | None:
+    if not _workers_cache_enabled():
+        return None
+    now = time.time()
+    with _WORKER_LIST_CACHE_LOCK:
+        payload = _WORKER_LIST_CACHE.get(key)
+        if payload is None:
+            return None
+        expires_at, ids = payload
+        if now >= expires_at:
+            _WORKER_LIST_CACHE.pop(key, None)
+            return None
+        _WORKER_LIST_CACHE.move_to_end(key)
+        return list(ids)
+
+
+def _worker_list_cache_set(key: tuple, ids: list[UUID]) -> None:
+    if not _workers_cache_enabled():
+        return
+    now = time.time()
+    ttl = _workers_cache_ttl_seconds()
+    max_entries = _workers_cache_max_entries()
+    with _WORKER_LIST_CACHE_LOCK:
+        _WORKER_LIST_CACHE[key] = (now + ttl, list(ids))
+        _WORKER_LIST_CACHE.move_to_end(key)
+        while len(_WORKER_LIST_CACHE) > max_entries:
+            _WORKER_LIST_CACHE.popitem(last=False)
+
+
+def _invalidate_worker_list_cache() -> None:
+    with _WORKER_LIST_CACHE_LOCK:
+        _WORKER_LIST_CACHE.clear()
 
 
 def _dates_to_storage(dates: list[date]) -> str:
@@ -79,6 +133,7 @@ def create_worker(db: Session, payload: WorkerCreate) -> Worker:
     _sync_worker_slots(db, worker, windows)
     db.commit()
     db.refresh(worker)
+    _invalidate_worker_list_cache()
     return worker
 
 
@@ -98,7 +153,43 @@ def list_workers(
     near_longitude: float | None = None,
     max_distance_km: float | None = None,
     sort_by: str | None = None,
+    offset: int = 0,
+    limit: int = 100,
 ) -> Sequence[Worker]:
+    cache_key = (
+        available,
+        village,
+        rate_type,
+        str(min_men_rate) if min_men_rate is not None else None,
+        str(max_men_rate) if max_men_rate is not None else None,
+        str(min_women_rate) if min_women_rate is not None else None,
+        str(max_women_rate) if max_women_rate is not None else None,
+        phone,
+        work_date.isoformat() if work_date else None,
+        work_slot,
+        near_latitude,
+        near_longitude,
+        max_distance_km,
+        sort_by,
+        offset,
+        limit,
+    )
+    can_use_cache = (
+        phone is None
+        and work_date is None
+        and near_latitude is None
+        and near_longitude is None
+        and sort_by != "distance"
+    )
+    if can_use_cache:
+        cached_ids = _worker_list_cache_get(cache_key)
+        if cached_ids:
+            rows = db.scalars(
+                select(Worker).where(Worker.id.in_(cached_ids)).options(selectinload(Worker.availability_slots))
+            ).all()
+            by_id = {row.id: row for row in rows}
+            return [by_id[row_id] for row_id in cached_ids if row_id in by_id]
+
     query = select(Worker).options(selectinload(Worker.availability_slots))
 
     if phone:
@@ -150,6 +241,9 @@ def list_workers(
             query = query.where(slot_match)
 
     query = query.order_by(Worker.created_at.desc())
+    apply_db_pagination = near_latitude is None or near_longitude is None
+    if apply_db_pagination:
+        query = query.offset(max(0, int(offset))).limit(max(1, int(limit)))
     workers = db.scalars(query).all()
 
     if work_date:
@@ -184,6 +278,14 @@ def list_workers(
         if sort_by == "distance":
             workers.sort(key=lambda item: item.distance_km if item.distance_km is not None else float("inf"))
 
+    if not apply_db_pagination:
+        safe_offset = max(0, int(offset))
+        safe_limit = max(1, int(limit))
+        workers = workers[safe_offset : safe_offset + safe_limit]
+
+    if can_use_cache:
+        _worker_list_cache_set(cache_key, [item.id for item in workers])
+
     return workers
 
 
@@ -203,6 +305,7 @@ def update_worker_availability(
     worker.available = payload.available
     db.commit()
     db.refresh(worker)
+    _invalidate_worker_list_cache()
     return worker
 
 
@@ -226,6 +329,7 @@ def delete_worker(
 
     db.delete(worker)
     db.commit()
+    _invalidate_worker_list_cache()
     return True
 
 
@@ -263,4 +367,5 @@ def update_worker_profile(
 
     db.commit()
     db.refresh(worker)
+    _invalidate_worker_list_cache()
     return worker

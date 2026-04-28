@@ -24,6 +24,7 @@ from app.core.config import settings
 from app.core.http_security import apply_security_headers
 from app.core.observability import (
     log_security_event,
+    metrics_backend_status,
     metrics_content_type,
     metrics_endpoint_enabled,
     metrics_payload,
@@ -124,6 +125,9 @@ def _trusted_hosts() -> list[str]:
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     validate_startup_settings_or_raise()
+    metrics_ok, metrics_reason = metrics_backend_status()
+    if settings.metrics_enabled and settings.metrics_require_prometheus_client and not metrics_ok:
+        raise RuntimeError(f"Metrics enabled but Prometheus backend is unavailable: {metrics_reason}")
     _ensure_market_order_review_columns_for_sqlite()
     _ensure_worker_slot_schema_for_sqlite()
     yield
@@ -238,6 +242,11 @@ async def ready() -> Response:
     limiter_ok, limiter_info = await rate_limiter_healthcheck()
     checks["rate_limiter"] = limiter_info
     if not limiter_ok:
+        healthy = False
+
+    metrics_ok, metrics_reason = metrics_backend_status()
+    checks["metrics_backend"] = {"status": metrics_reason}
+    if settings.metrics_enabled and settings.metrics_require_prometheus_client and not metrics_ok:
         healthy = False
 
     if healthy:

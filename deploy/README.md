@@ -55,6 +55,20 @@ Workflow file:
 - Backend retries transient upstream errors for GET requests only.
 - In production, backend startup validation can fail fast on insecure config (`STARTUP_FAIL_FAST_VALIDATION=true`).
 
+## Performance Baseline (Phase 0)
+
+- Load testing scenarios and SLO baseline are in `deploy/perf/`.
+- Start with `deploy/perf/README.md` and run k6 scenarios against staging before production tuning.
+- Enable metrics first: `METRICS_ENABLED=true` and set `METRICS_BEARER_TOKEN`.
+- Always run `make perf-preflight` before long load runs.
+- Use `make perf-phase0-safe` to automatically block load tests when preflight fails.
+
+## Scalability Roadmap
+
+- See `deploy/scaling/ROADMAP.md` for phased infrastructure scaling plan and exit criteria.
+- Phase 1 staging checklist: `deploy/scaling/PHASE1_STAGING_CHECKLIST.md`
+- Phase 1 go-live runbook: `deploy/scaling/PHASE1_GO_LIVE_RUNBOOK.md`
+
 ## Edge Security Artifacts
 
 - `deploy/security/EDGE_RATE_LIMIT_GUIDE.md`

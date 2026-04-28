@@ -8,12 +8,17 @@ from typing import Any
 from app.core.config import settings
 
 try:
-    from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+    from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
+    PROMETHEUS_IMPORT_ERROR: str | None = None
 except Exception:  # pragma: no cover
+    import traceback
+
     CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
     Counter = None
     Histogram = None
+    Gauge = None
     generate_latest = None
+    PROMETHEUS_IMPORT_ERROR = traceback.format_exc(limit=1)
 
 
 _uuid_like_re = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}\b")
@@ -49,11 +54,26 @@ if Counter is not None and Histogram is not None:
         "Rate limiter backend errors by phase/mode.",
         ["mode", "phase"],
     )
+    DB_POOL_SIZE = Gauge(
+        "worker_radar_db_pool_size",
+        "Configured SQLAlchemy DB pool size.",
+    )
+    DB_POOL_CHECKED_OUT = Gauge(
+        "worker_radar_db_pool_checked_out_connections",
+        "Current number of checked out DB connections.",
+    )
+    DB_POOL_OVERFLOW = Gauge(
+        "worker_radar_db_pool_overflow_connections",
+        "Current DB pool overflow connections.",
+    )
 else:  # pragma: no cover
     HTTP_REQUESTS_TOTAL = None
     HTTP_REQUEST_DURATION_SECONDS = None
     RATE_LIMIT_BLOCK_TOTAL = None
     RATE_LIMIT_BACKEND_ERROR_TOTAL = None
+    DB_POOL_SIZE = None
+    DB_POOL_CHECKED_OUT = None
+    DB_POOL_OVERFLOW = None
 
 
 def now_monotonic() -> float:
@@ -78,6 +98,14 @@ def observe_rate_limit_backend_error(mode: str, phase: str) -> None:
     if RATE_LIMIT_BACKEND_ERROR_TOTAL is None:
         return
     RATE_LIMIT_BACKEND_ERROR_TOTAL.labels(mode=mode, phase=phase).inc()
+
+
+def observe_db_pool_state(pool_size: int, checked_out: int, overflow: int) -> None:
+    if DB_POOL_SIZE is None or DB_POOL_CHECKED_OUT is None or DB_POOL_OVERFLOW is None:
+        return
+    DB_POOL_SIZE.set(max(0, int(pool_size)))
+    DB_POOL_CHECKED_OUT.set(max(0, int(checked_out)))
+    DB_POOL_OVERFLOW.set(max(0, int(overflow)))
 
 
 def log_security_event(logger, event: str, **fields: Any) -> None:
@@ -105,3 +133,9 @@ def metrics_content_type() -> str:
 
 def metrics_endpoint_enabled() -> bool:
     return bool(settings.metrics_enabled)
+
+
+def metrics_backend_status() -> tuple[bool, str]:
+    if generate_latest is None:
+        return False, PROMETHEUS_IMPORT_ERROR or "prometheus_client_unavailable"
+    return True, "ok"

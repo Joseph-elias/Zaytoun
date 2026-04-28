@@ -13,3 +13,4 @@ httpx==0.28.1
 python-multipart==0.0.20
 redis==5.2.1
 prometheus-client==0.21.1
+make==0.1.6.post2

@@ -31,6 +31,10 @@ FastAPI backend for Worker Radar, covering auth, workers, bookings, olive operat
 - `PATCH /workers/{worker_id}/availability`
 - `DELETE /workers/{worker_id}`
 
+`GET /workers` supports pagination:
+- `offset` (default `0`)
+- `limit` (default `100`, max `500`)
+
 ### Bookings
 - `POST /workers/{worker_id}/bookings`
 - `GET /bookings/mine`
@@ -121,6 +125,10 @@ Important env vars:
 - `APP_ENV` (`development`, `staging`, `production`)
 - `DATABASE_URL`
 - `DB_FALLBACK_URL`
+- `DB_POOL_SIZE`
+- `DB_MAX_OVERFLOW`
+- `DB_POOL_TIMEOUT_SECONDS`
+- `DB_POOL_RECYCLE_SECONDS`
 - `CORS_ALLOWED_ORIGINS` (comma-separated)
 - `STARTUP_FAIL_FAST_VALIDATION`
 - `AUTH_SECRET_KEY`
@@ -169,6 +177,8 @@ Important env vars:
 - `RATE_LIMIT_TRUSTED_PROXY_CIDRS`
 - `RATE_LIMIT_GLOBAL_REQUESTS`
 - `RATE_LIMIT_GLOBAL_WINDOW_SECONDS`
+- `RATE_LIMIT_GLOBAL_AUTHENTICATED_REQUESTS`
+- `RATE_LIMIT_GLOBAL_AUTHENTICATED_WINDOW_SECONDS`
 - `RATE_LIMIT_AUTH_REQUESTS`
 - `RATE_LIMIT_AUTH_WINDOW_SECONDS`
 - `RATE_LIMIT_AUTH_LOGIN_REQUESTS`
@@ -186,8 +196,12 @@ Important env vars:
 - `RATE_LIMIT_REDIS_SOCKET_TIMEOUT_SECONDS`
 - `RATE_LIMIT_REDIS_REQUIRED`
 - `METRICS_ENABLED`
+- `METRICS_REQUIRE_PROMETHEUS_CLIENT`
 - `METRICS_PATH`
 - `METRICS_BEARER_TOKEN`
+- `WORKERS_LIST_CACHE_ENABLED`
+- `WORKERS_LIST_CACHE_TTL_SECONDS`
+- `WORKERS_LIST_CACHE_MAX_ENTRIES`
 - `AUDIT_ALERT_ENABLED`
 - `AUDIT_ALERT_WINDOW_SECONDS`
 - `AUDIT_ALERT_AUTH_LOGIN_FAILED_THRESHOLD`

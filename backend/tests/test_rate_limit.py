@@ -10,6 +10,8 @@ def _snapshot_rate_limit_settings() -> dict[str, int | bool]:
         "rate_limit_enabled": settings.rate_limit_enabled,
         "rate_limit_global_requests": settings.rate_limit_global_requests,
         "rate_limit_global_window_seconds": settings.rate_limit_global_window_seconds,
+        "rate_limit_global_authenticated_requests": settings.rate_limit_global_authenticated_requests,
+        "rate_limit_global_authenticated_window_seconds": settings.rate_limit_global_authenticated_window_seconds,
         "rate_limit_auth_login_requests": settings.rate_limit_auth_login_requests,
         "rate_limit_auth_login_window_seconds": settings.rate_limit_auth_login_window_seconds,
         "rate_limit_agro_ai_requests": settings.rate_limit_agro_ai_requests,
@@ -21,6 +23,8 @@ def _restore_rate_limit_settings(snapshot: dict[str, int | bool]) -> None:
     settings.rate_limit_enabled = bool(snapshot["rate_limit_enabled"])
     settings.rate_limit_global_requests = int(snapshot["rate_limit_global_requests"])
     settings.rate_limit_global_window_seconds = int(snapshot["rate_limit_global_window_seconds"])
+    settings.rate_limit_global_authenticated_requests = int(snapshot["rate_limit_global_authenticated_requests"])
+    settings.rate_limit_global_authenticated_window_seconds = int(snapshot["rate_limit_global_authenticated_window_seconds"])
     settings.rate_limit_auth_login_requests = int(snapshot["rate_limit_auth_login_requests"])
     settings.rate_limit_auth_login_window_seconds = int(snapshot["rate_limit_auth_login_window_seconds"])
     settings.rate_limit_agro_ai_requests = int(snapshot["rate_limit_agro_ai_requests"])
@@ -90,6 +94,35 @@ def test_rate_limit_blocks_agro_ai_spam() -> None:
         assert second.status_code == 422
         assert third.status_code == 429
         assert third.json().get("rule") == "agro_ai_calls"
+    finally:
+        _restore_rate_limit_settings(snapshot)
+        asyncio.run(reset_rate_limiter_state())
+
+
+def test_global_ip_limit_does_not_block_authenticated_global_budget() -> None:
+    _clear_tables()
+    asyncio.run(reset_rate_limiter_state())
+    snapshot = _snapshot_rate_limit_settings()
+    try:
+        settings.rate_limit_enabled = True
+        settings.rate_limit_global_requests = 500
+        settings.rate_limit_global_window_seconds = 60
+        settings.rate_limit_global_authenticated_requests = 100
+        settings.rate_limit_global_authenticated_window_seconds = 60
+        settings.rate_limit_auth_login_requests = 50
+        settings.rate_limit_auth_login_window_seconds = 60
+
+        worker_headers = _register_and_login("worker", "+2127000199")
+        settings.rate_limit_global_requests = 1
+        asyncio.run(reset_rate_limiter_state())
+        first_anon = client.get("/workers")
+        second_anon = client.get("/workers")
+        assert first_anon.status_code in (401, 403)
+        assert second_anon.status_code == 429
+        assert second_anon.json().get("rule") == "global_ip"
+
+        authed = client.get("/workers", headers=worker_headers)
+        assert authed.status_code == 200
     finally:
         _restore_rate_limit_settings(snapshot)
         asyncio.run(reset_rate_limiter_state())

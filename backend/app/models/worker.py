@@ -13,6 +13,8 @@ class Worker(Base):
     __tablename__ = "workers"
     __table_args__ = (
         Index("ix_workers_village_available", "village", "available"),
+        Index("ix_workers_phone", "phone"),
+        Index("ix_workers_available_created_at", "available", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

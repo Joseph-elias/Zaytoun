@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     app_env: str = "development"  # development | staging | production
     database_url: str = DEFAULT_SQLITE_URL
     db_fallback_url: str = DEFAULT_SQLITE_URL
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
+    db_pool_timeout_seconds: int = 30
+    db_pool_recycle_seconds: int = 1800
     cors_allowed_origins: str = "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5500,http://localhost:5500"
     startup_fail_fast_validation: bool = True
 
@@ -84,6 +88,8 @@ class Settings(BaseSettings):
     rate_limit_trusted_proxy_cidrs: str = ""
     rate_limit_global_requests: int = 240
     rate_limit_global_window_seconds: int = 60
+    rate_limit_global_authenticated_requests: int = 1200
+    rate_limit_global_authenticated_window_seconds: int = 60
     rate_limit_auth_requests: int = 20
     rate_limit_auth_window_seconds: int = 60
     rate_limit_auth_login_requests: int = 8
@@ -103,8 +109,12 @@ class Settings(BaseSettings):
 
     # Metrics/observability
     metrics_enabled: bool = False
+    metrics_require_prometheus_client: bool = False
     metrics_path: str = "/metrics"
     metrics_bearer_token: str | None = None
+    workers_list_cache_enabled: bool = True
+    workers_list_cache_ttl_seconds: int = 20
+    workers_list_cache_max_entries: int = 500
 
     # Audit alerting
     audit_alert_enabled: bool = True

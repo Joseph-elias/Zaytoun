@@ -42,6 +42,7 @@ class RateLimitRule:
     window_seconds: int
     path_prefixes: tuple[str, ...]
     methods: frozenset[str] | None = None
+    identity_scope: Literal["any", "user", "ip"] = "any"
 
 
 class RateLimitBackend(Protocol):
@@ -264,10 +265,18 @@ def _is_trusted_proxy_ip(value: str | None) -> bool:
 def build_rate_limit_rules() -> list[RateLimitRule]:
     return [
         RateLimitRule(
-            name="global",
+            name="global_ip",
             limit=_coerce_positive_int(settings.rate_limit_global_requests, 240),
             window_seconds=_coerce_positive_int(settings.rate_limit_global_window_seconds, 60),
             path_prefixes=("/",),
+            identity_scope="ip",
+        ),
+        RateLimitRule(
+            name="global_authenticated",
+            limit=_coerce_positive_int(settings.rate_limit_global_authenticated_requests, 1200),
+            window_seconds=_coerce_positive_int(settings.rate_limit_global_authenticated_window_seconds, 60),
+            path_prefixes=("/",),
+            identity_scope="user",
         ),
         RateLimitRule(
             name="auth_general",
@@ -360,6 +369,16 @@ def identity_key(request: Request) -> str:
     return f"ip:{_client_ip(request)}"
 
 
+def _matches_identity_scope(identity: str, scope: Literal["any", "user", "ip"]) -> bool:
+    if scope == "any":
+        return True
+    if scope == "user":
+        return identity.startswith("user:")
+    if scope == "ip":
+        return identity.startswith("ip:")
+    return True
+
+
 def _configured_storage_mode() -> Literal["memory", "redis"]:
     raw = str(settings.rate_limit_storage or "memory").strip().lower()
     return "redis" if raw == "redis" else "memory"
@@ -422,7 +441,11 @@ def _rate_limit_block_response(rule_name: str, retry_after_seconds: int) -> Resp
             "rule": rule_name,
             "retry_after_seconds": retry_after_seconds,
         },
-        headers={"Retry-After": str(retry_after_seconds)},
+        headers={
+            "Retry-After": str(retry_after_seconds),
+            "X-RateLimit-Rule": rule_name,
+            "X-RateLimit-Retry-After-Seconds": str(retry_after_seconds),
+        },
     )
 
 
@@ -445,6 +468,8 @@ async def enforce_rate_limit(request: Request, rules: list[RateLimitRule]) -> Re
     key = identity_key(request)
 
     for rule in iter_matching_rules(path=request.url.path, method=request.method, rules=rules):
+        if not _matches_identity_scope(identity=key, scope=rule.identity_scope):
+            continue
         try:
             allowed, retry_after = await backend.check(rule=rule, key=key)
         except Exception as exc:

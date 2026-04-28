@@ -83,6 +83,8 @@ def list_workers_endpoint(
     near_longitude: float | None = Query(default=None, ge=-180, le=180),
     max_distance_km: float | None = Query(default=None, gt=0),
     sort_by: Literal["newest", "distance"] | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[WorkerOut]:
@@ -104,6 +106,8 @@ def list_workers_endpoint(
         near_longitude=near_longitude,
         max_distance_km=max_distance_km,
         sort_by=sort_by,
+        offset=offset,
+        limit=limit,
     )
     return [WorkerOut.model_validate(worker) for worker in workers]
 

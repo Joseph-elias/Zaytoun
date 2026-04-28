@@ -67,6 +67,12 @@ secrets.*
 
 # Local helper artifacts
 repo_files.txt
+.perf-results/
+.tools/
+*.db
+*.sqlite
+*.sqlite3
+*.log
 
 # Agro-copilot local runtime files
 Agro-copilot/.venv/
