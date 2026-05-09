@@ -21,7 +21,20 @@ def upgrade() -> None:
     with op.batch_alter_table("farmer_olive_inventory_items") as batch_op:
         batch_op.add_column(sa.Column("inventory_year", sa.Integer(), nullable=True))
 
-    op.execute("UPDATE farmer_olive_inventory_items SET inventory_year = CAST(strftime('%Y', COALESCE(created_at, CURRENT_TIMESTAMP)) AS INTEGER) WHERE inventory_year IS NULL")
+    bind = op.get_bind()
+    dialect = bind.dialect.name
+    if dialect == "postgresql":
+        op.execute(
+            "UPDATE farmer_olive_inventory_items "
+            "SET inventory_year = CAST(EXTRACT(YEAR FROM COALESCE(created_at, CURRENT_TIMESTAMP)) AS INTEGER) "
+            "WHERE inventory_year IS NULL"
+        )
+    else:
+        op.execute(
+            "UPDATE farmer_olive_inventory_items "
+            "SET inventory_year = CAST(strftime('%Y', COALESCE(created_at, CURRENT_TIMESTAMP)) AS INTEGER) "
+            "WHERE inventory_year IS NULL"
+        )
 
     with op.batch_alter_table("farmer_olive_inventory_items") as batch_op:
         batch_op.alter_column("inventory_year", existing_type=sa.Integer(), nullable=False)

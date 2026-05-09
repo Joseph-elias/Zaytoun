@@ -74,7 +74,7 @@ def upgrade() -> None:
             )
 
     op.execute(sa.text("UPDATE market_orders SET inventory_reserved_quantity = 0 WHERE inventory_reserved_quantity IS NULL"))
-    op.execute(sa.text("UPDATE market_orders SET inventory_shortage_alert = 0 WHERE inventory_shortage_alert IS NULL"))
+    op.execute(sa.text("UPDATE market_orders SET inventory_shortage_alert = false WHERE inventory_shortage_alert IS NULL"))
 
 
 def downgrade() -> None:

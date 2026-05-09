@@ -27,7 +27,7 @@ def upgrade() -> None:
     columns = _column_names("users")
     with op.batch_alter_table("users") as batch_op:
         if "mfa_enabled" not in columns:
-            batch_op.add_column(sa.Column("mfa_enabled", sa.Boolean(), nullable=False, server_default=sa.text("0")))
+            batch_op.add_column(sa.Column("mfa_enabled", sa.Boolean(), nullable=False, server_default=sa.false()))
         if "mfa_enabled_at" not in columns:
             batch_op.add_column(sa.Column("mfa_enabled_at", sa.DateTime(), nullable=True))
         if "mfa_totp_secret" not in columns:
