@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     db_pool_timeout_seconds: int = 30
     db_pool_recycle_seconds: int = 1800
     cors_allowed_origins: str = "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5500,http://localhost:5500"
+    cors_allowed_origin_regex: str = ""
     startup_fail_fast_validation: bool = True
 
     # Optional Supabase/PostgreSQL values for later deployment wiring.

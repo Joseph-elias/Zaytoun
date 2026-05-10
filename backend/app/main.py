@@ -32,7 +32,11 @@ from app.core.observability import (
     observe_http_request,
 )
 from app.core.rate_limit import build_rate_limit_rules, enforce_rate_limit, rate_limiter_healthcheck
-from app.core.startup_validation import parse_cors_origins, validate_startup_settings_or_raise
+from app.core.startup_validation import (
+    parse_cors_origin_regex,
+    parse_cors_origins,
+    validate_startup_settings_or_raise,
+)
 from app.db.session import engine
 
 logger = logging.getLogger(__name__)
@@ -148,6 +152,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=parse_cors_origins(),
+        allow_origin_regex=parse_cors_origin_regex() or None,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

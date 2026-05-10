@@ -10,6 +10,10 @@ def parse_cors_origins() -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def parse_cors_origin_regex() -> str:
+    return str(settings.cors_allowed_origin_regex or "").strip()
+
+
 def _is_production() -> bool:
     return str(settings.app_env or "development").strip().lower() == "production"
 
@@ -31,8 +35,9 @@ def validate_startup_settings_or_raise() -> None:
 
     errors: list[str] = []
     cors_origins = parse_cors_origins()
-    if not cors_origins:
-        errors.append("CORS_ALLOWED_ORIGINS is empty in production.")
+    cors_origin_regex = parse_cors_origin_regex()
+    if not cors_origins and not cors_origin_regex:
+        errors.append("Set CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGIN_REGEX in production.")
     if any(origin == "*" for origin in cors_origins):
         errors.append("CORS_ALLOWED_ORIGINS cannot include '*' in production.")
 

@@ -130,6 +130,7 @@ Important env vars:
 - `DB_POOL_TIMEOUT_SECONDS`
 - `DB_POOL_RECYCLE_SECONDS`
 - `CORS_ALLOWED_ORIGINS` (comma-separated)
+- `CORS_ALLOWED_ORIGIN_REGEX` (optional regex allowlist, useful for preview domains)
 - `STARTUP_FAIL_FAST_VALIDATION`
 - `AUTH_SECRET_KEY`
 - `AUTH_ALGORITHM`
