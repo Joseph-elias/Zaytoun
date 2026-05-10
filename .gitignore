@@ -95,3 +95,11 @@ AGENT_NOTES_PRIVATE.md
 
 # Public recruiter-facing preview image (keep tracked)
 !assets/landing-marketing.jpeg
+
+# Frontend images used by application code (must be tracked for deployment)
+!frontend/assets/zaytoun-logo.png
+!frontend/assets/workers-directory-bg.png
+!frontend/assets/landing-login-bg.png
+!frontend/assets/landing-bg.png
+!frontend/react-workers-directory/public/workers-directory-bg.png
+!frontend/react-workers-directory/public/zaytoun-logo.png
